@@ -14,3 +14,30 @@
 
 /* 연구 안내 텍스트 */
 .research-intro { font-size: 0.95rem; line-height: 1.7; color: #4a5568; background: #f1f5f9; padding: 20px; border-radius: 12px; }
+
+.brand-logo {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #4a90e2; /* 신뢰감을 주는 블루톤 */
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+
+.research-intro {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid #4a90e2;
+    line-height: 1.6;
+    text-align: left;
+    margin: 20px 0;
+}
+
+.pi-info {
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 15px;
+    border-top: 1px solid #ddd;
+    padding-top: 10px;
+}
