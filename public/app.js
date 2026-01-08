@@ -43,17 +43,25 @@ function toggleDiagnosis(element, value) {
 // 전체 동의 로직
 function agreeAll() {
     const checkboxes = document.querySelectorAll('.essential');
-    checkboxes.forEach(cb => cb.checked = true);
-    nextStep();
+    checkboxes.forEach(cb => {
+        cb.checked = true;
+    });
+    nextStep(); // 모든 체크 후 다음 단계(기본정보 입력)로 즉시 이동
 }
 
 // 파일명 표시 로직
 function updateFileName(type) {
-    const input = document.getElementById(`qeeg${type.toUpperCase()}`);
-    const status = document.getElementById(`${type}Status`);
-    if (input.files.length > 0) {
-        status.innerText = "첨부됨";
-        status.style.color = "#FFFFFF";
+    const fileInput = document.getElementById(`qeeg${type}`);
+    const statusDisplay = document.getElementById(`${type.toLowerCase()}Status`);
+    
+    if (fileInput.files.length > 0) {
+        const fileName = fileInput.files[0].name;
+        // 파일명이 너무 길면 잘라서 표시
+        statusDisplay.innerText = fileName; 
+        statusDisplay.classList.add('status-active'); // 연보라색 하이라이트
+    } else {
+        statusDisplay.innerText = "미첨부";
+        statusDisplay.classList.remove('status-active');
     }
 }
 
@@ -139,7 +147,7 @@ async function submitAll() {
         // ★ 핵심: DB에 "EC:파일명, EO:파일명" 형태로 저장
         qeeg_info: `EC: ${ecFile ? ecFile.name : 'none'}, EO: ${eoFile ? eoFile.name : 'none'}`
     };
-    
+
     try {
         const res = await fetch(`${CLOUD_RUN_URL}submit-survey`, {
             method: 'POST',

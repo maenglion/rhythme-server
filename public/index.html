@@ -20,66 +20,99 @@
         <button class="next-btn" onclick="nextStep()">연구 참여하기</button>
     </section>
 
-    <section id="step2" class="step">
-        <h3>연구 참여 동의</h3>
-        <div class="consent-box">
-            <label><input type="checkbox" class="essential"> 개인정보 수집 및 이용 동의 (필수)</label>
-            <label><input type="checkbox" class="essential"> 음성 데이터 수집 및 분석 동의 (필수)</label>
-            <label><input type="checkbox" class="essential"> qEEG 데이터 정보 저장 동의 (필수)</label>
+   <section id="step2" class="step">
+    <button class="next-btn" onclick="agreeAll()">전체 동의 후 시작</button>
+    <div class="consent-box" style="margin-top: 24px;">
+        <div class="consent-item">
+            <input type="checkbox" id="c1" class="essential">
+            <label for="c1">개인정보 수집 및 이용 동의 (필수)</label>
         </div>
-        <button class="next-btn" onclick="nextStep()">동의 후 시작</button>
-    </section>
+        </div>
+</section>
 
-    <section id="step3" class="step">
-        <h3>기본 정보 입력</h3>
+  <section id="step3" class="step">
+    <h3 class="title">기본 정보 입력</h3>
+    
+    <div class="input-group">
+        <label class="label">성명</label>
         <input type="text" id="nickname" placeholder="닉네임(익명 가능)">
-        <input type="number" id="age" placeholder="만 나이">
-        <div class="gender-group">
-            <label><input type="radio" name="gender" value="male" checked> 남성</label>
-            <label><input type="radio" name="gender" value="female"> 여성</label>
-            <label><input type="radio" name="gender" value="other"> 기타</label>
-        </div>
-        
-        <p class="label">해당하는 진단 정보 (중복 선택)</p>
-        <div class="chip-group">
-            <div class="chip" onclick="toggleDiagnosis(this, 'ASD')">ASD</div>
-            <div class="chip" onclick="toggleDiagnosis(this, 'ADHD')">ADHD</div>
-            <div class="chip" onclick="toggleDiagnosis(this, 'HSP')">HSP</div>
-            <div class="chip" onclick="toggleDiagnosis(this, 'None')">해당 없음</div>
-        </div>
-        <button class="next-btn" onclick="validateStep3()">SQ 테스트 시작</button>
-    </section>
+    </div>
 
-    <section id="step4" class="step">
-        <div id="questionCount" class="step-indicator">1 / 10</div>
-        <h3 id="questionText" class="question"></h3>
-        <div class="answer-group">
-            <button class="ans-btn" onclick="handleAnswer(0)">전혀 아니다</button>
-            <button class="ans-btn" onclick="handleAnswer(1)">약간 그렇다</button>
-            <button class="ans-btn" onclick="handleAnswer(2)">상당히 그렇다</button>
-            <button class="ans-btn" onclick="handleAnswer(3)">매우 그렇다</button>
+    <div class="input-group last">
+        <label class="label">만 나이</label>
+        <input type="number" id="age" placeholder="숫자만 입력">
+    </div>
+
+    <label class="label">성별</label>
+    <div class="gender-group">
+        <div class="gender-item">
+            <input type="radio" name="gender" id="male" value="male" checked>
+            <label for="male" class="gender-label">남성</label>
         </div>
-    </section>
+        <div class="gender-item">
+            <input type="radio" name="gender" id="female" value="female">
+            <label for="female" class="gender-label">여성</label>
+        </div>
+    </div>
+        
+       <label class="label">해당하는 진단 정보</label>
+    <p class="description">중복 선택이 가능합니다.</p>
+    <div class="chip-group">
+        <div class="chip" onclick="toggleDiagnosis(this, 'ASD')">ASD [cite: 79]</div>
+        <div class="chip" onclick="toggleDiagnosis(this, 'ADHD')">ADHD [cite: 79]</div>
+        <div class="chip" onclick="toggleDiagnosis(this, 'HSP')">HSP [cite: 79]</div>
+        <div class="chip" onclick="toggleDiagnosis(this, 'None')">해당 없음 [cite: 79]</div>
+    </div>
+
+    <button class="next-btn" style="margin-top: 40px;" onclick="validateStep3()">체계화 지수 SQ 테스트 시작</button>
+</section>
+
+ <section id="step4" class="step">
+    <div id="questionCount" class="step-indicator">1 / 10</div>
+    <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <h3 id="questionText" class="question-title"></h3>
+
+    <div class="answer-group">
+        <button class="ans-btn" onclick="handleAnswer(0)">전혀 아니다</button>
+        <button class="ans-btn" onclick="handleAnswer(1)">약간 그렇다</button>
+        <button class="ans-btn" onclick="handleAnswer(2)">상당히 그렇다</button>
+        <button class="ans-btn" onclick="handleAnswer(3)">매우 그렇다</button>
+    </div>
+</section>
 
 <section id="step5" class="step">
     <h3 class="title">qEEG 업로드</h3>
-    <p class="description">보유하신 파일을 업로드해 주세요. (선택사항)</p>
+    <p class="description">
+        보유하신 파일을 업로드해 주세요. EC와 EO는 오른쪽 상단에 표기되어 있습니다. 
+        잘 모르시거나 한 장만 보유하고 있다면 아무 곳에나 올려주세요. (선택사항)
+    </p>
     
-    <div class="qeeg-box">
-        <span>EC (눈 감았을 때)</span>
-        <span id="ecStatus" class="qeeg-status">미첨부</span>
+    <div class="upload-unit">
+        <div class="qeeg-box">
+            <div class="qeeg-info-text">
+                <span class="qeeg-type">EC</span>
+                <span class="description" style="margin-bottom:0;">(눈 감았을 때)</span>
+            </div>
+            <span id="ecStatus" class="qeeg-status">미첨부</span>
+        </div>
+        <input type="file" id="qeegEC" style="display:none" onchange="updateFileName('EC')">
+        <button class="next-btn file-btn" onclick="document.getElementById('qeegEC').click()">파일 선택 (EC)</button>
     </div>
-    <input type="file" id="qeegEC" style="display:none" onchange="updateFileName('EC')">
-    <button class="next-btn file-btn" onclick="document.getElementById('qeegEC').click()">파일 선택 (EC)</button>
 
-    <div style="height: 12px;"></div>
-
-    <div class="qeeg-box">
-        <span>EO (눈 떴을 때)</span>
-        <span id="eoStatus" class="qeeg-status">미첨부</span>
+    <div style="height: 24px;"></div> <div class="upload-unit">
+        <div class="qeeg-box">
+            <div class="qeeg-info-text">
+                <span class="qeeg-type">EO</span>
+                <span class="description" style="margin-bottom:0;">(눈 떴을 때)</span>
+            </div>
+            <span id="eoStatus" class="qeeg-status">미첨부</span>
+        </div>
+        <input type="file" id="qeegEO" style="display:none" onchange="updateFileName('EO')">
+        <button class="next-btn file-btn" onclick="document.getElementById('qeegEO').click()">파일 선택 (EO)</button>
     </div>
-    <input type="file" id="qeegEO" style="display:none" onchange="updateFileName('EO')">
-    <button class="next-btn file-btn" onclick="document.getElementById('qeegEO').click()">파일 선택 (EO)</button>
 
     <button class="next-btn" style="margin-top: 40px;" onclick="submitAll()">최종 제출</button>
 </section>
