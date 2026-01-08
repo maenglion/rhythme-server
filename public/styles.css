@@ -151,3 +151,22 @@ input[type="checkbox"]:checked::after {
 
 /* 12. 푸터 */
 footer { width: 100%; text-align: center; padding: 40px 0 24px 0; color: #E5E5E5; font-size: 10px; font-weight: 300; opacity: 0.8; }
+
+/* 첫번째 페이지 */
+.research-intro {
+    background: #1E1E1E;
+    padding: 24px;
+    border-radius: 8px;
+    line-height: 1.6;        /* 줄 간격 */
+    margin-bottom: 24px;
+    
+    /* 여기서 자간을 조절합니다 */
+    letter-spacing: -0.02em; /* 값이 작을수록 글자가 붙고, 클수록 벌어집니다. 보통 -0.01 ~ -0.05 사이가 깔끔합니다. */
+    text-align: left;        /* 정렬 방식 */
+}
+
+.research-intro p {
+    margin: 0;
+    font-size: 15px;         /* 본문 글씨 크기 */
+    color: #FFFFFF;          /* 본문 글씨 색상 */
+}
