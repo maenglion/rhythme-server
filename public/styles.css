@@ -105,6 +105,37 @@ input[type="checkbox"]:checked::after {
     font-weight: bold;
 }
 
+/* 메인 버튼 규격 (343x52, Radius 8) */
+.next-btn {
+    width: 343px; /* 너비 고정 */
+    height: 52px; /* 높이 고정 */
+    background-color: #FFFFFF;
+    color: #000000;
+    border: none;
+    border-radius: 8px; /* Radius 8 */
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto; /* 중앙 정렬 */
+    transition: background-color 0.2s;
+}
+
+.next-btn:disabled {
+    background-color: #333333;
+    color: #757575;
+    cursor: not-allowed;
+}
+
+/* 동의 컴포넌트 사이의 간격 */
+.consent-group {
+    margin: 24px 0 40px 0; /* 버튼들 사이의 적절한 여백 */
+    width: 100%;
+}
+
+
 
 /* 동의 항목 컴포넌트 (아코디언 스타일) */
 .consent-item {
