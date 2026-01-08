@@ -90,6 +90,22 @@ input[type="text"], input[type="number"] {
 .header-text { flex: 1; display: flex; justify-content: space-between; align-items: center; }
 .subject { font-size: 15px; font-weight: 500; color: #FFFFFF; white-space: nowrap; }
 .badge { font-size: 11px; color: #BB86FC; border: 1px solid #BB86FC; padding: 2px 6px; border-radius: 4px; }
+.consent-content {
+    max-height: 0;
+    background: #161616;
+    padding: 0 16px 0 50px; /* 왼쪽 패딩을 50px로 늘려 제목 텍스트와 시작점 일치 */
+    overflow-y: auto;
+    transition: max-height 0.3s ease;
+    font-size: 13px;
+    color: #757575;
+    line-height: 1.8;
+}
+
+.consent-item.active .consent-content {
+    max-height: 200px;
+    padding: 16px 16px 16px 50px; /* 활성화 시에도 동일하게 50px 적용 */
+    border-top: 1px solid #333;
+}
 
 input[type="checkbox"] {
     appearance: none; -webkit-appearance: none;

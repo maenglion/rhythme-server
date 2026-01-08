@@ -131,9 +131,20 @@ function renderQuestion() {
 }
 
 function handleAnswer(val) {
-    answers.push(val);
-    currentQIndex++;
-    renderQuestion();
+    // 1. 모든 버튼에서 보라색 효과 제거 (초기화)
+    const buttons = document.querySelectorAll('.ans-btn');
+    buttons.forEach(btn => btn.classList.remove('selected'));
+
+    // 2. 현재 내가 누른 버튼에만 보라색 입히기
+    const selectedBtn = event.currentTarget;
+    selectedBtn.classList.add('selected');
+
+    // 3. 사용자가 "아, 내가 이거 눌렀구나"라고 느낄 정도(0.2~0.3초)만 기다렸다가 다음으로 이동
+    setTimeout(() => {
+        answers.push(val);
+        currentQIndex++;
+        renderQuestion();
+    }, 250); 
 }
 
 // 5. 최종 데이터 제출 (DB 컬럼 구조에 최적화)
