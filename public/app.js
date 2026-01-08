@@ -86,7 +86,7 @@ function handleAnswer(val) {
 
 // 5. 최종 데이터 제출 (DB 컬럼 구조에 최적화)
 async function submitAll() {
-    const qeegInput = document.getElementById('qEegFile');
+    const qeegInput = document.getElementById('qeegFile');
     const nickname = document.getElementById('nickname').value;
     const age = document.getElementById('age').value;
     const genderElem = document.querySelector('input[name="gender"]:checked');
@@ -115,7 +115,7 @@ async function submitAll() {
         
         total_score: answers.reduce((a, b) => a + b, 0),
         s_tag: getSTag(answers.reduce((a, b) => a + b, 0)),
-        qeeg_info: qeegInput.files[0] ? qeegInput.files[0].name : 'no_file'
+        qeeg_info: qeegInput.files[0] ? qeegInput.files[0].name : 'no_data'
     };
 
     try {
