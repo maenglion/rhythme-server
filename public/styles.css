@@ -1,0 +1,16 @@
+/* 진행바 스타일 */
+.progress-container { width: 100%; background: #edf2f7; height: 10px; border-radius: 5px; margin-bottom: 30px; position: sticky; top: 0; }
+.progress-bar { height: 100%; background: #2563eb; width: 0%; transition: width 0.3s ease; border-radius: 5px; }
+
+/* 단계별 섹션 숨김/표시 */
+.step { display: none; }
+.step.active { display: block; animation: fadeIn 0.4s ease-in-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* 진단정보 칩 스타일 */
+.chip-group { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+.chip { padding: 10px 15px; border: 1px solid #cbd5e0; border-radius: 25px; cursor: pointer; background: white; transition: 0.2s; }
+.chip.selected { background: #2563eb; color: white; border-color: #2563eb; }
+
+/* 연구 안내 텍스트 */
+.research-intro { font-size: 0.95rem; line-height: 1.7; color: #4a5568; background: #f1f5f9; padding: 20px; border-radius: 12px; }

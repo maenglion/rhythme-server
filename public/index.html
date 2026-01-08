@@ -1,0 +1,50 @@
+<div class="container">
+    <div class="progress-container"><div class="progress-bar" id="progressBar"></div></div>
+
+    <section id="step1" class="step active">
+        <h2>RHYTHME 연구 안내</h2>
+        <div class="research-intro">
+            본 연구는 신경다양성인의 음성 및 인지 특성을 분석하여... (연구 내용 상세)
+        </div>
+        <button onclick="nextStep()">다음으로</button>
+    </section>
+
+    <section id="step2" class="step">
+        <h3>데이터 활용 동이션</h3>
+        <label><input type="checkbox" id="consent1"> 개인정보 수집/이용 동의 (필수)</label><br>
+        <label><input type="checkbox" id="consent2"> 음성 데이터 분석 활용 동의 (필수)</label><br>
+        <label><input type="checkbox" id="consent3"> qEEG 데이터 정보 저장 동의 (필수)</label>
+        <button onclick="nextStep()">동의 및 시작</button>
+    </section>
+
+    <section id="step3" class="step">
+        <h3>참여자 정보</h3>
+        <input type="text" id="nickname" placeholder="닉네임/ID">
+        <input type="number" id="age" placeholder="만 나이">
+        <div class="chip-group">
+            <div class="chip" onclick="toggleDiagnosis(this, 'ASD')">ASD</div>
+            <div class="chip" onclick="toggleDiagnosis(this, 'ADHD')">ADHD</div>
+            <div class="chip" onclick="toggleDiagnosis(this, 'HSP')">HSP</div>
+            <div class="chip" onclick="toggleDiagnosis(this, '기타')">기타</div>
+        </div>
+        <button onclick="nextStep()">테스트 시작</button>
+    </section>
+
+    <section id="step4" class="step">
+        <p id="ageGuide" style="color: blue; font-weight: bold;"></p>
+        <h3 id="questionText"></h3>
+        <div class="btn-group">
+            <button onclick="handleAnswer(0)">전혀 아니다 (0)</button>
+            <button onclick="handleAnswer(1)">가끔 그렇다 (1)</button>
+            <button onclick="handleAnswer(2)">자주 그렇다 (2)</button>
+            <button onclick="handleAnswer(3)">매우 그렇다 (3)</button>
+        </div>
+    </section>
+
+    <section id="step5" class="step">
+        <h3>qEEG 데이터 업로드</h3>
+        <p>보유하신 qEEG 데이터 파일을 선택해 주세요. (파일명 등 메타데이터만 연구에 활용됩니다.)</p>
+        <input type="file" id="qEegFile">
+        <button onclick="submitAll()">모든 결과 제출 및 종료</button>
+    </section>
+</div>
