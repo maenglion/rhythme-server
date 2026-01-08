@@ -40,6 +40,23 @@ function toggleDiagnosis(element, value) {
     else diagnoses.push(value);
 }
 
+// 전체 동의 로직
+function agreeAll() {
+    const checkboxes = document.querySelectorAll('.essential');
+    checkboxes.forEach(cb => cb.checked = true);
+    nextStep();
+}
+
+// 파일명 표시 로직
+function updateFileName(type) {
+    const input = document.getElementById(`qeeg${type.toUpperCase()}`);
+    const status = document.getElementById(`${type}Status`);
+    if (input.files.length > 0) {
+        status.innerText = "첨부됨";
+        status.style.color = "#FFFFFF";
+    }
+}
+
 // 3. 단계 이동 로직
 function nextStep() {
     const ageInput = document.getElementById('age');
@@ -86,7 +103,10 @@ function handleAnswer(val) {
 
 // 5. 최종 데이터 제출 (DB 컬럼 구조에 최적화)
 async function submitAll() {
-    const qeegInput = document.getElementById('qeegFile');
+    // 1. EC, EO 파일 각각 가져오기 (ID 주의: qeegEC, qeegEO)
+    const ecFile = document.getElementById('qeegEC').files[0];
+    const eoFile = document.getElementById('qeegEO').files[0];
+    // 2. 나머지 정보 가져오기 (이름, 나이 등)
     const nickname = document.getElementById('nickname').value;
     const age = document.getElementById('age').value;
     const genderElem = document.querySelector('input[name="gender"]:checked');
@@ -100,6 +120,7 @@ async function submitAll() {
         gender: gender,
         is_child: isChild,
         diagnoses: diagnoses.join(', '),
+        
         
         // 내부 매핑 정보에 따른 데이터 구성
         q1_spatial: answers[0],      // 공간 시스템
@@ -115,9 +136,10 @@ async function submitAll() {
         
         total_score: answers.reduce((a, b) => a + b, 0),
         s_tag: getSTag(answers.reduce((a, b) => a + b, 0)),
-        qeeg_info: qeegInput.files[0] ? qeegInput.files[0].name : 'no_data'
+        // ★ 핵심: DB에 "EC:파일명, EO:파일명" 형태로 저장
+        qeeg_info: `EC: ${ecFile ? ecFile.name : 'none'}, EO: ${eoFile ? eoFile.name : 'none'}`
     };
-
+    
     try {
         const res = await fetch(`${CLOUD_RUN_URL}submit-survey`, {
             method: 'POST',
