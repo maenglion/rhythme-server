@@ -1,43 +1,46 @@
 const express = require('express');
 const { Pool } = require('pg');
+const cors = require('cors'); // Netlify 통신을 위해 필수
 const app = express();
 
+app.use(cors()); // CORS 허용
 app.use(express.json());
 
-// 1. Cloud Run에 설정한 환경변수를 자동으로 불러옵니다.
 const pool = new Pool({
-  user: process.env.DB_USER,        // rhythmi_app
-  password: process.env.DB_PASS,    // pattern05-SEEKER
-  database: process.env.DB_NAME,    // RHYTHME
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME,
   host: `/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}`,
 });
 
-// 2. 데이터 저장 API 엔드포인트
 app.post('/submit-survey', async (req, res) => {
   try {
-    const { user_id, age, gender, answers } = req.body;
+    // 프론트엔드 payload 구조와 일치시킴
+    const { user_id, age, gender, diagnoses, answers, qeeg_info } = req.body;
 
-    // [기획 반영] 만 18세 이하는 아동/청소년(is_child = true)으로 자동 분류
     const isChild = parseInt(age) <= 18;
-    
-    // 점수 합산 로직 (0~30점)
     const totalScore = answers.reduce((a, b) => a + b, 0);
     
-    // S_tag 분류 (MVP 기준)
     let sTag = 'S_low';
     if (totalScore >= 20) sTag = 'S_high';
     else if (totalScore >= 10) sTag = 'S_mid';
 
+    // 컬럼명과 개수를 데이터베이스 스키마와 정확히 일치시킴
     const query = `
       INSERT INTO type_s_screener (
-        user_id, age, gender, is_child,
+        user_id, age, gender, is_child, diagnoses,
         q1_spatial, q2_decision_alg, q3_linguistic, q4_causal, q5_social,
         q6_decision_alg, q7_physical, q8_biological, q9_paradigm, q10_reverse_eng,
-        total_score, s_tag
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        total_score, s_tag, qeeg_info
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
     `;
 
-    const values = [user_id, age, gender, isChild, ...answers, totalScore, sTag];
+    // diagnoses 배열을 JSON 문자열로 변환하여 저장
+    const values = [
+      user_id, age, gender, isChild, JSON.stringify(diagnoses),
+      ...answers, totalScore, sTag, qeeg_info
+    ];
+
     await pool.query(query, values);
 
     res.status(200).json({
