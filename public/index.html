@@ -2,49 +2,62 @@
     <div class="progress-container"><div class="progress-bar" id="progressBar"></div></div>
 
     <section id="step1" class="step active">
-        <h2>RHYTHME 연구 안내</h2>
+        <h2 class="title">RHYTHME 연구 프로젝트</h2>
         <div class="research-intro">
-            본 연구는 신경다양성인의 음성 및 인지 특성을 분석하여... (연구 내용 상세)
+            본 연구는 <strong>음성 특징과 SQ(Systemizing Quotient)</strong>의 상관관계를 분석하여 신경다양성(ASD, ADHD 등) 특성을 정밀 프로파일링하는 것을 목적으로 합니다.
         </div>
-        <button onclick="nextStep()">다음으로</button>
+        <button class="next-btn" onclick="nextStep()">연구 참여하기</button>
     </section>
 
     <section id="step2" class="step">
-        <h3>데이터 활용 동이션</h3>
-        <label><input type="checkbox" id="consent1"> 개인정보 수집/이용 동의 (필수)</label><br>
-        <label><input type="checkbox" id="consent2"> 음성 데이터 분석 활용 동의 (필수)</label><br>
-        <label><input type="checkbox" id="consent3"> qEEG 데이터 정보 저장 동의 (필수)</label>
-        <button onclick="nextStep()">동의 및 시작</button>
+        <h3>연구 참여 동의</h3>
+        <div class="consent-box">
+            <label><input type="checkbox" class="essential"> 개인정보 수집 및 이용 동의 (필수)</label>
+            <label><input type="checkbox" class="essential"> 음성 데이터 수집 및 분석 동의 (필수)</label>
+            <label><input type="checkbox" class="essential"> qEEG 데이터 정보 저장 동의 (필수)</label>
+        </div>
+        <button class="next-btn" onclick="checkConsent()">동의 후 시작</button>
     </section>
 
     <section id="step3" class="step">
-        <h3>참여자 정보</h3>
-        <input type="text" id="nickname" placeholder="닉네임/ID">
+        <h3>기본 정보 입력</h3>
+        <input type="text" id="nickname" placeholder="닉네임(익명 가능)">
         <input type="number" id="age" placeholder="만 나이">
+        <select id="gender"><option value="male">남성</option><option value="female">여성</option><option value="other">기타</option></select>
+        
+        <p class="label">해당하는 진단 정보 (중복 선택)</p>
         <div class="chip-group">
-            <div class="chip" onclick="toggleDiagnosis(this, 'ASD')">ASD</div>
-            <div class="chip" onclick="toggleDiagnosis(this, 'ADHD')">ADHD</div>
-            <div class="chip" onclick="toggleDiagnosis(this, 'HSP')">HSP</div>
-            <div class="chip" onclick="toggleDiagnosis(this, '기타')">기타</div>
+            <div class="chip" onclick="toggleChip(this, 'ASD')">ASD</div>
+            <div class="chip" onclick="toggleChip(this, 'ADHD')">ADHD</div>
+            <div class="chip" onclick="toggleChip(this, 'HSP')">HSP</div>
+            <div class="chip" onclick="toggleChip(this, 'None')">해당 없음</div>
         </div>
-        <button onclick="nextStep()">테스트 시작</button>
+        <button class="next-btn" onclick="validateStep3()">SQ 테스트 시작</button>
     </section>
 
     <section id="step4" class="step">
-        <p id="ageGuide" style="color: blue; font-weight: bold;"></p>
-        <h3 id="questionText"></h3>
-        <div class="btn-group">
-            <button onclick="handleAnswer(0)">전혀 아니다 (0)</button>
-            <button onclick="handleAnswer(1)">가끔 그렇다 (1)</button>
-            <button onclick="handleAnswer(2)">자주 그렇다 (2)</button>
-            <button onclick="handleAnswer(3)">매우 그렇다 (3)</button>
+        <div id="surveyGuide" class="guide-text"></div>
+        <h3 id="questionText" class="question"></h3>
+        <div class="answer-group">
+            <button class="ans-btn" onclick="saveAnswer(0)">전혀 아니다</button>
+            <button class="ans-btn" onclick="saveAnswer(1)">약간 그렇다</button>
+            <button class="ans-btn" onclick="saveAnswer(2)">상당히 그렇다</button>
+            <button class="ans-btn" onclick="saveAnswer(3)">매우 그렇다</button>
         </div>
     </section>
 
     <section id="step5" class="step">
-        <h3>qEEG 데이터 업로드</h3>
-        <p>보유하신 qEEG 데이터 파일을 선택해 주세요. (파일명 등 메타데이터만 연구에 활용됩니다.)</p>
-        <input type="file" id="qEegFile">
-        <button onclick="submitAll()">모든 결과 제출 및 종료</button>
+        <h3>qEEG 데이터 업로드 (선택)</h3>
+        <p class="desc">보유하신 qEEG 결과 파일이 있다면 업로드해 주세요.<br>(파일명과 데이터 유무 정보만 저장됩니다.)</p>
+        <div class="file-upload">
+            <input type="file" id="qeegFile" accept=".pdf,.jpg,.png,.txt">
+        </div>
+        <button class="next-btn" onclick="nextStep()">최종 제출</button>
+    </section>
+
+    <section id="step6" class="step">
+        <div class="success-icon">✅</div>
+        <h2>참여해주셔서 감사합니다!</h2>
+        <p>전송된 데이터는 RHYTHME 연구의 소중한 자산이 됩니다.</p>
     </section>
 </div>

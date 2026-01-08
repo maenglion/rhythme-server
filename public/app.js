@@ -3,6 +3,11 @@ let currentQIndex = 0;
 let answers = [];
 let diagnoses = [];
 
+const CLOUD_RUN_URL = "https://rhythme-server-357918245340.asia-northeast3.run.app/"
+const childQuestions = [...]; // PDF의 10문항
+const adultQuestions = [...]; // 성인용 10문항
+
+
 // 진단 정보 다중 선택 로직
 function toggleDiagnosis(element, value) {
     element.classList.toggle('selected');
@@ -28,6 +33,26 @@ function nextStep() {
     if (currentStep === 4) renderQuestion();
 }
 
+function validateStep3() {
+    const age = document.getElementById('age').value;
+    const guide = document.getElementById('surveyGuide');
+    
+    // 12세 미만은 부모 동반 안내 필수
+    guide.innerText = (parseInt(age) < 12) ? "💡 보호자와 함께 문항을 읽고 응답해 주세요." : "";
+    nextStep();
+}
+
+function saveAnswer(val) {
+    surveyData.answers.push(val);
+    const questions = (parseInt(document.getElementById('age').value) <= 18) ? childQuestions : adultQuestions;
+    
+    if (surveyData.answers.length < questions.length) {
+        renderQuestion();
+    } else {
+        nextStep(); // SQ 완료 후 Step 5(qEEG)로
+    }
+}
+
 // 1페이지 1문항 렌더링
 function renderQuestion() {
     const age = parseInt(document.getElementById('age').value);
@@ -49,17 +74,41 @@ function handleAnswer(val) {
     renderQuestion();
 }
 
-// 최종 제출 (qEEG 데이터 정보 포함)
+/// 최종 제출 (qEEG 데이터 정보 포함)
 async function submitAll() {
     const qeegInput = document.getElementById('qEegFile');
+    const nickname = document.getElementById('nickname').value;
+    const age = document.getElementById('age').value;
+    
+    // 성별 선택 확인 (radio 버튼일 경우 예외처리 방지)
+    const genderElem = document.querySelector('input[name="gender"]:checked');
+    const gender = genderElem ? genderElem.value : 'unknown';
+
     const payload = {
-        user_id: document.getElementById('nickname').value,
-        age: parseInt(document.getElementById('age').value),
-        gender: document.querySelector('input[name="gender"]:checked').value,
+        user_id: nickname,
+        age: parseInt(age),
+        gender: gender,
         diagnoses: diagnoses,
         answers: answers,
-        qeeg_info: qeegInput.files[0] ? qeegInput.files[0].name : null // 파일 정보만 저장
+        qeeg_info: qeegInput.files[0] ? qeegInput.files[0].name : null 
     };
-    
-    // 서버 전송 로직...
+
+    try {
+        const res = await fetch(`${CLOUD_RUN_URL}submit-survey`, { // URL 뒤에 /가 이미 있으므로 확인
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            // 성공 시 Step 6(감사 페이지)으로 이동
+            nextStep(); 
+        } else {
+            alert('전송 중 오류가 발생했습니다. 다시 시도해주세요.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('서버와 연결할 수 없습니다.');
+    }
+} // 이 부분의 닫는 괄호를 정리했습니다.
 }
