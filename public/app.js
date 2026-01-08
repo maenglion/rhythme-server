@@ -147,6 +147,31 @@ function handleAnswer(val) {
     }, 250); 
 }
 
+// 문항을 화면에 그리는 함수
+function renderQuestion() {
+    const age = parseInt(document.getElementById('age').value);
+    const questions = (age <= 18) ? childQuestions : adultQuestions;
+    
+    if (currentQIndex >= questions.length) {
+        nextStep(); 
+        return;
+    }
+
+    // [추가] 새 문항이 나오기 전, 모든 답변 버튼의 보라색(selected) 클래스 제거
+    const buttons = document.querySelectorAll('.ans-btn');
+    buttons.forEach(btn => btn.classList.remove('selected'));
+
+    // 질문 텍스트 업데이트
+    document.getElementById('questionText').innerText = questions[currentQIndex];
+    
+    // 진행률 업데이트 (1/10 등)
+    const progress = ((currentQIndex + 1) / questions.length) * 100;
+    document.getElementById('progressBar').style.width = `${progress}%`;
+    document.getElementById('questionCount').innerText = `${currentQIndex + 1} / ${questions.length}`;
+}
+
+
+
 // 5. 최종 데이터 제출 (DB 컬럼 구조에 최적화)
 async function submitAll() {
     // 1. EC, EO 파일 각각 가져오기 (ID 주의: qeegEC, qeegEO)
