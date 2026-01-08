@@ -157,7 +157,7 @@ footer { width: 100%; text-align: center; padding: 40px 0 24px 0; color: #E5E5E5
     background: #1E1E1E;
     padding: 24px;
     border-radius: 8px;
-    line-height: 1.6;        /* 줄 간격 */
+    line-height: 1.3;        /* 줄 간격 */
     margin-bottom: 24px;
     
     /* 여기서 자간을 조절합니다 */
