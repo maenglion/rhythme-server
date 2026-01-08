@@ -21,9 +21,11 @@
     </section>
 
 <section id="step2" class="step">
-    <button class="next-btn" id="agreeAllBtn" onclick="agreeAllWithEffect()">전체 동의 후 시작</button>
+    <button class="next-btn" id="agreeAllBtn" onclick="agreeAllWithEffect()">
+        전체 동의 후 시작
+    </button>
     
-    <div class="consent-group" style="margin-top: 24px;">
+    <div class="consent-group">
         <div class="consent-item" id="item1">
             <div class="consent-header" onclick="toggleConsent(1)">
                 <input type="checkbox" class="essential" id="check1" onclick="event.stopPropagation()">
@@ -36,26 +38,14 @@
             <div class="consent-content">
                 <p>• 수집항목: 닉네임, 나이, 성별, 진단 정보</p>
                 <p>• 이용목적: 연구 참여자 식별 및 통계 분석</p>
-                <p>• 보유기간: 연구 종료 후 즉시 파기</p>
             </div>
         </div>
 
-        <div class="consent-item" id="item2">
-            <div class="consent-header" onclick="toggleConsent(2)">
-                <input type="checkbox" class="essential" id="check2" onclick="event.stopPropagation()">
-                <div class="header-text">
-                    <span class="subject">음성 데이터 수집 및 분석</span>
-                    <span class="badge">필수</span>
-                </div>
-                <span class="arrow" id="arrow2">▼</span>
-            </div>
-            <div class="consent-content">
-                <p>• 수집항목: 발화 음성 녹음 데이터</p>
-                <p>• 이용목적: 프로소디(운율) 및 음성 특징 추출</p>
-                <p>• 보안: 음성 원본은 비식별 처리 후 암호화 저장</p>
-            </div>
         </div>
-    </div>
+
+    <button class="next-btn" style="background-color: #1E1E1E; color: #FFF; border: 1px solid #333;" onclick="checkAndGo()">
+        동의 완료 및 다음
+    </button>
 </section>
 
   <section id="step3" class="step">

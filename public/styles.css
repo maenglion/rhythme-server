@@ -203,3 +203,25 @@ input[type="checkbox"]:checked::after {
     padding: 16px;
     border-top: 1px solid #333;
 }
+
+
+/* 푸터 스타일 조정 */
+.admin-footer, footer {
+    width: 100%;
+    text-align: center;
+    padding: 40px 0 24px 0; /* 상단 여백을 충분히 주어 본문과 분리 */
+    
+    /* 요청하신 스타일 반영 */
+    color: #E5E5E5;           /* 연한 회색 */
+    font-size: 10px;          /* 아주 작은 글씨 */
+    font-weight: 300;         /* 가느다란 두께 (Light) */
+    letter-spacing: 0.05em;   /* 자간을 살짝 벌려 가독성 확보 */
+    
+    line-height: 1.5;
+    opacity: 0.8;             /* 약간 투명하게 처리하여 더 부드럽게 */
+}
+
+/* 모바일 화면 하단 여백 확보 */
+body {
+    padding-bottom: env(safe-area-inset-bottom);
+}

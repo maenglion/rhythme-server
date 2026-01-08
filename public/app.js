@@ -47,22 +47,30 @@ function toggleConsent(index) {
     item.classList.toggle('active');
 }
 
-// 전체 동의 버튼 시각적 효과
+// 개별 체크 확인 후 다음 단계
+function checkAndGo() {
+    const checkboxes = document.querySelectorAll('.essential');
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    
+    if (allChecked) {
+        nextStep();
+    } else {
+        alert("모든 필수 항목에 동의해 주세요.");
+    }
+}
+
+// 전체 동의 버튼 시각적 효과 (이미 만든 함수 유지)
 async function agreeAllWithEffect() {
     const checkboxes = document.querySelectorAll('.essential');
     const agreeBtn = document.getElementById('agreeAllBtn');
     
-    // 버튼 비활성화 (중복 클릭 방지)
     agreeBtn.disabled = true;
-    agreeBtn.innerText = "처리 중...";
-
-    // 0.2초 간격으로 하나씩 체크됨
+    
     for (let i = 0; i < checkboxes.length; i++) {
         await new Promise(resolve => setTimeout(resolve, 200));
         checkboxes[i].checked = true;
     }
 
-    // 잠시 대기 후 다음 단계로
     setTimeout(() => {
         nextStep();
     }, 300);
