@@ -76,6 +76,89 @@ input[type="text"], input[type="number"] {
     font-size: 16px;
 }
 
+/* 체크박스 스타일 커스텀 */
+input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    border: 2px solid #333;
+    border-radius: 4px;
+    background-color: #1E1E1E;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s;
+}
+
+input[type="checkbox"]:checked {
+    background-color: #BB86FC; /* 연보라색 강조 */
+    border-color: #BB86FC;
+}
+
+input[type="checkbox"]:checked::after {
+    content: '✔';
+    color: #000;
+    position: absolute;
+    left: 4px;
+    top: -2px;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+
+/* 동의 항목 컴포넌트 (아코디언 스타일) */
+.consent-item {
+    background: #1E1E1E;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    border: 1px solid #333;
+    transition: all 0.3s ease;
+}
+
+.consent-header {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    cursor: pointer;
+}
+
+.consent-header label {
+    flex: 1;
+    margin-left: 12px;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+/* 약관 상세 내용 (숨김 상태) */
+.consent-content {
+    max-height: 0;
+    padding: 0 16px;
+    background: #161616;
+    color: #757575;
+    font-size: 13px;
+    line-height: 1.6;
+    overflow-y: auto;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+}
+
+/* 펼쳐졌을 때 스크롤바 활성화 */
+.consent-item.active .consent-content {
+    max-height: 120px; /* 적절한 높이 */
+    padding: 16px;
+    border-top: 1px solid #333;
+}
+
+/* 스크롤바 디자인 */
+.consent-content::-webkit-scrollbar {
+    width: 4px;
+}
+.consent-content::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 2px;
+}
+
+
 /* 성별 선택 (남성/여성 2개만 유지) */
 .gender-group {
     display: flex;
