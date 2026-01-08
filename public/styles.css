@@ -109,11 +109,10 @@ input[type="checkbox"]:checked::after {
 /* 동의 항목 컴포넌트 (아코디언 스타일) */
 .consent-item {
     background: #1E1E1E;
-    border-radius: 8px;
-    margin-bottom: 12px;
-    overflow: hidden;
     border: 1px solid #333;
-    transition: all 0.3s ease;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    overflow: hidden;
 }
 
 .consent-header {
@@ -121,217 +120,55 @@ input[type="checkbox"]:checked::after {
     align-items: center;
     padding: 16px;
     cursor: pointer;
+    gap: 12px; /* 컴포넌트 간 간격 */
 }
 
-.consent-header label {
+.header-text {
     flex: 1;
-    margin-left: 12px;
-    cursor: pointer;
-    font-size: 15px;
+    display: flex;
+    justify-content: space-between; /* 항목명과 필수 뱃지를 양끝으로 */
+    align-items: center;
 }
 
-/* 약관 상세 내용 (숨김 상태) */
+.subject {
+    font-size: 15px;
+    font-weight: 500;
+    color: #FFFFFF;
+    white-space: nowrap; /* 가로 유지 */
+}
+
+.badge {
+    font-size: 11px;
+    color: #BB86FC; /* 보라색 강조 */
+    border: 1px solid #BB86FC;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-right: 8px;
+}
+
+.arrow {
+    color: #757575;
+    font-size: 12px;
+    transition: transform 0.3s;
+}
+
+.consent-item.active .arrow {
+    transform: rotate(180deg); /* 펼쳐질 때 화살표 회전 */
+}
+
 .consent-content {
     max-height: 0;
-    padding: 0 16px;
     background: #161616;
-    color: #757575;
-    font-size: 13px;
-    line-height: 1.6;
+    padding: 0 16px;
     overflow-y: auto;
-    transition: max-height 0.3s ease, padding 0.3s ease;
+    transition: max-height 0.3s ease;
+    font-size: 13px;
+    color: #757575;
+    line-height: 1.6;
 }
 
-/* 펼쳐졌을 때 스크롤바 활성화 */
 .consent-item.active .consent-content {
-    max-height: 120px; /* 적절한 높이 */
+    max-height: 150px;
     padding: 16px;
     border-top: 1px solid #333;
-}
-
-/* 스크롤바 디자인 */
-.consent-content::-webkit-scrollbar {
-    width: 4px;
-}
-.consent-content::-webkit-scrollbar-thumb {
-    background: #333;
-    border-radius: 2px;
-}
-
-
-/* 성별 선택 (남성/여성 2개만 유지) */
-.gender-group {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 24px;
-}
-.gender-item { flex: 1; }
-.gender-item input { display: none; }
-.gender-label {
-    display: flex; align-items: center; justify-content: center;
-    height: 52px; background: #1E1E1E; border: 1px solid #333;
-    border-radius: 8px; cursor: pointer; transition: 0.2s;
-}
-.gender-item input:checked + .gender-label {
-    background: #FFFFFF; color: #000; border-color: #FFFFFF;
-}
-
-/* 진단 칩 그룹 (2열 배치) */
-.chip-group { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.chip {
-    height: 52px;
-    background: #1E1E1E;
-    border: 1px solid #333;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 14px;
-}
-.chip.selected { background: #333333; border: 1px solid #FFFFFF; }
-
-/* qEEG 업로드 박스 */
-.qeeg-box {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    height: 52px;
-    background: #1E1E1E;
-    border: 1px solid #333;
-    border-radius: 8px;
-    padding: 0 16px;
-    margin-bottom: 12px;
-}
-.qeeg-status { font-size: 12px; color: #757575; }
-
-/* 메인 버튼 (343x52, Radius 8) */
-.next-btn, .submit-btn {
-    width: 100%;
-    height: 52px;
-    background: #FFFFFF;
-    color: #000;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    margin-top: 24px;
-}
-.file-btn { background: #333; color: #FFF; margin-top: 0; font-size: 14px; }
-
-/* 동의 항목 섹션 구분 */
-.consent-item {
-    padding: 16px 0;
-    border-bottom: 1px solid #333;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-/* 푸터 */
-footer {
-    width: 100%;
-    text-align: center;
-    padding: 40px 0;
-    color: #E5E5E5;
-    font-size: 11px;
-    letter-spacing: 0.5px;
-}
-
-/* 설문 단계(Step 4) 레이아웃 */
-.step-indicator {
-    font-size: 14px;
-    color: #757575;
-    text-align: center;
-    margin-bottom: 8px; /* 바와 숫자 사이 간격 */
-}
-
-/* 진행바 아래에 배치 */
-.progress-container {
-    width: 100%;
-    background: #333333;
-    height: 4px;
-    margin-bottom: 40px; /* 진행바와 질문 사이 40px 여백 */
-}
-
-.question-title {
-    font-size: 20px;
-    font-weight: 700;
-    line-height: 1.4;
-    text-align: left;
-    margin-bottom: 40px; /* 질문과 답변 목록 사이 40px 여백 */
-}
-
-/* 답변 버튼 그룹 */
-.answer-group {
-    display: flex;
-    flex-direction: column;
-    gap: 16px; /* 답변 박스 간 16px 간격 */
-}
-
-.ans-btn {
-    width: 100%;
-    height: 52px;
-    background: #1E1E1E;
-    border: 1px solid #333;
-    border-radius: 8px; /* Radius 8 */
-    color: #FFFFFF;
-    font-size: 16px;
-    text-align: left;
-    padding: 0 20px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-/* 선택 시 연한 보라색 하이라이트 */
-.ans-btn:active, .ans-btn.selected {
-    background-color: #e3d4f6; /* 연한 보라색 (Light Purple) */
-    color: #000000;
-    border-color: #c19af1;
-}
-
-.qeeg-box {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 16px;
-    background: #1E1E1E;
-    border: 1px solid #333;
-    border-radius: 8px 8px 0 0; /* 아래 버튼과 붙이기 위해 아래쪽 radius 제거 */
-    border-bottom: none;
-}
-
-.qeeg-info-text {
-    display: flex;
-    flex-direction: column;
-}
-
-.qeeg-type {
-    font-size: 16px;
-    font-weight: 700;
-    color: #FFFFFF;
-}
-
-.qeeg-status {
-    font-size: 12px;
-    color: #757575;
-    max-width: 150px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.file-btn {
-    background: #333333 !important;
-    color: #FFFFFF !important;
-    border-radius: 0 0 8px 8px !important; /* 위 박스와 연결 */
-    margin-top: 0 !important;
-    font-size: 14px;
-}
-
-/* 파일 선택 시 강조 스타일 */
-.status-active {
-    color: #c19af1 !important; /* 연보라색으로 강조 */
-    font-weight: bold;
 }
