@@ -118,7 +118,15 @@ input[type="checkbox"]:checked::after {
 }
 
 /* 9. 설문 문항 (Step 4 최적화) */
-.step-indicator { font-size: 14px; color: #757575; text-align: center; margin-bottom: 8px; margin-top: 40px;}
+.step-indicator {
+    font-size: 18px;          /* 한 단계 키움 (기존 약 14px) */
+    font-weight: 400;         /* 일반 굵기 */
+    color: #BB86FC;           /* 소울스펙트럼 강조 보라색 */
+    text-align: center;
+    margin-bottom: 12px;      /* 진행바와의 간격 */
+    margin-top: 20px;         /* 상단 여백 */
+    letter-spacing: 1px;      /* 가독성을 위해 자간 살짝 확보 */
+}
 .question-title { font-size: 20px; font-weight: 700; line-height: 1.4; text-align: left; margin-bottom: 40px; margin-top: 40px;}
 .answer-group { display: flex; flex-direction: column; gap: 16px; }
 .ans-btn {
