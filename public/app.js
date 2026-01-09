@@ -4,6 +4,8 @@ let answers = [];
 let diagnoses = [];
 let isMinor = false; // 전역 변수로 관리
 let isUnder14 = false; // 연령 상태 저장 변수
+let recordingTimer;
+let timeLeft = 40;
 
 const CLOUD_RUN_URL = "https://rhythme-server-357918245340.asia-northeast3.run.app/";
 
@@ -383,4 +385,28 @@ async function loadAndToggleConsent(fileName, headerElement) {
     // 다른 항목 닫고 현재 항목 열기
     document.querySelectorAll('.consent-item').forEach(el => el.classList.remove('active'));
     item.classList.add('active');
+}
+// 프로소디 // 
+function startRecording() {
+    // 1. 녹음 시작 시점 기록 (Latency 계산용)
+    const startTime = Date.now();
+    
+    // 2. 40초 타이머 작동
+    recordingTimer = setInterval(() => {
+        timeLeft--;
+        updateCircleProgress(timeLeft); // 얇은 보라색 선 줄이기 애니메이션
+
+        if (timeLeft <= 0) {
+            stopRecording("completed"); // 40초 꽉 채우면 자동 종료
+        }
+    }, 1000);
+}
+
+function stopRecording(status) {
+    clearInterval(recordingTimer);
+    const stopOffset = (40 - timeLeft) * 1000; // 사용자가 멈춘 시점 (ms)
+    
+    // status: 'completed' (40초 다 채움) vs 'stopped' (사용자가 수동 종료)
+    saveVoiceMetric(status, stopOffset);
+    nextStage(); // 다음 단계 질문으로
 }
