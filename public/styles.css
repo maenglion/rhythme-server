@@ -276,17 +276,51 @@ footer { width: 100%; text-align: center; padding: 40px 0 24px 0; color: #E5E5E5
 
 /* 모달 */
 
+/* 8-1. 커스텀 모달 스타일 */
 .modal-overlay {
-    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.7); z-index: 9999; align-items: center; justify-content: center;
+    display: none; /* 기본은 숨김 */
+    position: fixed; 
+    top: 0; left: 0; 
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.85); 
+    z-index: 10000; 
+    align-items: center; 
+    justify-content: center;
 }
+
 .modal-content {
-    background: #1E1E1E; border: 1px solid #BB86FC; padding: 30px; border-radius: 12px;
-    text-align: center; color: white; min-width: 280px;
+    background: #1E1E1E; 
+    border: 1px solid #BB86FC; 
+    padding: 30px; 
+    border-radius: 12px;
+    text-align: center; 
+    width: 90%; 
+    max-width: 300px; /* 모바일에서 적절한 크기 */
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
 }
+
+#modalMessage { 
+    color: #FFFFFF; 
+    font-size: 15px; 
+    line-height: 1.6; 
+    margin-bottom: 24px; 
+    word-break: keep-all; /* 단어 단위 줄바꿈으로 가독성 향상 */
+}
+
 .modal-btn {
-    background: #BB86FC; border: none; padding: 10px 30px; color: black;
-    border-radius: 6px; cursor: pointer; margin-top: 20px; font-weight: bold;
+    background: #BB86FC; 
+    border: none; 
+    padding: 12px 0; 
+    width: 100%; 
+    color: #000; /* 보라 배경엔 검정 글씨가 정석 */
+    font-weight: bold; 
+    border-radius: 8px; 
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.modal-btn:hover {
+    background: #A370DB;
 }
 
 /* 닉네임, 나이와 동일한 스타일을 PIN 칸에도 적용 */
