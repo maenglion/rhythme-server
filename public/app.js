@@ -36,6 +36,19 @@ const adultQuestions = [
     "나의 신체리듬을 데이터화하고 컨디션을 최적화하는 시스템적인 방법을 구상해본다."
 ];
 
+// 알림, 모달 
+
+function showNotice(msg) {
+    document.getElementById('modalMessage').innerText = msg;
+    document.getElementById('customModal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('customModal').style.display = 'none';
+}
+
+
+
 // 동의 연령 확인에 따른 분기
 
 function startResearch(under14) {
@@ -44,31 +57,25 @@ function startResearch(under14) {
     const parentalCheckbox = document.getElementById('checkParent');
     
     if (isUnder14) {
-        // 14세 미만: 박스 보여주고 체크박스를 다시 '필수'로 설정
         parentalBox.style.display = 'block';
-        parentalCheckbox.classList.add('essential'); 
+        parentalCheckbox.classList.add('essential'); // 14세 미만은 보호자 동의 필수
     } else {
-        // 14세 이상: 박스 숨기고 체크박스에서 '필수' 클래스 제거
         parentalBox.style.display = 'none';
-        parentalCheckbox.classList.remove('essential');
-        parentalCheckbox.checked = false; // 혹시 체크되어 있었다면 해제
+        parentalCheckbox.classList.remove('essential'); // 14세 이상은 필수 항목에서 제외
     }
-    
-    nextStep(); 
+    nextStep();
 }
 
 function checkAndGo() {
-    // 현재 클래스에 'essential'이 붙어 있는 항목만 가져옴
     const essentials = document.querySelectorAll('.essential');
     const allChecked = Array.from(essentials).every(cb => cb.checked);
     
     if (allChecked) {
         nextStep();
     } else {
-        alert("모든 필수 항목에 동의해 주세요.");
+        showNotice("모든 필수 항목에 동의해 주세요."); // 커스텀 모달 호출
     }
 }
-
 
 
 // 2. 진단 정보 선택 로직
