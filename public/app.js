@@ -1,3 +1,14 @@
+import { VoiceProcessor } from "./voice-processor.js";
+import { 
+    setQuestionText, 
+    setDescriptionText, 
+    setTimer, 
+    setRecordButtonState, 
+    setNextEnabled 
+} from "./voice-ui.js";
+
+const vp = new VoiceProcessor();
+
 let currentStep = 1;
 let currentQIndex = 0;
 let answers = [];
@@ -411,4 +422,92 @@ function stopRecording(status) {
     // status: 'completed' (40초 다 채움) vs 'stopped' (사용자가 수동 종료)
     saveVoiceMetric(status, stopOffset);
     nextStage(); // 다음 단계 질문으로
+}
+
+// 1. PDF 기반 연령별/단계별 질문 로직
+function getStages(age) {
+    const isMinor = age < 14;
+    return [
+        { id: 1, q: "Stage 1. 음성 분석 지문", d: "화면의 지문을 끝까지 읽어주세요.", text: `지금 나는 내 음성에 귀를 기울이고 있다. ...` }, // 원문 유지
+        { 
+            id: 2, 
+            q: isMinor ? "최근 2년 안에 내가 계속 파고 있는 주제는?" : "해결을 위해 노력한 문제의 원인, 방법, 결과는?",
+            d: isMinor ? "게임, 코딩, 반려견 등 무엇이든 좋아요." : "짧게 설명해 주세요."
+        },
+        { 
+            id: 3, 
+            q: isMinor ? "고민을 해결하려고 시도해 본 적이 있나요?" : "가장 막히거나 어려웠던 지점은 어디인가요?",
+            d: "실험, 연습, 검색 등 무엇이든 좋습니다."
+        },
+        { id: 4, q: "노력을 해도 해결이 되지 않는다면 보통 어떻게 하나요?", d: "평소 자신의 습관이나 생각을 말씀해 주세요." }
+    ];
+}
+
+/* ============================================================
+   STEP 5: 음성 스트레스 반응 테스트 (Voice Stress Test) 로직
+   ============================================================ */
+   
+let STAGES = [];
+let idx = 0;
+let session_id = null;
+let stageDisplayTime = 0; // Start Latency 측정용
+
+function renderStage() {
+    const s = STAGES[idx];
+    setQuestionText(s.text || s.q);
+    setDescriptionText(s.d);
+    setTimer(40000);
+    setRecordButtonState({ recording: false });
+    setNextEnabled(idx > 0); // Stage 1 완료 전에는 Next 비활성화 추천
+    
+    stageDisplayTime = performance.now(); // 질문이 화면에 뜬 시점 기록
+}
+
+async function runStage() {
+    const s = STAGES[idx];
+    const clickTime = performance.now(); // 사용자가 버튼을 누른 시점
+    
+    setNextEnabled(false);
+    
+    // 1. 소음 캘리브레이션 (UI에 상태 표시)
+    setRecordButtonState({ recording: false, calibrating: true });
+    const cal = await vp.calibrateSilence(2);
+    
+    // 2. 실제 녹음 시작
+    setRecordButtonState({ recording: true, calibrating: false });
+    const metrics = await vp.startStage({
+        durationSec: 40,
+        onTick: ({ leftMs }) => setTimer(leftMs, 40),
+    });
+
+    setRecordButtonState({ recording: false });
+    setNextEnabled(true);
+
+    // 3. 연구용 데이터 패키징
+    const payload = {
+        session_id,
+        stage_id: s.id,
+        age_group: window.__USER_AGE__ < 14 ? "child" : "adult",
+        status: metrics.status,
+        
+        // 중요: 질문 노출부터 클릭까지의 시간 (회피/망설임 지표)
+        start_latency_ms: Math.floor(clickTime - stageDisplayTime),
+        recorded_ms: metrics.recorded_ms, 
+        stop_offset_ms: metrics.status === "stopped" ? Math.floor(performance.now() - clickTime) : 40000,
+
+        pitch_mean: metrics.pitch_mean,
+        pitch_sd: metrics.pitch_sd,
+        speech_rate: metrics.speech_rate,
+        pause_ratio: metrics.pause_ratio,
+
+        noise_floor_db: cal.noise_floor_db,
+        snr_est_db: metrics.snr_est_db,
+        clipping_ratio: metrics.clipping_ratio,
+        bg_voice_ratio: metrics.bg_voice_ratio,
+        
+        // Stage 1일 때만 '공구삼공' 스타일 분석 결과 포함 (나중에 구현)
+        time_reading_style: s.id === 1 ? "pending_analysis" : null 
+    };
+
+    await postStage(payload);
 }
