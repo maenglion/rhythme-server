@@ -267,3 +267,28 @@ function getSTag(score) {
     if (score >= 12) return "Average S";
     return "Low S";
 }
+// 개인정보 동의서 아코디언 txt 불러오기
+async function loadAndToggleConsent(fileName, headerElement) {
+    const item = headerElement.closest('.consent-item');
+    const textArea = item.querySelector('.consent-text-area');
+
+    // 이미 활성화된 상태면 닫기만 함
+    if (item.classList.contains('active')) {
+        item.classList.remove('active');
+        return;
+    }
+
+    // 파일 내용 불러오기
+    try {
+        const response = await fetch(`/terms-of-use/${fileName}`);
+        if (!response.ok) throw new Error('파일을 불러올 수 없습니다.');
+        const text = await response.text();
+        textArea.innerText = text; // .txt 내용을 주입
+    } catch (error) {
+        textArea.innerText = "내용을 불러오는 데 실패했습니다. 관리자에게 문의하세요.";
+    }
+
+    // 아코디언 활성화 (다른 항목은 닫기)
+    document.querySelectorAll('.consent-item').forEach(el => el.classList.remove('active'));
+    item.classList.add('active');
+}

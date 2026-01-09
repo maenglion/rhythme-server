@@ -24,47 +24,44 @@
     <h3 class="title">연구 참여 동의</h3>
     <div class="consent-group">
         <div class="consent-item" id="parentalConsentItem" style="display: none;">
-            <div class="consent-header" onclick="toggleConsent('parent')">
+            <div class="consent-header" onclick="loadAndToggleConsent('child', this)">
                 <input type="checkbox" class="essential" id="checkParent" onclick="event.stopPropagation()">
                 <div class="header-text">
                     <span class="subject">법정대리인 동의</span>
                     <span class="badge">필수</span>
                 </div>
-                <a href="/terms-of-use/child" target="_blank" class="detail-link" onclick="event.stopPropagation()">전문보기</a>
                 <span class="arrow">▼</span>
             </div>
             <div class="consent-content">
-                <p>만 14세 미만 아동은 보호자의 동의가 반드시 필요합니다. 상세 내용은 '전문보기'를 확인해 주세요.</p>
+                <div class="consent-text-area">내용을 불러오는 중...</div>
             </div>
         </div>
 
         <div class="consent-item">
-            <div class="consent-header" onclick="toggleConsent(1)">
+            <div class="consent-header" onclick="loadAndToggleConsent('personal.txt', this)">
                 <input type="checkbox" class="essential" id="check1" onclick="event.stopPropagation()">
                 <div class="header-text">
                     <span class="subject">개인정보 수집 및 이용</span>
                     <span class="badge">필수</span>
                 </div>
-                <a href="/terms-of-use/personal.txt" target="_blank" class="detail-link" onclick="event.stopPropagation()">전문보기</a>
                 <span class="arrow">▼</span>
             </div>
             <div class="consent-content">
-                <p>닉네임, 나이, 성별 및 삭제용 PIN 정보를 수집합니다. 상세 내용은 '전문보기'를 참조하세요.</p>
+                <div class="consent-text-area">내용을 불러오는 중...</div>
             </div>
         </div>
 
         <div class="consent-item">
-            <div class="consent-header" onclick="toggleConsent(2)">
+            <div class="consent-header" onclick="loadAndToggleConsent('voice', this)">
                 <input type="checkbox" class="essential" id="check2" onclick="event.stopPropagation()">
                 <div class="header-text">
                     <span class="subject">음성정보 처리 동의</span>
                     <span class="badge">필수</span>
                 </div>
-                <a href="/terms-of-use/voice" target="_blank" class="detail-link" onclick="event.stopPropagation()">전문보기</a>
                 <span class="arrow">▼</span>
             </div>
             <div class="consent-content">
-                <p>음성 원본은 저장되지 않으며 특징값만 추출됩니다. 상세 내용은 '전문보기'를 확인해 주세요.</p>
+                <div class="consent-text-area">내용을 불러오는 중...</div>
             </div>
         </div>
     </div>
