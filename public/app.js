@@ -41,49 +41,34 @@ const adultQuestions = [
 function startResearch(under14) {
     isUnder14 = under14;
     const parentalBox = document.getElementById('parentalConsentItem');
+    const parentalCheckbox = document.getElementById('checkParent');
     
-    // 14세 미만일 경우에만 보호자 동의 박스 표시
     if (isUnder14) {
+        // 14세 미만: 박스 보여주고 체크박스를 다시 '필수'로 설정
         parentalBox.style.display = 'block';
+        parentalCheckbox.classList.add('essential'); 
     } else {
+        // 14세 이상: 박스 숨기고 체크박스에서 '필수' 클래스 제거
         parentalBox.style.display = 'none';
+        parentalCheckbox.classList.remove('essential');
+        parentalCheckbox.checked = false; // 혹시 체크되어 있었다면 해제
     }
     
-    nextStep(); // Step 2로 이동
+    nextStep(); 
 }
 
-// Step 2에서 '동의 완료 및 다음' 클릭 시 실행  ,현재 연령 분기상태 디버깅 추가
 function checkAndGo() {
-    console.log("현재 연령 분기 상태 (isUnder14):", isUnder14);
-    const checkboxes = document.querySelectorAll('.essential');
-    checkboxes.forEach((cb, idx) => {
-        const isVisible = cb.closest('.consent-item').style.display !== 'none';
-        console.log(`체크박스 ${idx+1}번 - 표시여부: ${isVisible}, 체크여부: ${cb.checked}`);
-    });
-
-    // 1. 모든 필수 체크박스 요소를 가져옵니다.
+    // 현재 클래스에 'essential'이 붙어 있는 항목만 가져옴
     const essentials = document.querySelectorAll('.essential');
-    let allChecked = true;
-
-    essentials.forEach(cb => {
-        // 2. 해당 체크박스가 속한 부모 컨테이너(consent-item)를 찾습니다.
-        const container = cb.closest('.consent-item');
-        
-        // 3. 컨테이너가 화면에 보이는 상태(display: none이 아님)일 때만 체크 여부를 검사합니다.
-        if (container && container.style.display !== 'none') {
-            if (!cb.checked) {
-                allChecked = false;
-            }
-        }
-    });
-
-    // 4. 모든 '보이는' 필수 항목이 체크되었다면 다음 단계로 이동합니다.
+    const allChecked = Array.from(essentials).every(cb => cb.checked);
+    
     if (allChecked) {
         nextStep();
     } else {
         alert("모든 필수 항목에 동의해 주세요.");
     }
 }
+
 
 
 // 2. 진단 정보 선택 로직
