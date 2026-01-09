@@ -149,6 +149,57 @@ async function agreeAllWithEffect() {
     }, 300);
 }
 
+// 3. 정보입력 유효성 검사
+function validateStep3() {
+    const ageInput = document.getElementById('age');
+    const ageValue = ageInput.value.trim();
+    const age = parseInt(ageValue);
+    
+    // 기존에 있던 에러 메시지가 있다면 제거 (중복 방지)
+    const existingError = document.getElementById('dynamicAgeError');
+    if (existingError) existingError.remove();
+
+    // 헬퍼 함수: 에러 메시지 생성 및 삽입
+    const showError = (msg) => {
+        const errorP = document.createElement('p');
+        errorP.id = 'dynamicAgeError';
+        errorP.style.color = '#ff5252';
+        errorP.style.fontSize = '12px';
+        errorP.style.marginTop = '8px';
+        errorP.textContent = msg;
+        ageInput.parentNode.appendChild(errorP); // 나이 입력창 부모 요소(input-group) 끝에 추가
+        ageInput.focus();
+    };
+
+    // 1. 입력 여부 확인
+    if (!ageValue || isNaN(age)) {
+        showError("나이를 숫자로 입력해 주세요.");
+        return;
+    }
+
+    // 2. 동의서 연령 분기(isUnder14)와 실제 나이 교차 검증
+    if (!isUnder14 && age < 14) {
+        showError("⚠️ 선택하신 동의서(14세 이상)와 입력하신 나이가 맞지 않습니다.");
+        return;
+    } 
+    else if (isUnder14 && age >= 14) {
+        showError("⚠️ 선택하신 동의서(14세 미만)와 입력하신 나이가 맞지 않습니다.");
+        return;
+    }
+
+    // 3. 닉네임 및 PIN 유효성 검사
+    const nickname = document.getElementById('nickname').value.trim();
+    const pin = document.getElementById('userPin').value;
+    
+    if (nickname.length < 2) { alert("닉네임을 2자 이상 입력해 주세요."); return; }
+    if (pin.length !== 4) { alert("비밀 PIN 4자리를 정확히 입력해 주세요."); return; }
+
+    // 모든 검사 통과 시 다음 단계로
+    nextStep(); 
+}
+
+
+
 // 파일명 표시 로직
 function updateFileName(type) {
     const fileInput = document.getElementById(`qeeg${type}`);
