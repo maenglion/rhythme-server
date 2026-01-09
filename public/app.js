@@ -52,25 +52,34 @@ function startResearch(under14) {
     nextStep(); // Step 2로 이동
 }
 
-// Step 2에서 '동의 완료 및 다음' 클릭 시 실행
+// Step 2에서 '동의 완료 및 다음' 클릭 시 실행  ,현재 연령 분기상태 디버깅 추가
 function checkAndGo() {
-    // 모든 필수(essential) 체크박스 요소를 가져옴
+    console.log("현재 연령 분기 상태 (isUnder14):", isUnder14);
+    const checkboxes = document.querySelectorAll('.essential');
+    checkboxes.forEach((cb, idx) => {
+        const isVisible = cb.closest('.consent-item').style.display !== 'none';
+        console.log(`체크박스 ${idx+1}번 - 표시여부: ${isVisible}, 체크여부: ${cb.checked}`);
+    });
+
+    // 1. 모든 필수 체크박스 요소를 가져옵니다.
     const essentials = document.querySelectorAll('.essential');
     let allChecked = true;
 
     essentials.forEach(cb => {
-        // 체크박스가 포함된 부모 컨테이너(consent-item)가 화면에 보이는 상태인지 확인
+        // 2. 해당 체크박스가 속한 부모 컨테이너(consent-item)를 찾습니다.
         const container = cb.closest('.consent-item');
+        
+        // 3. 컨테이너가 화면에 보이는 상태(display: none이 아님)일 때만 체크 여부를 검사합니다.
         if (container && container.style.display !== 'none') {
-            // 화면에 보이는 항목인데 체크되지 않았다면 실패 처리
             if (!cb.checked) {
                 allChecked = false;
             }
         }
     });
 
+    // 4. 모든 '보이는' 필수 항목이 체크되었다면 다음 단계로 이동합니다.
     if (allChecked) {
-        nextStep(); // 모든 보이는 필수 항목 체크 시 Step 3로 이동
+        nextStep();
     } else {
         alert("모든 필수 항목에 동의해 주세요.");
     }
