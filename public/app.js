@@ -54,24 +54,25 @@ function startResearch(under14) {
 
 // Step 2에서 '동의 완료 및 다음' 클릭 시 실행
 function checkAndGo() {
-    const check1 = document.getElementById('check1').checked;
-    const check2 = document.getElementById('check2').checked;
-    
-    if (isUnder14) {
-        // 14세 미만인 경우 보호자 동의 여부 추가 확인
-        const checkParent = document.getElementById('checkParent').checked;
-        if (check1 && check2 && checkParent) {
-            nextStep();
-        } else {
-            alert("모든 필수 동의 항목에 체크해 주세요.");
+    // 모든 필수(essential) 체크박스 요소를 가져옴
+    const essentials = document.querySelectorAll('.essential');
+    let allChecked = true;
+
+    essentials.forEach(cb => {
+        // 체크박스가 포함된 부모 컨테이너(consent-item)가 화면에 보이는 상태인지 확인
+        const container = cb.closest('.consent-item');
+        if (container && container.style.display !== 'none') {
+            // 화면에 보이는 항목인데 체크되지 않았다면 실패 처리
+            if (!cb.checked) {
+                allChecked = false;
+            }
         }
+    });
+
+    if (allChecked) {
+        nextStep(); // 모든 보이는 필수 항목 체크 시 Step 3로 이동
     } else {
-        // 14세 이상인 경우 일반 동의 2개만 확인
-        if (check1 && check2) {
-            nextStep();
-        } else {
-            alert("모든 필수 동의 항목에 체크해 주세요.");
-        }
+        alert("모든 필수 항목에 동의해 주세요.");
     }
 }
 
