@@ -359,7 +359,7 @@ function getSTag(score) {
     if (score >= 12) return "Average S";
     return "Low S";
 }
-// 개인정보 동의서 아코디언 txt 불러오기
+// 아코디언 내 TXT 직접 로드 로직
 async function loadAndToggleConsent(fileName, headerElement) {
     const item = headerElement.closest('.consent-item');
     const textArea = item.querySelector('.consent-text-area');
@@ -370,17 +370,17 @@ async function loadAndToggleConsent(fileName, headerElement) {
         return;
     }
 
-    // 파일 내용 불러오기
+    // 텍스트 파일 fetch (확장자 체크 주의: 이미지상 child, voice는 확장자 없음)
     try {
         const response = await fetch(`/terms-of-use/${fileName}`);
-        if (!response.ok) throw new Error('파일을 불러올 수 없습니다.');
+        if (!response.ok) throw new Error();
         const text = await response.text();
-        textArea.innerText = text; // .txt 내용을 주입
-    } catch (error) {
-        textArea.innerText = "내용을 불러오는 데 실패했습니다. 관리자에게 문의하세요.";
+        textArea.innerText = text;
+    } catch (e) {
+        textArea.innerText = "내용을 불러올 수 없습니다. 다시 시도해 주세요.";
     }
 
-    // 아코디언 활성화 (다른 항목은 닫기)
+    // 다른 항목 닫고 현재 항목 열기
     document.querySelectorAll('.consent-item').forEach(el => el.classList.remove('active'));
     item.classList.add('active');
 }

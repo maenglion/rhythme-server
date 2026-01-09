@@ -147,7 +147,6 @@ input[type="text"], input[type="number"] {
 
 /* 얇은 보라색 스크롤바 커스텀 */
 .consent-text-area::-webkit-scrollbar { width: 4px; }
-.consent-text-area::-webkit-scrollbar-track { background: #1E1E1E; }
 .consent-text-area::-webkit-scrollbar-thumb { background: #BB86FC; border-radius: 10px; }
 
 /* 체크박스 스타일 */
@@ -164,12 +163,12 @@ input[type="checkbox"]:checked::after {
 
 /* 헤더 텍스트 내부 배치 미세 조정 */
 .header-text {
+    flex: 1;
     display: flex;
+    justify-content: flex-start; /* 왼쪽 정렬로 밀착 */
     align-items: center;
-    justify-content: flex-start; /* 왼쪽 정렬로 변경하여 텍스트-배지-링크 순서 고정 */
     gap: 10px;
 }
-
 .arrow {
     margin-left: auto; /* 화살표만 맨 오른쪽으로 밀기 */
     transition: transform 0.3s ease;
