@@ -49,15 +49,26 @@ const adultQuestions = [
 
 // 알림, 모달 
 
-function showNotice(msg) {
-    document.getElementById('modalMessage').innerText = msg;
-    document.getElementById('customModal').style.display = 'flex';
-}
+/* --- 커스텀 모달 제어 (이름 통일: showModal) --- */
+window.showModal = function(msg) {
+    const modal = document.getElementById('customModal');
+    const msgEl = document.getElementById('modalMessage');
+    
+    if (modal && msgEl) {
+        msgEl.innerText = msg; // 파라미터 msg를 화면에 표시
+        modal.style.display = 'flex'; // 중앙 정렬 flex
+    } else {
+        console.error("HTML에 모달 요소가 없습니다.");
+        alert(msg); // 비상용
+    }
+};
 
-function closeModal() {
-    document.getElementById('customModal').style.display = 'none';
-}
-
+window.closeModal = function() {
+    const modal = document.getElementById('customModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+};
 
 
 // 동의 연령 확인에 따른 분기
@@ -75,17 +86,6 @@ function startResearch(under14) {
         parentalCheckbox.classList.remove('essential'); // 14세 이상은 필수 항목에서 제외
     }
     nextStep();
-}
-
-function checkAndGo() {
-    const essentials = document.querySelectorAll('.essential');
-    const allChecked = Array.from(essentials).every(cb => cb.checked);
-    
-    if (allChecked) {
-        nextStep();
-    } else {
-        showNotice("모든 필수 항목에 동의해 주세요."); // 커스텀 모달 호출
-    }
 }
 
 
@@ -111,13 +111,15 @@ function selectAgeGroup(minor) {
     nextStep(); // Step 2로 이동
 }
 
-function checkAndGo() {
+/* --- 필수 항목 체크 및 다음 단계 이동 --- */
+window.checkAndGo = function() {
     const essentials = document.querySelectorAll('.essential');
     let allChecked = true;
 
     essentials.forEach(cb => {
-        // 부모 동의 항목이 display:none이면 체크 검사에서 제외
-        if (cb.closest('.consent-item').style.display !== 'none') {
+        // 부모 동의 항목이 숨겨져(display:none) 있으면 체크 대상에서 제외
+        const container = cb.closest('.consent-item');
+        if (container && container.style.display !== 'none') {
             if (!cb.checked) allChecked = false;
         }
     });
@@ -125,8 +127,20 @@ function checkAndGo() {
     if (allChecked) {
         nextStep(); // Step 3(정보입력)으로 이동
     } else {
-        alert("모든 필수 항목에 동의해 주세요.");
+        // 브라우저 alert 대신 우리가 만든 커스텀 모달 사용
+        if (typeof showModal === 'function') {
+            showModal("모든 필수 항목에 동의해 주세요.");
+        } else {
+            alert("모든 필수 항목에 동의해 주세요.");
+        }
     }
+}
+
+/* --- HTML onclick 에러 방지를 위한 startResearch 함수 등록 --- */
+window.startResearch = function() {
+    // 만약 index.html 23~24번 줄 버튼이 이걸 호출한다면
+    // 바로 정보 입력 페이지로 넘기거나 checkAndGo를 호출하게 연결합니다.
+    nextStep();
 }
 
 // 아코디언 기능 (기존 토글 함수 보완)
@@ -135,17 +149,6 @@ function toggleConsent(id) {
     item.classList.toggle('active');
 }
 
-// 개별 체크 확인 후 다음 단계
-function checkAndGo() {
-    const checkboxes = document.querySelectorAll('.essential');
-    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-    
-    if (allChecked) {
-        nextStep();
-    } else {
-        alert("모든 필수 항목에 동의해 주세요.");
-    }
-}
 
 // 전체 동의 버튼 시각적 효과 (이미 만든 함수 유지)
 async function agreeAllWithEffect() {
