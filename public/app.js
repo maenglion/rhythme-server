@@ -399,6 +399,23 @@ async function loadAndToggleConsent(fileName, headerElement) {
     document.querySelectorAll('.consent-item').forEach(el => el.classList.remove('active'));
     item.classList.add('active');
 }
+
+
+/* ============================================================
+   STEP 5: 음성 스트레스 반응 테스트 (Voice Stress Test) 로직
+   ============================================================ */
+
+
+// 안내 페이지에서 테스트 페이지로 이동
+function goToVoiceTest() {
+    document.getElementById('step5').style.display = 'none';
+    document.getElementById('step6').style.display = 'block';
+    
+    // 이전에 만든 renderStage 함수 호출하여 Stage 1 세팅
+    renderStage(); 
+}
+
+
 // 프로소디 // 
 function startRecording() {
     // 1. 녹음 시작 시점 기록 (Latency 계산용)
@@ -443,10 +460,7 @@ function getStages(age) {
     ];
 }
 
-/* ============================================================
-   STEP 5: 음성 스트레스 반응 테스트 (Voice Stress Test) 로직
-   ============================================================ */
-   
+
 let STAGES = [];
 let idx = 0;
 let session_id = null;
@@ -465,15 +479,15 @@ function renderStage() {
 
 async function runStage() {
     const s = STAGES[idx];
-    const clickTime = performance.now(); // 사용자가 버튼을 누른 시점
+    const clickTime = performance.now(); 
     
-    setNextEnabled(false);
-    
-    // 1. 소음 캘리브레이션 (UI에 상태 표시)
+    // 1. 소음 캘리브레이션 (2초)
     setRecordButtonState({ recording: false, calibrating: true });
-    const cal = await vp.calibrateSilence(2);
+    setTimer(40000); // 타이머는 아직 40초 고정
     
-    // 2. 실제 녹음 시작
+    const cal = await vp.calibrateSilence(2); // 여기서 2초 대기함
+
+    // 2. 실제 본 녹음 시작 (40초)
     setRecordButtonState({ recording: true, calibrating: false });
     const metrics = await vp.startStage({
         durationSec: 40,
