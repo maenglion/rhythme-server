@@ -116,6 +116,41 @@ input[type="checkbox"]:checked { background-color: #BB86FC; border-color: #BB86F
 input[type="checkbox"]:checked::after {
     content: '✔'; color: #000; position: absolute; left: 4px; top: -2px; font-size: 16px; font-weight: bold;
 }
+/* 자세히 보기(전문보기) 링크 스타일 */
+.detail-link {
+    font-size: 12px;
+    color: #BB86FC; /* 배지 색상과 통일감 부여 */
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    margin-left: 12px;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    z-index: 10; /* 체크박스나 헤더 클릭과 겹치지 않게 */
+}
+
+.detail-link:hover {
+    color: #FFFFFF; /* 호버 시 하얗게 */
+}
+
+/* 3. 화살표만 맨 오른쪽으로 밀기 */
+.arrow {
+    margin-left: auto;
+}
+
+/* 헤더 텍스트 내부 배치 미세 조정 */
+.header-text {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* 왼쪽 정렬로 변경하여 텍스트-배지-링크 순서 고정 */
+    gap: 10px;
+}
+
+.arrow {
+    margin-left: auto; /* 화살표만 맨 오른쪽으로 밀기 */
+    transition: transform 0.3s ease;
+    color: #757575;
+}
+
 
 /* 9. 설문 문항 (Step 4 최적화) */
 .step-indicator {
@@ -169,4 +204,37 @@ footer { width: 100%; text-align: center; padding: 40px 0 24px 0; color: #E5E5E5
     margin: 0;
     font-size: 15px;         /* 본문 글씨 크기 */
     color: #FFFFFF;          /* 본문 글씨 색상 */
+}
+
+.age-btn {
+    background-color: #2D2D2D;
+    border: 1px solid #444;
+    transition: all 0.3s ease;
+}
+
+.age-btn:hover {
+    background-color: #3D3D3D;
+    transform: translateY(-2px);
+}
+
+.age-btn.secondary {
+    background-color: transparent;
+    color: #AAA;
+}
+
+.consent-content {
+    display: none;
+    padding: 15px;
+    font-size: 0.9rem;
+    color: #CCC;
+    background: #1A1A1A;
+    border-radius: 0 0 8px 8px;
+}
+
+.consent-item.active .consent-content {
+    display: block;
+}
+
+.consent-item.active .arrow {
+    transform: rotate(180deg);
 }

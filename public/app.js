@@ -2,6 +2,7 @@ let currentStep = 1;
 let currentQIndex = 0;
 let answers = [];
 let diagnoses = [];
+let isMinor = false; // 전역 변수로 관리
 
 const CLOUD_RUN_URL = "https://rhythme-server-357918245340.asia-northeast3.run.app/";
 
@@ -41,9 +42,40 @@ function toggleDiagnosis(element, value) {
 }
 
 // 전체 동의 로직
-// 아코디언 토글 (상세 내용 보기)
-function toggleConsent(index) {
-    const item = document.getElementById(`item${index}`);
+function selectAgeGroup(minor) {
+    isMinor = minor;
+    const parentalBox = document.getElementById('parentalConsentItem');
+    
+    if (isMinor) {
+        parentalBox.style.display = 'block';
+    } else {
+        parentalBox.style.display = 'none';
+    }
+    
+    nextStep(); // Step 2로 이동
+}
+
+function checkAndGo() {
+    const essentials = document.querySelectorAll('.essential');
+    let allChecked = true;
+
+    essentials.forEach(cb => {
+        // 부모 동의 항목이 display:none이면 체크 검사에서 제외
+        if (cb.closest('.consent-item').style.display !== 'none') {
+            if (!cb.checked) allChecked = false;
+        }
+    });
+
+    if (allChecked) {
+        nextStep(); // Step 3(정보입력)으로 이동
+    } else {
+        alert("모든 필수 항목에 동의해 주세요.");
+    }
+}
+
+// 아코디언 기능 (기존 토글 함수 보완)
+function toggleConsent(id) {
+    const item = typeof id === 'string' ? document.getElementById('parentalConsentItem') : document.querySelectorAll('.consent-item')[id];
     item.classList.toggle('active');
 }
 
