@@ -11,57 +11,70 @@
     <div class="progress-container"><div class="progress-bar" id="progressBar"></div></div>
 
     <section id="step1" class="step active">
-        <h2 class="title">프로젝트-RHYTHME</h2>
-        <div class="research-intro">
-            <p>본 연구는 <strong>(주)소울스펙트럼(SoulSpectrum Inc.)</strong>에서 주관하며, 
-            음성 특징과 SQ(Systemizing Quotient)의 상관관계를 분석하여 신경다양성 특성을 정밀 프로파일링하는 것을 목적으로 합니다.</p>
+    <h2 class="title">프로젝트-RHYTHME</h2>
+    <div class="research-intro">
+        <p>본 연구는 <strong>(주)소울스펙트럼(SoulSpectrum Inc.)</strong>에서 주관하며, 
+        음성 특징과 SQ(Systemizing Quotient)의 상관관계를 분석하여 신경다양성 특성을 정밀 프로파일링하는 것을 목적으로 합니다.</p>
+        
+        <div style="border-top: 1px solid #333; margin-top: 24px; padding-top: 12px;">
             <p class="pi-info">연구책임자: 맹난영</p>
         </div>
-        <button class="next-btn" onclick="nextStep()">연구 참여하기</button>
-    </section>
+    </div>
+    
+    <div class="button-group" style="margin-top: 40px;">
+        <button class="next-btn" onclick="startResearch(false)">14세 이상 연구 참여하기</button>
+        
+        <button class="next-btn secondary-btn" style="margin-top: 16px;" onclick="startResearch(true)">
+            14세 미만 연구 참여하기 (보호자 동의 필요)
+        </button>
+    </div>
+</section>
 
 <section id="step2" class="step">
     <h3 class="title">연구 참여 동의</h3>
     <div class="consent-group">
         <div class="consent-item" id="parentalConsentItem" style="display: none;">
-            <div class="consent-header" onclick="loadAndToggleConsent('child', this)">
+            <div class="consent-header" onclick="toggleConsent('parent')">
                 <input type="checkbox" class="essential" id="checkParent" onclick="event.stopPropagation()">
                 <div class="header-text">
                     <span class="subject">법정대리인 동의</span>
                     <span class="badge">필수</span>
                 </div>
+                <a href="/terms-of-use/child" target="_blank" class="detail-link" onclick="event.stopPropagation()">전문보기</a>
                 <span class="arrow">▼</span>
             </div>
             <div class="consent-content">
-                <div class="consent-text-area">내용을 불러오는 중...</div>
+                <p>만 14세 미만 아동은 보호자의 동의가 반드시 필요합니다. 상세 내용은 '전문보기'를 확인해 주세요.</p>
             </div>
         </div>
 
         <div class="consent-item">
-            <div class="consent-header" onclick="loadAndToggleConsent('personal.txt', this)">
+            <div class="consent-header" onclick="toggleConsent(1)">
                 <input type="checkbox" class="essential" id="check1" onclick="event.stopPropagation()">
                 <div class="header-text">
                     <span class="subject">개인정보 수집 및 이용</span>
                     <span class="badge">필수</span>
                 </div>
+                <a href="/terms-of-use/personal.txt" target="_blank" class="detail-link" onclick="event.stopPropagation()">전문보기</a>
                 <span class="arrow">▼</span>
             </div>
             <div class="consent-content">
-                <div class="consent-text-area">내용을 불러오는 중...</div>
+                <p>닉네임, 나이, 성별 및 삭제용 PIN 정보를 수집합니다. 상세 내용은 '전문보기'를 참조하세요.</p>
             </div>
         </div>
 
         <div class="consent-item">
-            <div class="consent-header" onclick="loadAndToggleConsent('voice', this)">
+            <div class="consent-header" onclick="toggleConsent(2)">
                 <input type="checkbox" class="essential" id="check2" onclick="event.stopPropagation()">
                 <div class="header-text">
                     <span class="subject">음성정보 처리 동의</span>
                     <span class="badge">필수</span>
                 </div>
+                <a href="/terms-of-use/voice" target="_blank" class="detail-link" onclick="event.stopPropagation()">전문보기</a>
                 <span class="arrow">▼</span>
             </div>
             <div class="consent-content">
-                <div class="consent-text-area">내용을 불러오는 중...</div>
+                <p>음성 원본은 저장되지 않으며 특징값만 추출됩니다. 상세 내용은 '전문보기'를 확인해 주세요.</p>
             </div>
         </div>
     </div>

@@ -3,6 +3,7 @@ let currentQIndex = 0;
 let answers = [];
 let diagnoses = [];
 let isMinor = false; // 전역 변수로 관리
+let isUnder14 = false; // 연령 상태 저장 변수
 
 const CLOUD_RUN_URL = "https://rhythme-server-357918245340.asia-northeast3.run.app/";
 
@@ -32,6 +33,46 @@ const adultQuestions = [
     "복잡한 데이터나 정보에서 남들이 보지 못하는 반복 규칙이나 사이클을 찾는 것이 즐겁다.",
     "나의 신체리듬을 데이터화하고 컨디션을 최적화하는 시스템적인 방법을 구상해본다."
 ];
+
+// 동의 연령 확인에 따른 분기
+
+function startResearch(under14) {
+    isUnder14 = under14;
+    const parentalBox = document.getElementById('parentalConsentItem');
+    
+    // 14세 미만일 경우에만 보호자 동의 박스 표시
+    if (isUnder14) {
+        parentalBox.style.display = 'block';
+    } else {
+        parentalBox.style.display = 'none';
+    }
+    
+    nextStep(); // Step 2로 이동
+}
+
+// Step 2에서 '동의 완료 및 다음' 클릭 시 실행
+function checkAndGo() {
+    const check1 = document.getElementById('check1').checked;
+    const check2 = document.getElementById('check2').checked;
+    
+    if (isUnder14) {
+        // 14세 미만인 경우 보호자 동의 여부 추가 확인
+        const checkParent = document.getElementById('checkParent').checked;
+        if (check1 && check2 && checkParent) {
+            nextStep();
+        } else {
+            alert("모든 필수 동의 항목에 체크해 주세요.");
+        }
+    } else {
+        // 14세 이상인 경우 일반 동의 2개만 확인
+        if (check1 && check2) {
+            nextStep();
+        } else {
+            alert("모든 필수 동의 항목에 체크해 주세요.");
+        }
+    }
+}
+
 
 // 2. 진단 정보 선택 로직
 function toggleDiagnosis(element, value) {
