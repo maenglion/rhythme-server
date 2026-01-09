@@ -111,17 +111,16 @@ function validateStep3() {
     nextStep();
 }
 
-// 4. 설문 렌더링 (진행률 표시: n / 10)
+// 4. 설문 렌더링
 function renderQuestion() {
     const age = parseInt(document.getElementById('age').value);
     const questions = (age <= 18) ? childQuestions : adultQuestions;
     
     if (currentQIndex >= questions.length) {
-        nextStep(); // 설문 종료 시 qEEG 제출 단계로
+        nextStep(); 
         return;
     }
 
-    // 질문 텍스트 업데이트
     document.getElementById('questionText').innerText = questions[currentQIndex];
     
     // 상단 진행바 및 숫자 표시 (1/10)
@@ -131,15 +130,15 @@ function renderQuestion() {
 }
 
 function handleAnswer(val) {
-    // 1. 모든 버튼에서 보라색 효과 제거 (초기화)
+
     const buttons = document.querySelectorAll('.ans-btn');
     buttons.forEach(btn => btn.classList.remove('selected'));
 
-    // 2. 현재 내가 누른 버튼에만 보라색 입히기
+    //현재 내가 누른 버튼에만 보라색 입히기
     const selectedBtn = event.currentTarget;
     selectedBtn.classList.add('selected');
 
-    // 3. 사용자가 "아, 내가 이거 눌렀구나"라고 느낄 정도(0.2~0.3초)만 기다렸다가 다음으로 이동
+    // 3. 선택 시각화
     setTimeout(() => {
         answers.push(val);
         currentQIndex++;
