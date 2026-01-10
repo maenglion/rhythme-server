@@ -179,8 +179,16 @@ function renderQuestion() {
     document.getElementById('questionCount').innerText = `${currentQIndex + 1} / ${questions.length}`;
 }
 
-window.handleAnswer = function(val) {
-    event.currentTarget.classList.add('selected');
+window.handleAnswer = function(val, evt) {
+    // 1. 이벤트 객체와 타겟 요소 가드
+    const el = evt?.currentTarget;
+    if (!el) return;
+
+    // 2. 시각적 피드백
+    document.querySelectorAll('.ans-btn').forEach(btn => btn.classList.remove('selected'));
+    el.classList.add('selected');
+
+    // 3. 데이터 기록 및 다음 문항
     setTimeout(() => {
         answers.push(val);
         currentQIndex++;
@@ -276,12 +284,16 @@ function getSTag(score) {
    4. Step 6~7: 음성 분석 엔진 (핵심)
    ============================================================ */
 window.goToVoiceTest = function() {
-    const age = parseInt(document.getElementById('age').value) || 20;
+    const ageInput = document.getElementById('age');
+    const age = ageInput ? parseInt(ageInput.value) : 20;
+    
     STAGES = getStages(age);
     stageIdx = 0;
-    document.getElementById('step6').style.display = 'none';
-    const step7 = document.getElementById('step7');
-    if (step7) step7.style.display = 'block';
+
+    // display: none 대신 정의된 nextStep()을 사용하여 .active 클래스 교체
+    // 현재 currentStep이 6(안내)인 상태이므로 호출 시 7(녹음)로 자연스럽게 이동
+    window.nextStep(); 
+
     renderStage(); 
 };
 
@@ -293,31 +305,12 @@ function getStages(age) {
     ];
 }
 
-function renderStage() {
-    const s = STAGES[stageIdx];
-    setQuestionText(s.text || s.q);
-    setDescriptionText(s.d);
-    setTimer(40000);
-    setRecordButtonState({ recording: false });
-    document.getElementById('stageBadge').innerText = `Stage ${s.id}`;
-    stageDisplayTime = performance.now();
-    document.getElementById('nextBtn').style.display = 'none';
-}
-
-// 녹음 버튼 리스너
-document.addEventListener('DOMContentLoaded', () => {
-    const recBtn = document.querySelector("#recordBtn");
-    if (recBtn) {
-        recBtn.addEventListener("click", async () => {
-            if (recBtn.dataset.recording === "1") { vp.stop(); return; }
-            await runVoiceStage();
-        });
-    }
-});
-
 async function runVoiceStage() {
+    const s = STAGES[stageIdx];
+    const clickTime = performance.now();
+    
     setRecordButtonState({ recording: false, calibrating: true });
-    await vp.calibrateSilence(2); 
+    const cal = await vp.calibrateSilence(2);
 
     setRecordButtonState({ recording: true, calibrating: false });
     const metrics = await vp.startStage({
@@ -326,15 +319,24 @@ async function runVoiceStage() {
     });
 
     setRecordButtonState({ recording: false });
+
+    // [추가] 연구 데이터 최종 패키징 및 전송
+    const voiceData = {
+        user_id: document.getElementById('nickname')?.value || "unknown",
+        stage_id: s.id,
+        metrics: metrics, // pitch, speech_rate 등 포함
+        calibration: cal, // noise_floor 등 포함
+        latency_ms: Math.floor(clickTime - stageDisplayTime)
+    };
+
+    console.log("Saving voice data:", voiceData);
     
-    // 다음 버튼 활성화
-    const nBtn = document.getElementById('nextBtn');
-    if (nBtn) {
-        nBtn.style.display = 'block';
-        nBtn.onclick = () => {
-            if (stageIdx < STAGES.length - 1) { stageIdx++; renderStage(); }
-            else { window.showModal("모든 테스트 완료!"); }
-            
-        };
-    }
+    // 서버 전송 실행
+    fetch(`${CLOUD_RUN_URL}submit-voice-metrics`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(voiceData)
+    }).catch(err => console.error("Voice submission failed:", err));
+
+    // 다음 버튼 활성화 로직...
 }
