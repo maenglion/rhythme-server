@@ -264,11 +264,13 @@ window.submitAll = async function(evt) {
     if (ecFile) await uploadSingleFile(nickname, 'EC', ecFile);
     if (eoFile) await uploadSingleFile(nickname, 'EO', eoFile);
 
-  alert("✅ 저장 완료");
-// 업로드 버튼 숨기고
-document.getElementById('uploadBtn')?.style && (document.getElementById('uploadBtn').style.display = 'none');
-// 다음 버튼 보이게
-document.getElementById('nextStepBtn')?.style && (document.getElementById('nextStepBtn').style.display = 'block');
+alert("✅ 저장 완료");
+
+const uploadBtn = document.getElementById('uploadBtn');
+if (uploadBtn) uploadBtn.style.display = 'none';
+
+const nextBtn = document.getElementById('nextStepBtn');
+if (nextBtn) nextBtn.style.display = 'block';
 
 
   } catch (error) {
