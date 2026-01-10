@@ -242,25 +242,23 @@ window.submitAll = async function() {
     };
 
     // 4. 전송 로직
-    try {
-        const res = await fetch(`${CLOUD_RUN_URL}submit-survey`, {
+try {
+        // [중요] trailing slash(/)를 추가하여 리다이렉트 및 CORS 이슈 방지
+        const res = await fetch(`${CLOUD_RUN_URL}submit-survey/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
 
         if (res.ok) {
-            console.log("Data submitted successfully");
-            window.nextStep(); // 전송 성공 시 다음 단계(감사 페이지 또는 음성 안내)로
-       } else {
-            const errorMsg = await res.text();
-            console.error("서버 응답 에러:", errorMsg);
-            alert(`서버 응답 오류: ${res.status}`);
+            console.log("✅ 데이터 전송 성공. 음성 안내로 이동합니다.");
+            window.nextStep(); 
+        } else {
+            alert('서버 응답 오류가 발생했습니다. 상태 코드: ' + res.status);
         }
     } catch (error) {
-        // [현재 터지는 지점]
-        console.error('Detailed Fetch Error:', error); 
-        alert('서버 연결에 실패했습니다. (네트워크 상태 또는 서버 설정을 확인하세요)');
+        console.error('Fetch Error:', error);
+        alert('서버 연결 오류(CORS)가 발생했습니다. 서버 설정을 확인해주세요.');
     }
 };
 
@@ -302,17 +300,17 @@ function getStages(age) {
    [신규 추가] Step 7: 음성 테스트 화면 전용 렌더링 함수
    ============================================================ */
 function renderStage() {
-    // 1. 현재 스테이지 데이터 가져오기 (STAGES 배열은 getStages(age)로 생성됨)
     const s = STAGES[stageIdx];
     if (!s) return;
 
     // 2. HTML 요소에 데이터 주입
     // HTML의 id가 'questionText'와 'descriptionText'로 되어 있어야 함
-    const qEl = document.getElementById('questionText'); // 질문/지문
-    const dEl = document.getElementById('descriptionText'); // 설명
+
+    const qEl = document.getElementById('question') || document.getElementById('questionText');
+    const dEl = document.getElementById('desc') || document.getElementById('descriptionText');
     const badge = document.getElementById('stageBadge'); // Stage 번호
 
-    if (qEl) qEl.innerText = s.text || s.q; 
+    if (qEl) qEl.innerText = s.text || s.q;
     if (dEl) dEl.innerText = s.d;
     if (badge) badge.innerText = `Stage ${s.id}`;
 
