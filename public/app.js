@@ -244,7 +244,7 @@ window.submitAll = async function() {
     // 4. 전송 로직
 try {
         // [중요] trailing slash(/)를 추가하여 리다이렉트 및 CORS 이슈 방지
-        const res = await fetch(`${CLOUD_RUN_URL}submit-survey/`, {
+        const res = await fetch(`${CLOUD_RUN_URL}/submit-survey`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
