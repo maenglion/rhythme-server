@@ -261,10 +261,15 @@ window.submitAll = async function(evt) {
       throw new Error(`submit-survey failed ${surveyRes.status}: ${t}`);
     }
 
-    if (ecFile) await uploadSingleFile(nickname, 'EC', ecFile);
-    if (eoFile) await uploadSingleFile(nickname, 'EO', eoFile);
+const ecResult = ecFile ? await uploadSingleFile(nickname, 'EC', ecFile) : null;
+const eoResult = eoFile ? await uploadSingleFile(nickname, 'EO', eoFile) : null;
 
-alert("✅ 저장 완료");
+window.showModal(
+  `✅ 저장 완료\n\nEC: ${ecFile?.name || 'none'}\nEO: ${eoFile?.name || 'none'}`
+);
+
+console.log('EC path:', ecResult?.path);
+console.log('EO path:', eoResult?.path);
 
 const uploadBtn = document.getElementById('uploadBtn');
 if (uploadBtn) uploadBtn.style.display = 'none';
