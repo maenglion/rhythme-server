@@ -40,10 +40,48 @@
         <button class="next-btn" onclick="checkAndGo()">동의 완료 및 다음</button>
     </section>
 
-    <section id="step3" class="step">
-        <h3 class="title">기본 정보 입력</h3>
-        <button class="next-btn" style="margin-top: 40px;" onclick="validateStep3()">체계화 지수 SQ 테스트 시작</button>
-    </section>
+   <section id="step3" class="step">
+    <h3 class="title">기본 정보 입력</h3>
+    
+    <div class="input-group">
+        <label class="label">닉네임</label>
+        <input type="text" id="nickname" placeholder="익명 가능 (2자 이상)">
+    </div>
+
+    <div class="input-group">
+        <label class="label">비밀 PIN (4자리)</label>
+        <input type="password" id="userPin" maxlength="4" inputmode="numeric" placeholder="숫자 4자리">
+        <p class="description" style="font-size: 11px; margin-top: 5px;">* 리포트 조회 및 데이터 삭제 시 반드시 필요합니다.</p>
+    </div>
+
+    <div class="input-group last">
+        <label class="label">만 나이</label>
+        <input type="number" id="age" placeholder="숫자만 입력">
+    </div>
+
+    <label class="label">성별</label>
+    <div class="gender-group">
+        <div class="gender-item">
+            <input type="radio" name="gender" id="male" value="male" checked>
+            <label for="male" class="gender-label">남성</label>
+        </div>
+        <div class="gender-item">
+            <input type="radio" name="gender" id="female" value="female">
+            <label for="female" class="gender-label">여성</label>
+        </div>
+    </div>
+        
+    <label class="label">해당하는 진단 정보</label>
+    <p class="description">중복 선택이 가능합니다.</p>
+    <div class="chip-group">
+        <div class="chip" onclick="toggleDiagnosis(this, 'ASD')">ASD</div>
+        <div class="chip" onclick="toggleDiagnosis(this, 'ADHD')">ADHD</div>
+        <div class="chip" onclick="toggleDiagnosis(this, 'HSP')">HSP</div>
+        <div class="chip" onclick="toggleDiagnosis(this, 'None')">해당 없음</div>
+    </div>
+
+    <button class="next-btn" style="margin-top: 40px;" onclick="validateStep3()">체계화 지수 SQ 테스트 시작</button>
+</section>
 
     <section id="step4" class="step">
         <div id="questionCount" class="step-indicator">1 / 10</div>
