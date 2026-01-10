@@ -127,10 +127,40 @@
         </div>
     </section>
 
-    <section id="step5" class="step">
-        <h3 class="title">qEEG 업로드 (선택)</h3>
-        <button class="next-btn" style="margin-top: 40px;" onclick="submitAll()">음성 분석 안내로 이동</button>
-    </section>
+   <section id="step5" class="step">
+    <h3 class="title">qEEG 업로드</h3>
+    <p class="description">
+        보유하신 파일을 업로드해 주세요. EC와 EO는 오른쪽 상단에 표기되어 있습니다. 
+        잘 모르시거나 한 장만 보유하고 있다면 아무 곳에나 올려주세요. (선택사항)
+    </p>
+    
+    <div class="upload-unit">
+        <div class="qeeg-box">
+            <div class="qeeg-info-text">
+                <span class="qeeg-type">EC</span>
+                <span class="description" style="margin-bottom:0;">(눈 감았을 때)</span>
+            </div>
+            <span id="ecStatus" class="qeeg-status">미첨부</span>
+        </div>
+        <input type="file" id="qeegEC" style="display:none" onchange="updateFileName('EC')">
+        <button class="next-btn file-btn" onclick="document.getElementById('qeegEC').click()">파일 선택</button>
+    </div>
+
+    <div style="height: 24px;"></div> <div class="upload-unit">
+        <div class="qeeg-box">
+            <div class="qeeg-info-text">
+                <span class="qeeg-type">EO</span>
+                <span class="description" style="margin-bottom:0;">(눈 떴을 때)</span>
+            </div>
+            <span id="eoStatus" class="qeeg-status">미첨부</span>
+        </div>
+        <input type="file" id="qeegEO" style="display:none" onchange="updateFileName('EO')">
+        <button class="next-btn file-btn" onclick="document.getElementById('qeegEO').click()">파일 선택</button>
+    </div>
+
+    <button class="next-btn" style="margin-top: 40px;" onclick="submitAll()">최종 제출</button>
+</section>
+
 
     <section id="step6" class="step">
         <h3 class="title">음성 분석 테스트 안내</h3>
@@ -165,6 +195,13 @@
         </div>
         <button id="nextBtn" class="next-btn" style="display:none;">다음 단계로</button>
     </section>
+
+        <section id="step8" class="step">
+        <div class="success-icon">✅</div>
+        <h2>참여해주셔서 감사합니다!</h2>
+        <p>전송된 데이터는 <strong>(주)소울스펙트럼</strong> 연구의 소중한 자산이 됩니다.</p>
+    </section>
+</div>
 
     <div id="customModal" class="modal-overlay">
         <div class="modal-content">

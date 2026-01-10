@@ -48,28 +48,6 @@ const adultQuestions = [
     "나의 신체리듬을 데이터화하고 컨디션을 최적화하는 시스템적인 방법을 구상해본다."
 ];
 
-const CONSENT_TEXTS = {
-    "child.txt": `[법정대리인 동의서]
-본 연구는 만 14세 미만 아동의 음성 데이터 및 심리 지표를 수집합니다.
-보호자께서는 아동의 연구 참여에 동의하며, 수집된 데이터가 
-학술적 목적으로 익명 처리되어 사용됨을 확인합니다.
-(주)소울스펙트럼 연구팀`,
-
-    "personal.txt": `[개인정보 수집 및 이용 동의]
-1. 수집 항목: 닉네임, 나이, 성별, 진단 정보
-2. 수집 목적: 연구 대상자 분류 및 SQ-음성 상관관계 분석
-3. 보유 기간: 연구 종료 후 3년 (이후 즉시 파기)
-귀하는 동의를 거부할 권리가 있으나, 거부 시 연구 참여가 제한될 수 있습니다.`,
-
-    "voice.txt": `[음성정보 처리 동의서]
-본 연구는 참여자의 발화 시 나타나는 운율(Prosody) 데이터를 추출합니다.
-녹음된 원본 파일은 특징값(Pitch, SNR 등) 추출 직후 서버에서 
-즉시 삭제되거나 비식별 처리되어 연구 데이터셋으로만 활용됩니다.
-음성 데이터의 안전한 처리를 약속드립니다.`
-};
-
-
-
 /* ============================================================
    1. 공통 및 단계 이동 제어 (window 등록 필수)
    ============================================================ */
@@ -305,6 +283,35 @@ function getStages(age) {
     ];
 }
 
+
+/* ============================================================
+   [신규 추가] Step 7: 음성 테스트 화면 전용 렌더링 함수
+   ============================================================ */
+function renderStage() {
+    // 1. 현재 스테이지 데이터 가져오기 (STAGES 배열은 getStages(age)로 생성됨)
+    const s = STAGES[stageIdx];
+    if (!s) return;
+
+    // 2. HTML 요소에 데이터 주입
+    // HTML의 id가 'questionText'와 'descriptionText'로 되어 있어야 함
+    const qEl = document.getElementById('questionText'); // 질문/지문
+    const dEl = document.getElementById('descriptionText'); // 설명
+    const badge = document.getElementById('stageBadge'); // Stage 번호
+
+    if (qEl) qEl.innerText = s.text || s.q; 
+    if (dEl) dEl.innerText = s.d;
+    if (badge) badge.innerText = `Stage ${s.id}`;
+
+    // 3. 음성 UI 초기화 (보라색 타이머 등)
+    if (typeof setTimer === 'function') setTimer(40000);
+    if (typeof setRecordButtonState === 'function') setRecordButtonState({ recording: false });
+
+    // 4. 녹음 전에는 '다음 단계로' 버튼 숨기기
+    const nBtn = document.getElementById('nextBtn');
+    if (nBtn) nBtn.style.display = 'none';
+}
+
+
 async function runVoiceStage() {
     const s = STAGES[stageIdx];
     const clickTime = performance.now();
@@ -337,6 +344,27 @@ async function runVoiceStage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(voiceData)
     }).catch(err => console.error("Voice submission failed:", err));
-
-    // 다음 버튼 활성화 로직...
 }
+
+/* ============================================================
+   [핵심] 녹음 버튼 이벤트 연결 (이게 있어야 runVoiceStage가 작동함)
+   ============================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+    const recBtn = document.querySelector("#recordBtn");
+    
+    if (recBtn) {
+        recBtn.addEventListener("click", async () => {
+            // 버튼의 데이터 상태(recording)를 확인하여 분기
+            // voice-ui.js에서 녹음 시작 시 이 값을 "1"로 바꿉니다.
+            if (recBtn.dataset.recording === "1") {
+                console.log("녹음 중단 요청...");
+                vp.stop(); // voice-processor.js 엔진 정지
+            } else {
+                console.log("녹음 시작 시퀀스 진입...");
+                await runVoiceStage(); // 정의해둔 음성 분석 로직 실행
+            }
+        });
+    } else {
+        console.error("오류: #recordBtn 요소를 찾을 수 없습니다. HTML ID를 확인하세요.");
+    }
+});
