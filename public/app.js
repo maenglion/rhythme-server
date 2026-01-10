@@ -200,31 +200,77 @@ window.updateFileName = function(type) {
     }
 };
 
+/* ============================================================
+   최종 데이터 제출 (qEEG 정보 + 설문 점수 + S-Tag 포함)
+   ============================================================ */
 window.submitAll = async function() {
+    // 1. 파일 및 기본 정보 가져오기
     const ecFile = document.getElementById('qeegEC')?.files[0];
     const eoFile = document.getElementById('qeegEO')?.files[0];
     const nickname = document.getElementById('nickname').value;
     const age = document.getElementById('age').value;
+    const genderElem = document.querySelector('input[name="gender"]:checked');
+    const gender = genderElem ? genderElem.value : 'unknown';
+    const isChild = parseInt(age) <= 18;
 
+    // 2. 점수 합산 및 태그 생성
+    const totalScore = answers.reduce((a, b) => a + b, 0);
+    const sTag = getSTag(totalScore);
+
+    // 3. 내부 매핑 정보에 따른 payload 구성 (DB 컬럼명 일치 확인)
     const payload = {
         user_id: nickname,
         age: parseInt(age),
+        gender: gender,
+        is_child: isChild,
         diagnoses: diagnoses.join(', '),
-        answers: answers,
-        total_score: answers.reduce((a, b) => a + b, 0),
+        
+        // 설문 개별 점수 (index 0~9)
+        q1_spatial: answers[0],        // 공간 시스템
+        q2_decision_alg: answers[1],   // 의사결정 알고리즘
+        q3_linguistic: answers[2],     // 언어 구조화 / 기계 분해
+        q4_causal: answers[3],         // 인과관계 추론
+        q5_reverse_eng: answers[4],    // 역설계 / 규칙 집중
+        q6_decision_adv: answers[5],   // 의사결정(심화) / 사실 콘텐츠
+        q7_social_pattern: answers[6], // 사회적 패턴 / 분류
+        q8_error_analysis: answers[7], // 결함 트리 / 수리 규칙
+        q9_abstract_pattern: answers[8], // 추상 패턴 / 심층 탐구
+        q10_self_opt: answers[9],      // 자기 최적화 / 실행 우위
+        
+        total_score: totalScore,
+        s_tag: sTag,
+        
+        // qEEG 파일명 정보
         qeeg_info: `EC: ${ecFile ? ecFile.name : 'none'}, EO: ${eoFile ? eoFile.name : 'none'}`
     };
 
+    // 4. 전송 로직
     try {
         const res = await fetch(`${CLOUD_RUN_URL}submit-survey`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-        if (res.ok) window.nextStep(); // Step 6 안내로 이동
-        else window.showModal("제출 실패. 다시 시도해주세요.");
-    } catch (e) { window.showModal("서버 연결 오류"); }
+
+        if (res.ok) {
+            console.log("Data submitted successfully");
+            window.nextStep(); // 전송 성공 시 다음 단계(감사 페이지 또는 음성 안내)로
+        } else {
+            alert('데이터 전송에 실패했습니다. 관리자에게 문의하세요.');
+        }
+    } catch (error) {
+        console.error('Submission Error:', error);
+        alert('서버 연결 오류가 발생했습니다.');
+    }
 };
+
+// 총점에 따른 결과 태그 생성 함수 (전역)
+function getSTag(score) {
+    if (score >= 24) return "Extreme S";
+    if (score >= 18) return "High S";
+    if (score >= 12) return "Average S";
+    return "Low S";
+}
 
 /* ============================================================
    4. Step 6~7: 음성 분석 엔진 (핵심)
