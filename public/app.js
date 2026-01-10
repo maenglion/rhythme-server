@@ -199,6 +199,17 @@ window.submitAll = async function() {
     const gender = genderElem ? genderElem.value : 'unknown';
     const isChild = parseInt(age) <= 18;
 
+    // [핵심] 파일이 하나라도 없는 경우 안내창 띄우기
+    if (!ecFile || !eoFile) {
+        const confirmGo = confirm(
+            "⚠️ qEEG 파일이 선택되지 않았습니다.\n\n" +
+            "파일 없이도 음성 분석을 진행할 수 있으나, 통합 분석 정확도는 다소 떨어질 수 있습니다.\n" +
+            "이대로 음성 분석 단계로 넘어갈까요?"
+        );
+        // 취소를 누르면 함수 종료 (페이지에 머무름)
+        if (!confirmGo) return; 
+    }
+
     // 2. 점수 합산 및 태그 생성
     const totalScore = answers.reduce((a, b) => a + b, 0);
     const sTag = getSTag(totalScore);
