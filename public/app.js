@@ -191,6 +191,14 @@ window.updateFileName = function(type) {
 /* ============================================================
    최종 데이터 제출 (qEEG 정보 + 설문 점수 + S-Tag 포함)
    ============================================================ */
+window.getSTag = function(score) {
+  if (score >= 24) return "Extreme S";
+  if (score >= 18) return "High S";
+  if (score >= 12) return "Average S";
+  return "Low S";
+};
+
+
 window.submitAll = async function(evt) {
   const ecFile = document.getElementById('qeegEC')?.files[0];
   const eoFile = document.getElementById('qeegEO')?.files[0];
@@ -224,8 +232,7 @@ window.submitAll = async function(evt) {
   }
 
   const totalScore = answers.reduce((a,b)=>a+b,0);
-  const sTag = getSTag(totalScore);
-
+  const sTag = window.getSTag(totalScore);
   const surveyPayload = {
     user_id: nickname,
     age: parseInt(age),
