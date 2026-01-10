@@ -241,12 +241,15 @@ window.submitAll = async function() {
         if (res.ok) {
             console.log("Data submitted successfully");
             window.nextStep(); // 전송 성공 시 다음 단계(감사 페이지 또는 음성 안내)로
-        } else {
-            alert('데이터 전송에 실패했습니다. 관리자에게 문의하세요.');
+       } else {
+            const errorMsg = await res.text();
+            console.error("서버 응답 에러:", errorMsg);
+            alert(`서버 응답 오류: ${res.status}`);
         }
     } catch (error) {
-        console.error('Submission Error:', error);
-        alert('서버 연결 오류가 발생했습니다.');
+        // [현재 터지는 지점]
+        console.error('Detailed Fetch Error:', error); 
+        alert('서버 연결에 실패했습니다. (네트워크 상태 또는 서버 설정을 확인하세요)');
     }
 };
 

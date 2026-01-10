@@ -198,7 +198,10 @@ input[type="checkbox"]:checked::after {
 .qeeg-box { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: #1E1E1E; border: 1px solid #333; border-radius: 8px 8px 0 0; }
 .qeeg-status { font-size: 12px; color: #757575; }
 .file-btn { background: #333 !important; color: #FFF !important; border-radius: 0 0 8px 8px !important; margin-top: 0 !important; }
-
+.qeeg-status.status-active {
+    color: #BB86FC !important; 
+    font-weight: bold;
+}
 /* 11. 메인 버튼 (343x52) */
 .next-btn {
     width: 343px; height: 52px; background-color: #FFFFFF; color: #000000;
