@@ -19,7 +19,8 @@ let STAGES = [];
 let stageIdx = 0;
 let stageDisplayTime = 0;
 
-const CLOUD_RUN_URL = "https://rhythme-server-357918245340.asia-northeast3.run.app/";
+const CLOUD_RUN_URL = "https://rhythme-server-357918245340.asia-northeast3.run.app";
+const API = (path) => `${CLOUD_RUN_URL.replace(/\/$/, '')}${path}`;
 
 // 1. 연구용 실제 문항 배열 (참여자에게는 괄호 안의 내부 지표를 숨기고 텍스트만 노출)
 const childQuestions = [
@@ -189,86 +190,99 @@ window.updateFileName = function(type) {
 /* ============================================================
    최종 데이터 제출 (qEEG 정보 + 설문 점수 + S-Tag 포함)
    ============================================================ */
-window.submitAll = async function() {
-    // 1. 파일 및 기본 정보 가져오기
-    const ecFile = document.getElementById('qeegEC')?.files[0];
-    const eoFile = document.getElementById('qeegEO')?.files[0];
-    const nickname = document.getElementById('nickname').value;
-    const age = document.getElementById('age').value;
-    const genderElem = document.querySelector('input[name="gender"]:checked');
-    const gender = genderElem ? genderElem.value : 'unknown';
-    const isChild = parseInt(age) <= 18;
+window.submitAll = async function(evt) {
+  const ecFile = document.getElementById('qeegEC')?.files[0];
+  const eoFile = document.getElementById('qeegEO')?.files[0];
+  const nickname = document.getElementById('nickname').value;
+  const age = document.getElementById('age').value;
+  const genderElem = document.querySelector('input[name="gender"]:checked');
+  const gender = genderElem ? genderElem.value : 'unknown';
+  const isChild = parseInt(age) <= 18;
 
-    // [핵심] 파일이 하나라도 없는 경우 안내창 띄우기
-    if (!ecFile || !eoFile) {
-        const confirmGo = confirm(
-            "⚠️ qEEG 파일이 선택되지 않았습니다.\n\n" +
-            "파일 없이도 음성 분석을 진행할 수 있으나, 통합 분석 정확도는 다소 떨어질 수 있습니다.\n" +
-            "이대로 음성 분석 단계로 넘어갈까요?"
-        );
-        // 취소를 누르면 함수 종료 (페이지에 머무름)
-        if (!confirmGo) return; 
+  const currentBtn = evt?.currentTarget;
+  if (currentBtn) {
+    currentBtn.disabled = true;
+    currentBtn.innerText = "데이터 전송 중...";
+  }
+
+  if (!ecFile || !eoFile) {
+    const confirmGo = confirm("⚠️ qEEG 파일이 선택되지 않았습니다.\n\n파일 없이 진행할까요?");
+    if (!confirmGo) {
+      if (currentBtn) {
+        currentBtn.disabled = false;
+        currentBtn.innerText = "음성분석 시작";
+      }
+      return;
+    }
+  }
+
+  if (answers.length !== 10) {
+    alert("설문이 완료되지 않았습니다.");
+    if (currentBtn) { currentBtn.disabled = false; currentBtn.innerText = "음성분석 시작"; }
+    return;
+  }
+
+  const totalScore = answers.reduce((a,b)=>a+b,0);
+  const sTag = getSTag(totalScore);
+
+  const surveyPayload = {
+    user_id: nickname,
+    age: parseInt(age),
+    gender,
+    is_child: isChild,
+    diagnoses: diagnoses.join(', '),
+    q1_spatial: answers[0], q2_decision_alg: answers[1], q3_linguistic: answers[2],
+    q4_causal: answers[3], q5_reverse_eng: answers[4], q6_decision_adv: answers[5],
+    q7_social_pattern: answers[6], q8_error_analysis: answers[7], q9_abstract_pattern: answers[8],
+    q10_self_opt: answers[9],
+    total_score: totalScore,
+    s_tag: sTag,
+    qeeg_info: `EC: ${ecFile ? ecFile.name : 'none'}, EO: ${eoFile ? eoFile.name : 'none'}`
+  };
+
+  try {
+    const surveyRes = await fetch(`${CLOUD_RUN_URL}/submit-survey`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(surveyPayload)
+    });
+
+    if (!surveyRes.ok) {
+      const t = await surveyRes.text();
+      throw new Error(`submit-survey failed ${surveyRes.status}: ${t}`);
     }
 
-    // 2. 점수 합산 및 태그 생성
-    const totalScore = answers.reduce((a, b) => a + b, 0);
-    const sTag = getSTag(totalScore);
+    if (ecFile) await uploadSingleFile(nickname, 'EC', ecFile);
+    if (eoFile) await uploadSingleFile(nickname, 'EO', eoFile);
 
-    // 3. 내부 매핑 정보에 따른 payload 구성 (DB 컬럼명 일치 확인)
-    const payload = {
-        user_id: nickname,
-        age: parseInt(age),
-        gender: gender,
-        is_child: isChild,
-        diagnoses: diagnoses.join(', '),
-        
-        // 설문 개별 점수 (index 0~9)
-        q1_spatial: answers[0],        // 공간 시스템
-        q2_decision_alg: answers[1],   // 의사결정 알고리즘
-        q3_linguistic: answers[2],     // 언어 구조화 / 기계 분해
-        q4_causal: answers[3],         // 인과관계 추론
-        q5_reverse_eng: answers[4],    // 역설계 / 규칙 집중
-        q6_decision_adv: answers[5],   // 의사결정(심화) / 사실 콘텐츠
-        q7_social_pattern: answers[6], // 사회적 패턴 / 분류
-        q8_error_analysis: answers[7], // 결함 트리 / 수리 규칙
-        q9_abstract_pattern: answers[8], // 추상 패턴 / 심층 탐구
-        q10_self_opt: answers[9],      // 자기 최적화 / 실행 우위
-        
-        total_score: totalScore,
-        s_tag: sTag,
-        
-        // qEEG 파일명 정보
-        qeeg_info: `EC: ${ecFile ? ecFile.name : 'none'}, EO: ${eoFile ? eoFile.name : 'none'}`
-    };
+    alert("✅ 저장 완료");
+    window.nextStep();
 
-    // 4. 전송 로직
-try {
-        // [중요] trailing slash(/)를 추가하여 리다이렉트 및 CORS 이슈 방지
-        const res = await fetch(`${CLOUD_RUN_URL}/submit-survey`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        if (res.ok) {
-            console.log("✅ 데이터 전송 성공. 음성 안내로 이동합니다.");
-            window.nextStep(); 
-        } else {
-            alert('서버 응답 오류가 발생했습니다. 상태 코드: ' + res.status);
-        }
-    } catch (error) {
-        console.error('Fetch Error:', error);
-        alert('서버 연결 오류(CORS)가 발생했습니다. 서버 설정을 확인해주세요.');
-    }
+  } catch (error) {
+    console.error('Submit Error:', error);
+    alert('서버 오류: ' + error.message);
+    if (currentBtn) { currentBtn.disabled = false; currentBtn.innerText = "음성분석 시작"; }
+  }
 };
 
-// 총점에 따른 결과 태그 생성 함수 (전역)
-function getSTag(score) {
-    if (score >= 24) return "Extreme S";
-    if (score >= 18) return "High S";
-    if (score >= 12) return "Average S";
-    return "Low S";
+async function uploadSingleFile(userId, type, file) {
+  const formData = new FormData();
+  formData.append('user_id', userId);
+  formData.append('file_type', type);
+  formData.append('file', file);
+
+  const res = await fetch(`${CLOUD_RUN_URL}/upload-qeeg`, {
+    method: 'POST',
+    body: formData
+  });
+
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`upload-qeeg failed ${res.status}: ${t}`);
+  }
+  return res.json();
 }
+
 
 /* ============================================================
    4. Step 6~7: 음성 분석 엔진 (핵심)
@@ -283,8 +297,8 @@ window.goToVoiceTest = function() {
     // display: none 대신 정의된 nextStep()을 사용하여 .active 클래스 교체
     // 현재 currentStep이 6(안내)인 상태이므로 호출 시 7(녹음)로 자연스럽게 이동
     window.nextStep(); 
+    renderStage();
 
-    renderStage(); 
 };
 
 function getStages(age) {
@@ -314,6 +328,8 @@ function renderStage() {
     if (dEl) dEl.innerText = s.d;
     if (badge) badge.innerText = `Stage ${s.id}`;
 
+     stageDisplayTime = performance.now(); // ✅ 여기서 찍는다
+
     // 3. 음성 UI 초기화 (보라색 타이머 등)
     if (typeof setTimer === 'function') setTimer(40000);
     if (typeof setRecordButtonState === 'function') setRecordButtonState({ recording: false });
@@ -325,38 +341,63 @@ function renderStage() {
 
 
 async function runVoiceStage() {
-    const s = STAGES[stageIdx];
-    const clickTime = performance.now();
-    
-    setRecordButtonState({ recording: false, calibrating: true });
-    const cal = await vp.calibrateSilence(2);
+  const s = STAGES[stageIdx];
+  const clickTime = performance.now();
 
-    setRecordButtonState({ recording: true, calibrating: false });
-    const metrics = await vp.startStage({
-        durationSec: 40,
-        onTick: ({ leftMs }) => setTimer(leftMs, 40),
-    });
+  setRecordButtonState({ recording: false, calibrating: true });
+  const cal = await vp.calibrateSilence(2);
 
-    setRecordButtonState({ recording: false });
+  setRecordButtonState({ recording: true, calibrating: false });
+  const metrics = await vp.startStage({
+    durationSec: 40,
+    onTick: ({ leftMs }) => setTimer(leftMs, 40),
+  });
 
-    // [추가] 연구 데이터 최종 패키징 및 전송
-    const voiceData = {
-        user_id: document.getElementById('nickname')?.value || "unknown",
-        stage_id: s.id,
-        metrics: metrics, // pitch, speech_rate 등 포함
-        calibration: cal, // noise_floor 등 포함
-        latency_ms: Math.floor(clickTime - stageDisplayTime)
-    };
+  setRecordButtonState({ recording: false });
 
-    console.log("Saving voice data:", voiceData);
-    
-    // 서버 전송 실행
-    fetch(`${CLOUD_RUN_URL}submit-voice-metrics`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(voiceData)
-    }).catch(err => console.error("Voice submission failed:", err));
+  const age = parseInt(document.getElementById('age')?.value || '0', 10);
+  const age_group = age < 14 ? "under14" : (age < 19 ? "child" : "adult");
+
+  const payload = {
+    session_id: document.getElementById('nickname')?.value || "unknown",
+    stage_id: s.id,
+    age_group,
+    status: metrics?.status || "completed",
+    start_latency_ms: Math.max(0, Math.floor(clickTime - stageDisplayTime)),
+
+    recorded_ms: metrics?.recorded_ms ?? 40000,
+    stop_offset_ms: metrics?.stop_offset_ms ?? 40000,
+
+    pitch_mean: metrics?.pitch_mean ?? 0,
+    pitch_sd: metrics?.pitch_sd ?? 0,
+    speech_rate: metrics?.speech_rate ?? 0,
+    pause_ratio: metrics?.pause_ratio ?? 0,
+    jitter: metrics?.jitter ?? 0,
+    shimmer: metrics?.shimmer ?? 0,
+
+    noise_floor_db: cal?.noise_floor_db ?? null,
+    snr_est_db: cal?.snr_est_db ?? null,
+    clipping_ratio: metrics?.clipping_ratio ?? null,
+    bg_voice_ratio: metrics?.bg_voice_ratio ?? null,
+
+    time_reading_style: metrics?.time_reading_style ?? null,
+    time_digits_rule: metrics?.time_digits_rule ?? null,
+  };
+
+  console.log("Saving voice data:", payload);
+
+  const res = await fetch(API('/submit-voice-stage'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`submit-voice-stage failed ${res.status}: ${t}`);
+  }
 }
+
 
 /* ============================================================
    [핵심] 녹음 버튼 이벤트 연결 (이게 있어야 runVoiceStage가 작동함)

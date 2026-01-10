@@ -158,7 +158,9 @@
         <button class="next-btn file-btn" onclick="document.getElementById('qeegEO').click()">파일 선택</button>
     </div>
 
-    <button class="next-btn" style="margin-top: 40px;" onclick="submitAll()">음성분석 시작</button>
+   <button type="button" id="uploadBtn" onclick="submitDataOnly()">데이터 전송</button>
+
+<button type="button" id="nextStepBtn" onclick="location.href='voice_info.html'" style="display:none;">음성분석 안내 보기</button>
 </section>
 
 
@@ -174,7 +176,7 @@
         <button class="next-btn" onclick="goToVoiceTest()">확인했습니다</button>
     </section>
 
-    <section id="step7" class="step" style="display:none;">
+    <section id="step7" class="step">
         <div class="stage-info">
             <span id="stageBadge">Stage 1</span>
             <h3 id="question" class="voice-title">지문을 불러오는 중...</h3>
