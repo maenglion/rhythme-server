@@ -334,6 +334,7 @@ async function runVoiceStage() {
         nBtn.onclick = () => {
             if (stageIdx < STAGES.length - 1) { stageIdx++; renderStage(); }
             else { window.showModal("모든 테스트 완료!"); }
+            
         };
     }
 }
