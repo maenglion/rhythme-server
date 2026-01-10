@@ -8,6 +8,9 @@ import {
 } from "./voice-ui.js";
 
 const vp = new VoiceProcessor();
+const CLOUD_RUN_URL = "https://rhythme-server-357918245340.asia-northeast3.run.app";
+const API = (path) => `${CLOUD_RUN_URL.replace(/\/$/, '')}${path}`;
+
 
 
 /* --- [전역 상태 관리] --- */
@@ -20,8 +23,6 @@ let STAGES = [];
 let stageIdx = 0;
 let stageDisplayTime = 0;
 
-const CLOUD_RUN_URL = "https://rhythme-server-357918245340.asia-northeast3.run.app";
-const API = (path) => `${CLOUD_RUN_URL.replace(/\/$/, '')}${path}`;
 
 // 1. 연구용 실제 문항 배열 (참여자에게는 괄호 안의 내부 지표를 숨기고 텍스트만 노출)
 const childQuestions = [
@@ -249,11 +250,11 @@ window.submitAll = async function(evt) {
   };
 
   try {
-    const surveyRes = await fetch(`${CLOUD_RUN_URL}/submit-survey`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(surveyPayload)
-    });
+    const surveyRes = await fetch(API('/submit-survey'), {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(surveyPayload),
+});
 
     if (!surveyRes.ok) {
       const t = await surveyRes.text();
@@ -279,13 +280,13 @@ document.getElementById('nextStepBtn')?.style && (document.getElementById('nextS
 
 async function uploadSingleFile(userId, type, file) {
   const formData = new FormData();
-  formData.append('user_id', userId);
-  formData.append('file_type', type);
-  formData.append('file', file);
+  formData.append("user_id", userId);
+  formData.append("file_type", type);
+  formData.append("file", file);
 
-  const res = await fetch(`${CLOUD_RUN_URL}/upload-qeeg`, {
-    method: 'POST',
-    body: formData
+  const res = await fetch(API("/upload-qeeg"), {
+    method: "POST",
+    body: formData,
   });
 
   if (!res.ok) {
