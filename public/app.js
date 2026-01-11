@@ -26,6 +26,10 @@ let stageDisplayTime = 0;
 // 세션 아이디 
 window.SESSION_ID = window.SESSION_ID || crypto.randomUUID();
 
+// 토글 
+window.CONSENT_TEXTS = window.CONSENT_TEXTS || {};
+const CONSENT_TEXTS = window.CONSENT_TEXTS; // 기존 코드가 CONSENT_TEXTS를 써도 안 죽게
+
 
 // 1. 연구용 실제 문항 배열 (참여자에게는 괄호 안의 내부 지표를 숨기고 텍스트만 노출)
 const childQuestions = [
@@ -464,6 +468,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // voice-ui.js에서 녹음 시작 시 이 값을 "1"로 바꿉니다.
             if (recBtn.dataset.recording === "1") {
                 console.log("녹음 중단 요청...");
+                recBtn.disabled = true;   // ✅ 여기로 이동
                 vp.stop(); // voice-processor.js 엔진 정지
             } else {
                 console.log("녹음 시작 시퀀스 진입...");
@@ -474,9 +479,4 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error("오류: #recordBtn 요소를 찾을 수 없습니다. HTML ID를 확인하세요.");
     }
 });
-if (recBtn.dataset.recording === "1") {
-  console.log("녹음 중단 요청...");
-  recBtn.disabled = true;   // ✅ 중복 클릭 방지 (선택)
-  vp.stop();
-}
 
