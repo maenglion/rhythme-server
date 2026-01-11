@@ -55,3 +55,11 @@ export function setRecordButtonState({ recording, calibrating = false }) {
 
   if (icon) icon.style.borderRadius = recording ? "4px" : "50%";
 }
+
+export function initStageUI() {
+  // 기본 상태: 녹음 전
+  setRecordButtonState({ recording: false, calibrating: false });
+
+  // 타이머 UI 초기화(원하면)
+  // setTimer(40_000, 40);
+}
