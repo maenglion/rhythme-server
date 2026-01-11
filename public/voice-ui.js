@@ -37,27 +37,25 @@ export function setRecordButtonState({ recording, calibrating }) {
     const calib = document.getElementById('calibratingText');
     const finishBtn = document.getElementById('finishBtn');
 
-    // 1. 소음 측정 중일 때
+    // 1. 소음 측정 상태
     if (calibrating) {
-        calib.style.visibility = "visible"; // 연한 글씨 등장
+        calib.style.visibility = "visible";
         status.innerText = "준비 중...";
         status.style.color = "#BB86FC";
-        if (finishBtn) finishBtn.style.display = 'none';
         return;
-    } 
-
-    // 2. 녹음 중일 때
-    if (recording) {
-        calib.style.visibility = "hidden"; // 소음 측정 글씨는 숨김
-        status.innerText = "녹음 중";
-        status.style.color = "#BB86FC"; // 굵은 보라
-        if (finishBtn) finishBtn.style.display = 'block'; // '다 말했어요' 등장
-    } 
-    // 3. 대기 상태일 때
-    else {
+    } else {
         calib.style.visibility = "hidden";
+    }
+
+    // 2. 녹음 상태 (녹음 중일 때와 시작 전의 디자인을 보라색 톤으로 통일)
+    if (recording) {
+        status.innerText = "녹음 중";
+        status.style.color = "#BB86FC"; // 굵은 보라색
+        if (finishBtn) finishBtn.style.display = 'block';
+    } else {
+        // 3. 녹음 시작 전 (빨간색이 싫으시다면 여기도 보라색이나 흰색으로 추천!)
         status.innerText = "녹음 시작";
-        status.style.color = "#FF4444"; // 굵은 빨강
+        status.style.color = "#BB86FC"; // 녹음 중과 똑같은 보라색 테마로 통일
         if (finishBtn) finishBtn.style.display = 'none';
     }
 }
