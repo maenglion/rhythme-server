@@ -1,27 +1,61 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="styles.css">
-  <title>음성 분석 안내</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="styles.css">
+    <title>음성 분석 안내</title>
 </head>
-<body>
-  <h1>음성 분석 테스트 안내</h1>
-  <ul>
-    <li>문항은 총 4가지로 </li>
-    <li>각 문항은 최대 40초 진행됩니다.</li>
-    <li>질문을 읽고 준비가 되면 녹음을 시작하세요.</li>
-    <!-- 여기 주의사항 더 길게 추가 -->
-  </ul>
+<body style="display: block;"> <div class="container">
+        <div class="progress-container">
+            <div class="progress-bar" style="width: 85%;"></div>
+        </div>
 
-  <button id="goStage">확인했습니다</button>
+        <header>
+            <h1 class="title">음성 분석 테스트<br>진행 가이드</h1>
+            <p class="description">정확한 분석을 위해 아래 내용을 숙지해 주세요.</p>
+        </header>
 
-  <script>
-    document.getElementById('goStage').onclick = () => {
-      // 세션/닉네임은 이미 index에서 localStorage에 저장했다고 가정(아래에서 저장함)
-      location.href = 'voice_test.html';
-    };
-  </script>
+        <main>
+            <div class="research-intro" style="margin-top: 24px;">
+                <span class="badge" style="margin-bottom: 12px; display: inline-block;">테스트 구성</span>
+                <p style="line-height: 1.6; color: #FFF;">
+                    본 테스트는 총 <strong>4가지 스테이지</strong>로 구성되어 있으며, 각 문항당 <strong>최대 40초</strong>의 시간이 주어집니다.
+                </p>
+            </div>
+
+            <div class="input-group">
+                <label class="label">주변 환경 확인</label>
+                <p class="description">TV 소리나 대화 소리가 들리지 않는 조용한 독립된 공간에서 진행해 주셔야 분석 데이터의 오차가 줄어듭니다.</p>
+
+                <label class="label">마이크 거리 및 위치</label>
+                <p class="description">스마트폰이나 PC 마이크로부터 약 15~20cm 거리를 유지하고, 숨소리가 직접 들어가지 않도록 정면보다는 살짝 옆에서 말씀해 주세요.</p>
+
+                <label class="label">발성 및 태도</label>
+                <p class="description">일부러 목소리를 꾸미지 말고, 평소 지인과 대화하듯 가장 편안하고 자연스러운 목소리로 읽어주시는 것이 가장 좋습니다.</p>
+            
+            <label class="label">2초 후 시작 </label>
+                <p class="description">로딩 시간을 감안하여 버튼을 누르시고 2초 후에 시작해 주세요.</p>
+            
+            </div>
+
+            <div class="pi-info">
+                <p>※ 녹음 시작 버튼 클릭 시 '마이크 사용 권한' 허용 창이 뜨면 반드시 <strong>[허용]</strong>을 눌러주셔야 테스트가 가능합니다.</p>
+            </div>
+        </main>
+
+        <button id="goStage" class="next-btn" style="margin-top: 40px;">확인했습니다</button>
+
+        <footer>
+            © 2026 RHYTHME. All rights reserved.
+        </footer>
+    </div>
+
+    <script>
+        document.getElementById('goStage').onclick = () => {
+            // 인덱스에서 선택했던 정보를 유지하며 실제 테스트 페이지로 이동
+            location.href = 'voice_test.html';
+        };
+    </script>
 </body>
 </html>

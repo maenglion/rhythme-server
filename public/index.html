@@ -167,13 +167,15 @@
 </button>
 
 </section>
-    <div id="customModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-body"><p id="modalMessage"></p></div>
-        <button onclick="closeModal()" class="modal-btn">확인</button>
-        </div>
-    </div>
+ <div id="customModal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-body"><p id="modalMessage"></p></div>
+
+    <button id="modalCancelBtn" class="modal-btn" style="display:none;">취소</button>
+    <button id="modalOkBtn" class="modal-btn">확인</button>
+  </div>
 </div>
+
 
 <script type="module" src="app.js"></script>
 </body>

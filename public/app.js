@@ -23,12 +23,111 @@ let STAGES = [];
 let stageIdx = 0;
 let stageDisplayTime = 0;
 
+// ===== Modal helpers (index.html의 customModal 사용) =====
+window.showModal = function (message) {
+  const modal = document.getElementById('customModal');
+  const msgEl = document.getElementById('modalMessage');
+  const okBtn = document.getElementById('modalOkBtn');
+  const cancelBtn = document.getElementById('modalCancelBtn');
+
+  if (!modal || !msgEl || !okBtn) {
+    // 모달 DOM이 없으면 최후 fallback
+    alert(message);
+    return;
+  }
+
+  msgEl.textContent = message;
+
+  // confirm 모드가 아닐 때는 cancel 숨김
+  if (cancelBtn) cancelBtn.style.display = 'none';
+
+  okBtn.onclick = () => window.closeModal();
+  modal.style.display = 'flex';
+};
+
+window.closeModal = function () {
+  const modal = document.getElementById('customModal');
+  if (modal) modal.style.display = 'none';
+};
+
+// confirm 대체 (Promise 반환)
+window.showConfirmModal = function (message) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('customModal');
+    const msgEl = document.getElementById('modalMessage');
+    const okBtn = document.getElementById('modalOkBtn');
+    const cancelBtn = document.getElementById('modalCancelBtn');
+
+    // fallback
+    if (!modal || !msgEl || !okBtn || !cancelBtn) {
+      resolve(confirm(message));
+      return;
+    }
+
+    msgEl.textContent = message;
+cancelBtn.style.display = 'inline-block';
+
+    okBtn.onclick = () => {
+      window.closeModal();
+      resolve(true);
+    };
+    cancelBtn.onclick = () => {
+      window.closeModal();
+      resolve(false);
+    };
+
+    modal.style.display = 'flex';
+  });
+};
+
+
+
 // 세션 아이디 
 window.SESSION_ID = window.SESSION_ID || crypto.randomUUID();
 
 // 토글 
-window.CONSENT_TEXTS = window.CONSENT_TEXTS || {};
-const CONSENT_TEXTS = window.CONSENT_TEXTS; // 기존 코드가 CONSENT_TEXTS를 써도 안 죽게
+window.loadAndToggleConsent = async function (filename, headerEl) {
+  try {
+    const item = headerEl.closest('.consent-item');
+    if (!item) return;
+
+    const contentEl = item.querySelector('.consent-content');
+    const textArea = item.querySelector('.consent-text-area');
+    const arrow = headerEl.querySelector('.arrow');
+
+    if (!contentEl || !textArea) return;
+
+    const isOpen = contentEl.classList.contains('open');
+
+    // 닫기 동작
+    if (isOpen) {
+      contentEl.classList.remove('open');
+      contentEl.style.display = 'none';
+      if (arrow) arrow.textContent = '▼';
+      return;
+    }
+
+    // 열기 동작: 아직 로드 안 했으면 fetch
+    if (!item.dataset.loaded) {
+      textArea.textContent = '내용을 불러오는 중...';
+
+      const url = `terms-of-use/${filename}`;
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`Failed to load ${url}: ${res.status}`);
+
+      const text = await res.text();
+      textArea.textContent = text;
+      item.dataset.loaded = '1';
+    }
+
+    contentEl.classList.add('open');
+    contentEl.style.display = 'block';
+    if (arrow) arrow.textContent = '▲';
+  } catch (e) {
+    console.error(e);
+    window.showModal?.('동의서 내용을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.') ?? alert('동의서 내용을 불러오지 못했습니다.');
+  }
+};
 
 
 // 1. 연구용 실제 문항 배열 (참여자에게는 괄호 안의 내부 지표를 숨기고 텍스트만 노출)
@@ -222,10 +321,9 @@ window.submitAll = async function(evt) {
     currentBtn.innerText = "데이터 분석중...";
   }
 
-  if (!ecFile || !eoFile) {
-   const confirmGo = await window.showModalConfirm(
-    "⚠️ qEEG 파일이 선택되지 않았습니다.\n\n파일 없이 진행할까요?",
-    { okText: "파일 없이 진행", cancelText: "돌아가기" }
+ if (!ecFile || !eoFile) {
+  const confirmGo = await window.showConfirmModal(
+    "⚠️ qEEG 파일이 선택되지 않았습니다.\n\n파일 없이 진행할까요?"
   );
 
   if (!confirmGo) {
@@ -237,14 +335,13 @@ window.submitAll = async function(evt) {
   }
 }
 
+
 if (answers.length !== 10) {
   window.showModal("설문이 완료되지 않았습니다.");
-  if (currentBtn) { 
-    currentBtn.disabled = false; 
-    currentBtn.innerText = "음성분석 시작"; 
-  }
+  if (currentBtn) { currentBtn.disabled = false; currentBtn.innerText = "음성분석 시작"; }
   return;
 }
+
 
   const totalScore = answers.reduce((a,b)=>a+b,0);
   const sTag = window.getSTag(totalScore);

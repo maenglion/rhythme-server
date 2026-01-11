@@ -1,74 +1,41 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="styles.css">
-  <title>음성 분석</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="styles.css">
+    <title>음성 분석</title>
 </head>
 <body>
-  <div id="stageWrap">
-    <div id="stageBadge"></div>
-    <div id="desc"></div>
-    <pre id="question" style="white-space:pre-wrap;"></pre>
+    <div class="container">
+        <div class="progress-container">
+            <div class="progress-bar" style="width: 95%;"></div>
+        </div>
 
-    <!-- 타이머 UI (네 기존 SVG 그대로 가져와도 됨) -->
-    <div id="timer">40s</div>
-    <svg width="120" height="120">
-      <circle id="timerLine" cx="60" cy="60" r="45" stroke="purple" stroke-width="4" fill="none"
-        stroke-dasharray="283" stroke-dashoffset="0"></circle>
-    </svg>
+        <div id="stageWrap" style="text-align: center;">
+            <div id="stageBadge" class="badge" style="margin-bottom: 20px; display: inline-block;">Stage 1</div>
+            <p id="desc" class="description">제시된 지문을 또박또박 읽어주세요.</p>
+            <h2 id="question" class="question-title" style="text-align: center; margin-bottom: 30px;">지문 로딩 중...</h2>
 
-    <button id="recordBtn"><span id="recordIcon"></span> 녹음 시작</button>
-    <button id="finishBtn" type="button">다 말했어요</button>
-  </div>
+            <div class="recorder-wrapper">
+                <div id="timer">40s</div>
+                <svg width="180" height="180" style="transform: rotate(-90deg);">
+                    <circle cx="90" cy="90" r="80" stroke="#333" stroke-width="4" fill="none"></circle>
+                    <circle id="timerLine" cx="90" cy="90" r="80" stroke="#BB86FC" stroke-width="4" fill="none"
+                        stroke-dasharray="502" stroke-dashoffset="0" style="transition: stroke-dashoffset 0.1s linear;"></circle>
+                </svg>
+                
+                <button id="recordBtn" class="record-btn">
+                    <span id="recordIcon"></span>
+                    <span id="recordStatus" style="font-size: 12px; margin-top: 5px;">녹음 시작</span>
+                </button>
+            </div>
 
-  <!-- ✅ ESM: voice-ui.js가 export 쓰고 있으니 꼭 module로 -->
-  <script type="module">
-    import { initStageUI, setTimer, setRecordButtonState } from './js/voice-ui.js';
-    import { VoiceProcessor } from './js/voice-processor.js';
+            <div style="margin-top: 40px;">
+                <button id="finishBtn" class="next-btn secondary-btn" style="display: none;">다 말했어요</button>
+            </div>
+        </div>
+    </div>
 
-    const vp = new VoiceProcessor();
-
-    // Stage 1 화면 세팅: ✅ voice-ui.js의 원문 지문이 그대로 들어감
-    document.getElementById('stageBadge').innerText = 'Stage 1';
-    initStageUI(1);
-
-    // 버튼 동작(일단 “오류 안나게” 최소만)
-    const recBtn = document.getElementById('recordBtn');
-    const finishBtn = document.getElementById('finishBtn');
-
-    let recording = false;
-
-    recBtn.addEventListener('click', async () => {
-      if (!recording) {
-        recording = true;
-        setRecordButtonState({ recording: false, calibrating: true });
-        await vp.calibrateSilence(2);
-
-        setRecordButtonState({ recording: true, calibrating: false });
-
-        // 타이머 표시
-        const metrics = await vp.startStage({
-          durationSec: 40,
-          onTick: ({ leftMs }) => setTimer(leftMs, 40),
-        });
-
-        // 여기서 다음 단계/전송은 다음 단계에서 붙이면 됨(오늘은 UI부터)
-        recording = false;
-        setRecordButtonState({ recording: false });
-        console.log('metrics:', metrics);
-      } else {
-        vp.stop();
-      }
-    });
-
-    finishBtn.addEventListener('click', () => {
-      vp.stop(); // “다 말했어요”는 stop만 호출 (중복 처리/저장 로직은 다음 단계에서)
-      finishBtn.disabled = true;
-      finishBtn.innerText = '저장 중...';
-    });
-  </script>
-</body>
+    </body>
 </html>
-
