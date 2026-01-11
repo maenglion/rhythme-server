@@ -5,6 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="styles.css">
     <title>음성 분석 안내</title>
+    <style>
+        /* 추가적인 중앙 정렬 커스텀 스타일 */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center; /* 텍스트 중앙 정렬 */
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* 자식 요소 중앙 정렬 */
+            width: 100%;
+            max-width: 343px;
+        }
+        .guide-list {
+            list-style: none;
+            padding: 0;
+            margin: 24px 0;
+            text-align: left; /* 리스트 내용은 가독성을 위해 좌측 정렬 권장 */
+            width: 100%;
+        }
+        .guide-list li {
+            background: #1E1E1E;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            color: #A0A0A0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
 </head>
 <body style="display: block;"> <div class="container">
         <div class="progress-container">

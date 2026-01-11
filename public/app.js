@@ -86,46 +86,44 @@ cancelBtn.style.display = 'inline-block';
 window.SESSION_ID = window.SESSION_ID || crypto.randomUUID();
 
 // 토글 
-window.loadAndToggleConsent = async function (filename, headerEl) {
+window.loadAndToggleConsent = async function (path, headerEl) {
   try {
-    const item = headerEl.closest('.consent-item');
+    const item = headerEl.closest(".consent-item");
     if (!item) return;
 
-    const contentEl = item.querySelector('.consent-content');
-    const textArea = item.querySelector('.consent-text-area');
-    const arrow = headerEl.querySelector('.arrow');
+    const contentEl = item.querySelector(".consent-content");
+    const textArea = item.querySelector(".consent-text-area");
+    const arrow = item.querySelector(".arrow");
 
-    if (!contentEl || !textArea) return;
-
-    const isOpen = contentEl.classList.contains('open');
-
-    // 닫기 동작
+    // 토글
+    const isOpen = contentEl.classList.contains("open");
     if (isOpen) {
-      contentEl.classList.remove('open');
-      contentEl.style.display = 'none';
-      if (arrow) arrow.textContent = '▼';
+      contentEl.classList.remove("open");
+      if (arrow) arrow.textContent = "▼";
       return;
+    } else {
+      contentEl.classList.add("open");
+      if (arrow) arrow.textContent = "▲";
     }
 
-    // 열기 동작: 아직 로드 안 했으면 fetch
-    if (!item.dataset.loaded) {
-      textArea.textContent = '내용을 불러오는 중...';
+    // 이미 로딩했으면 재요청 안 함
+    if (textArea && textArea.dataset.loaded === "1") return;
 
-      const url = `terms-of-use/${filename}`;
-      const res = await fetch(url, { cache: 'no-store' });
-      if (!res.ok) throw new Error(`Failed to load ${url}: ${res.status}`);
+    if (textArea) textArea.textContent = "내용을 불러오는 중...";
 
-      const text = await res.text();
-      textArea.textContent = text;
-      item.dataset.loaded = '1';
+    const res = await fetch(path, { cache: "no-store" });
+    if (!res.ok) throw new Error(`failed to load ${path}: ${res.status}`);
+    const txt = await res.text();
+
+    if (textArea) {
+      textArea.textContent = txt;
+      textArea.dataset.loaded = "1";
     }
-
-    contentEl.classList.add('open');
-    contentEl.style.display = 'block';
-    if (arrow) arrow.textContent = '▲';
   } catch (e) {
     console.error(e);
-    window.showModal?.('동의서 내용을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.') ?? alert('동의서 내용을 불러오지 못했습니다.');
+    const item = headerEl.closest(".consent-item");
+    const textArea = item?.querySelector(".consent-text-area");
+    if (textArea) textArea.textContent = "불러오기 실패. 잠시 후 다시 시도해주세요.";
   }
 };
 
