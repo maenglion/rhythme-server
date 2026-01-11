@@ -1,4 +1,4 @@
-// /js/voice-processor.js
+// ./voice-processor.js
 export class VoiceProcessor {
   constructor() {
     this.ctx = null;
