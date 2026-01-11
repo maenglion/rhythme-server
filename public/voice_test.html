@@ -22,10 +22,7 @@
 }
 
 
- const API_BASE = localStorage.getItem("API_BASE") || "";
-const url = API_BASE
-  ? API_BASE.replace(/\/$/, "") + "/submit-voice-stage"
-  : "/submit-voice-stage";
+const url = apiUrl("/submit-voice-stage");
 
 
   // ====== Stage 설계 ======
