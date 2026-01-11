@@ -430,3 +430,15 @@ footer { width: 100%; text-align: center; padding: 40px 0 24px 0; color: #E5E5E5
     background: #fff;
     border-radius: 4px;
 }
+
+/* VOICE_TEXT 영역
+
+/* Stage 1 전용 지문 스타일 */
+#question.stage1-text {
+    font-size: 16px;           /* 글자 크기를 16~18px로 축소 */
+    line-height: 1.8;          /* 줄 간격을 넓혀서 읽기 편하게 */
+    text-align: center;        /* 중앙 정렬 */
+    word-break: keep-all;      /* 단어 단위로 줄바꿈 (한글 가독성 핵심) */
+    margin: 20px 0;
+    color: #E0E0E0;            /* 약간 연한 회색으로 피로도 감소 */
+}
