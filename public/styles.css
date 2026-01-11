@@ -120,8 +120,8 @@ input[type="text"], input[type="number"] {
     margin-left: 8px;
 }
 .badge.select-badge {
-    background: #444; /* 연한 회색 배경 */
-    color: #AAA;      /* 연한 글자색 */
+    background: #256f8a; /* 연한 회색 배경 */
+    color: #b1b1b1;      /* 연한 글자색 */
 }
 /* 화살표 정렬 및 회전 */
 .arrow { 
