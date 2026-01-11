@@ -196,19 +196,20 @@ import {
             <p id="desc" class="description">제시된 지문을 또박또박 읽어주세요.</p>
             <h2 id="question" class="question-title" style="text-align: center; margin-bottom: 30px;">지문 로딩 중...</h2>
 
-            <div class="recorder-wrapper">
-                <div id="timer">40s</div>
-                <svg width="180" height="180" style="transform: rotate(-90deg);">
-                    <circle cx="90" cy="90" r="80" stroke="#333" stroke-width="4" fill="none"></circle>
-                    <circle id="timerLine" cx="90" cy="90" r="80" stroke="#BB86FC" stroke-width="4" fill="none"
-                        stroke-dasharray="502" stroke-dashoffset="0" style="transition: stroke-dashoffset 0.1s linear;"></circle>
-                </svg>
-                
-                <button id="recordBtn" class="record-btn">
-                    <span id="recordIcon"></span>
-                    <span id="recordStatus" style="font-size: 12px; margin-top: 5px;">녹음 시작</span>
-                </button>
-            </div>
+            <div class="recorder-wrapper" style="position: relative; width: 180px; height: 180px; margin: 0 auto;">
+    <div id="timer" style="position: absolute; top: 40px; left: 50%; transform: translateX(-50%); font-size: 24px; color: #BB86FC; font-weight: bold; z-index: 10;">40s</div>
+    
+    <svg width="180" height="180" style="transform: rotate(-90deg); position: absolute; top: 0; left: 0;">
+        <circle cx="90" cy="90" r="80" stroke="#333" stroke-width="4" fill="none"></circle>
+        <circle id="timerLine" cx="90" cy="90" r="80" stroke="#BB86FC" stroke-width="4" fill="none"
+            stroke-dasharray="502" stroke-dashoffset="0" style="transition: stroke-dashoffset 0.1s linear;"></circle>
+    </svg>
+    
+    <button id="recordBtn" class="record-btn" style="position: absolute; top: 100px; left: 50%; transform: translate(-50%, -50%); background: none; border: none; display: flex; flex-direction: column; align-items: center; cursor: pointer; z-index: 11;">
+        <span id="recordIcon" style="width: 24px; height: 24px; background: #ff4444; border-radius: 50%; transition: all 0.3s ease; margin-bottom: 8px;"></span>
+        <span id="recordStatus" style="font-size: 14px; color: #fff; white-space: nowrap; font-weight: 500;">녹음 시작</span>
+    </button>
+</div>
 
             <div style="margin-top: 40px;">
                 <button id="finishBtn" class="next-btn secondary-btn" style="display: none;">다 말했어요</button>

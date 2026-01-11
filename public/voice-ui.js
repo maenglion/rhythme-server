@@ -1,6 +1,5 @@
 // ./voice-ui.js
 
-
 export function setQuestionText(text) {
   const el = document.querySelector("#question");
   if (el) el.innerText = text ?? "";
@@ -33,27 +32,31 @@ export function setTimer(leftMs, totalSec = 40) {
   }
 }
 
-export function setRecordButtonState({ recording, calibrating = false }) {
-  const btn = document.querySelector("#recordBtn");
-  const icon = document.querySelector("#recordIcon");
-  if (!btn) return;
+export function setRecordButtonState({ recording, calibrating }) {
+    const btn = document.getElementById('recordBtn');
+    const icon = document.getElementById('recordIcon');
+    const status = document.getElementById('recordStatus');
+    const timerLine = document.getElementById('timerLine');
 
-  if (calibrating) {
-    btn.disabled = true;
-    btn.dataset.recording = "0";
-    btn.textContent = "소음 측정 중...";
-    return;
-  }
+    if (calibrating) {
+        status.innerText = "소음 측정 중...";
+        icon.style.background = "#BB86FC"; // 보라색으로 변경
+        icon.style.borderRadius = "50%";
+        return;
+    }
 
-  btn.disabled = false;
-  btn.dataset.recording = recording ? "1" : "0"; // ✅ 이게 핵심(상태 꼬임 방지)
-
-  // 버튼 텍스트/아이콘
-  //const label = btn.querySelector("span") || btn;
-  //if (label) label.textContent = recording ? "중단하기" : "녹음 시작";
-  btn.classList.toggle("recording", !!recording);
-
-  if (icon) icon.style.borderRadius = recording ? "4px" : "50%";
+    if (recording) {
+        status.innerText = "녹음 중";
+        status.style.color = "#BB86FC"; // 글씨도 보라색으로 강조
+        icon.style.background = "#BB86FC"; // 보라색
+        icon.style.borderRadius = "4px"; // 사각형(Stop 아이콘 느낌)
+        timerLine.style.stroke = "#BB86FC";
+    } else {
+        status.innerText = "녹음 시작";
+        status.style.color = "#fff";
+        icon.style.background = "#ff4444"; // 다시 빨간색 원으로
+        icon.style.borderRadius = "50%";
+    }
 }
 
 export function initStageUI() {
