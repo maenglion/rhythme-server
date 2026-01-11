@@ -167,48 +167,6 @@
 </button>
 
 </section>
-
-    <section id="step6" class="step">
-        <h3 class="title">음성 분석 테스트 안내</h3>
-        <div class="intro-box">
-            <p class="description">지금부터 목소리를 통한 심리 반응 테스트를 시작합니다.</p>
-            <ul class="guide-list">
-                <li>📍 각 문항은 최대 40초간 진행됩니다.</li>
-                <li>📍 질문을 읽고 준비가 되면 녹음 시작을 눌러주세요.</li>
-            </ul>
-        </div>
-        <button class="next-btn" onclick="goToVoiceTest()">확인했습니다</button>
-    </section>
-
-    <section id="step7" class="step">
-        <div class="stage-info">
-            <span id="stageBadge">Stage 1</span>
-            <h3 id="question" class="voice-title">지문을 불러오는 중...</h3>
-            <p id="desc" class="voice-desc"></p>
-        </div>
-        <div class="recorder-wrapper">
-            <svg width="200" height="200" viewBox="0 0 100 100">
-                <circle class="timer-bg" cx="50" cy="50" r="45" fill="none" stroke="#333" stroke-width="2" />
-                <circle id="timerLine" cx="50" cy="50" r="45" fill="none" stroke="#BB86FC" 
-                        stroke-width="4" stroke-dasharray="283" stroke-dashoffset="0" 
-                        transform="rotate(-90 50 50)" style="transition: all 0.1s linear;" />
-            </svg>
-            <div id="timer">40s</div>
-            <button id="recordBtn" class="record-btn">
-                <div id="recordIcon"></div>
-                <span>녹음 시작</span>
-            </button>
-        </div>
-        <button id="nextBtn" class="next-btn" style="display:none;">다음 단계로</button>
-    </section>
-
-        <section id="step8" class="step">
-        <div class="success-icon">✅</div>
-        <h2>참여해주셔서 감사합니다!</h2>
-        <p>전송된 데이터는 <strong>(주)소울스펙트럼</strong> 연구의 소중한 자산이 됩니다.</p>
-    </section>
-</div>
-
     <div id="customModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-body"><p id="modalMessage"></p></div>
@@ -217,8 +175,6 @@
     </div>
 </div>
 
-<script type="module" src="voice-processor.js"></script>
-<script type="module" src="voice-ui.js"></script>
 <script type="module" src="app.js"></script>
 </body>
 </html>
