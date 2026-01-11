@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>음성 분석 안내</title>
+</head>
+<body>
+  <h1>음성 분석 테스트 안내</h1>
+  <ul>
+    <li>문항은 총 4가지로 </li>
+    <li>각 문항은 최대 40초 진행됩니다.</li>
+    <li>질문을 읽고 준비가 되면 녹음을 시작하세요.</li>
+    <!-- 여기 주의사항 더 길게 추가 -->
+  </ul>
+
+  <button id="goStage">확인했습니다</button>
+
+  <script>
+    document.getElementById('goStage').onclick = () => {
+      // 세션/닉네임은 이미 index에서 localStorage에 저장했다고 가정(아래에서 저장함)
+      location.href = 'voice_test.html';
+    };
+  </script>
+</body>
+</html>

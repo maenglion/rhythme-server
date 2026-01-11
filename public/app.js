@@ -273,19 +273,20 @@ window.showModal(
 console.log('EC path:', ecResult?.path);
 console.log('EO path:', eoResult?.path);
 
-// ✅ 화면 전환: step5 -> step6
-const step5 = document.getElementById('step5');
-if (step5) step5.style.display = 'none';
-
-const step6 = document.getElementById('step6');
-if (step6) step6.style.display = 'block';
-
 // 버튼은 있으면 숨김 (step5에서 쓰던 것들)
 const uploadBtn = document.getElementById('uploadBtn');
 if (uploadBtn) uploadBtn.style.display = 'none';
 
 const nextBtn = document.getElementById('nextStepBtn');
 if (nextBtn) nextBtn.style.display = 'none';
+
+// ✅ 화면 전환: step5 -> step6
+localStorage.setItem('rhythmi_user_id', nickname);
+localStorage.setItem('rhythmi_age', String(age));
+localStorage.setItem('rhythmi_gender', gender);
+
+// 기존 step6 토글 대신
+location.href = 'voice_info.html';
 
 
   } catch (error) {
