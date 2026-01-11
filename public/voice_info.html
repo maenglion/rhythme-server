@@ -7,71 +7,88 @@
     <title>음성 분석 안내</title>
     <style>
    /* 전체 레이아웃을 화면 중앙으로 배치 */
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: #121212;
-      display: flex;
-      flex-direction: column;
-      align-items: center; /* 가로 중앙 */
-      justify-content: flex-start;
-      min-height: 100vh;
-      color: #fff;
-    }
+   body {
+    margin: 0;
+    padding: 0;
+    background-color: #121212;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    color: #fff;
+    font-family: 'Pretendard', sans-serif;
+}
 
-    /* 컨테이너가 왼쪽으로 쏠리지 않게 너비 고정 및 마진 자동 */
-    .container {
-      width: 100%;
-      max-width: 343px;
-      margin: 0 auto;
-      padding: 40px 20px;
-      box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-      align-items: center; /* 내부 요소들 중앙 정렬 */
-      text-align: center;
-    }
+/* 컨테이너: 버튼 사이즈에 맞춰 너비 확장 */
+.container {
+    width: 100%;
+    /* 버튼의 최대 너비와 일치하도록 설정 */
+    max-width: 400px; 
+    padding: 40px 24px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
 
-    /* 가이드 섹션 스타일 */
-    .guide-box {
-      width: 100%;
-      background: #1E1E1E;
-      border-radius: 12px;
-      padding: 24px;
-      margin: 24px 0;
-      text-align: left; /* 내용은 읽기 편하게 왼쪽 정렬 */
-    }
+/* 설명 문구 텍스트 크기 상향 */
+.guide-desc {
+    color: #A0A0A0;
+    /* 기존보다 1단계 키운 사이즈 */
+    font-size: 15px; 
+    line-height: 1.7;
+    margin: 0;
+    word-break: keep-all;
+}
 
-    .guide-item {
-      margin-bottom: 20px;
-    }
+/* 가이드 항목 간격 조정 */
+.guide-item {
+    margin-bottom: 32px;
+}
 
-    .guide-item:last-child { margin-bottom: 0; }
+.guide-title {
+    display: block;
+    color: #BB86FC;
+    font-weight: 700;
+    font-size: 18px;
+    margin-bottom: 10px;
+}
 
-    .guide-title {
-      display: block;
-      color: #BB86FC;
-      font-weight: 700;
-      font-size: 15px;
-      margin-bottom: 6px;
-    }
+/* 테스트 구성 박스 내부 간격 */
+.test-config-box {
+    background: #1E1E1E;
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 40px;
+}
 
-    .guide-desc {
-      color: #A0A0A0;
-      font-size: 13px;
-      line-height: 1.6;
-      margin: 0;
-    }
+.config-text {
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.6;
+}
 
-    /* 보라색 강조 박스 (마이크 권한) */
-    .permission-alert {
-      width: 100%;
-      background: rgba(187, 134, 252, 0.1);
-      border: 1px dashed #BB86FC;
-      border-radius: 8px;
-      padding: 16px;
-      margin-top: 20px;
-    }
+/* 하단 알림 영역 */
+.permission-alert {
+    background: rgba(187, 134, 252, 0.05);
+    border: 1px dashed rgba(187, 134, 252, 0.5);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0 40px 0;
+    text-align: center;
+}
+
+/* 확인 버튼: 너비 100% 유지 */
+.next-btn {
+    width: 100%;
+    height: 56px;
+    background-color: #FFFFFF;
+    color: #000000;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+}
   </style>
 </head>
 <body style="display: block;"> <div class="container">
@@ -119,7 +136,8 @@
         <button id="goStage" class="next-btn" style="margin-top: 40px;">확인했습니다</button>
 
         <footer>
-            © 2026 RHYTHME. All rights reserved.
+            © 2026 SoulSpectrum.Inc. All rights reserved.
+            개인정보책임자 : 맹난영   maengnanyoung@gmail.com
         </footer>
     </div>
 
