@@ -98,6 +98,21 @@
   let stageIdx = 0;
   let STAGES = [];
 
+
+// ✅ DEV DEBUG: 콘솔에서 보기용(나중에 지워도 됨)
+window.__rh = {
+  get stageIdx() { return stageIdx; },
+  get STAGES() { return STAGES; },
+  get currStage() { return STAGES?.[stageIdx]; },
+  vp,
+  VoiceProcessor,
+  getSid,
+  apiUrl,
+};
+console.log("[DBG] __rh ready", window.__rh);
+
+
+
   // ---------------------------
   // 렌더
   // ---------------------------
