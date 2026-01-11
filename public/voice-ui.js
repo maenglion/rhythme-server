@@ -33,36 +33,31 @@ export function setTimer(leftMs, totalSec = 40) {
 }
 
 export function setRecordButtonState({ recording, calibrating }) {
-    const btn = document.getElementById('recordBtn');
-    const icon = document.getElementById('recordIcon');
     const status = document.getElementById('recordStatus');
-    const timerLine = document.getElementById('timerLine');
+    const calib = document.getElementById('calibratingText');
+    const finishBtn = document.getElementById('finishBtn');
 
+    // 1. 소음 측정 중일 때
     if (calibrating) {
-        status.innerText = "소음 측정 중...";
-        icon.style.background = "#BB86FC"; // 보라색으로 변경
-        icon.style.borderRadius = "50%";
+        calib.style.visibility = "visible"; // 연한 글씨 등장
+        status.innerText = "준비 중...";
+        status.style.color = "#BB86FC";
+        if (finishBtn) finishBtn.style.display = 'none';
         return;
-    }
+    } 
 
+    // 2. 녹음 중일 때
     if (recording) {
+        calib.style.visibility = "hidden"; // 소음 측정 글씨는 숨김
         status.innerText = "녹음 중";
-        status.style.color = "#BB86FC"; // 글씨도 보라색으로 강조
-        icon.style.background = "#BB86FC"; // 보라색
-        icon.style.borderRadius = "4px"; // 사각형(Stop 아이콘 느낌)
-        timerLine.style.stroke = "#BB86FC";
-    } else {
+        status.style.color = "#BB86FC"; // 굵은 보라
+        if (finishBtn) finishBtn.style.display = 'block'; // '다 말했어요' 등장
+    } 
+    // 3. 대기 상태일 때
+    else {
+        calib.style.visibility = "hidden";
         status.innerText = "녹음 시작";
-        status.style.color = "#fff";
-        icon.style.background = "#ff4444"; // 다시 빨간색 원으로
-        icon.style.borderRadius = "50%";
+        status.style.color = "#FF4444"; // 굵은 빨강
+        if (finishBtn) finishBtn.style.display = 'none';
     }
-}
-
-export function initStageUI() {
-  // 기본 상태: 녹음 전
-  setRecordButtonState({ recording: false, calibrating: false });
-
-  // 타이머 UI 초기화(원하면)
-  // setTimer(40_000, 40);
 }
