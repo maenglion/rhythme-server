@@ -86,6 +86,9 @@ cancelBtn.style.display = 'inline-block';
 window.SESSION_ID = window.SESSION_ID || crypto.randomUUID();
 
 // 토글 
+// app.js 상단에 이미 있다고 하신 부분
+// const CONSENT_CACHE = {}; 
+
 window.loadAndToggleConsent = async function (path, headerEl) {
   const item = headerEl.closest(".consent-item");
   if (!item) return;
@@ -96,22 +99,23 @@ window.loadAndToggleConsent = async function (path, headerEl) {
 
   if (!contentEl || !textArea) return;
 
-  const isOpen = item.classList.contains("open");
+  // active 클래스를 사용하여 CSS와 일치시킵니다.
+  const isOpen = item.classList.contains("active");
 
-  // 닫기
   if (isOpen) {
-    item.classList.remove("open");
-    contentEl.style.display = "none";
+    item.classList.remove("active");
+    contentEl.style.maxHeight = "0";
+    setTimeout(() => { if(!item.classList.contains('active')) contentEl.style.display = "none"; }, 300);
     if (arrow) arrow.textContent = "▼";
     return;
   }
 
-  // 열기: 텍스트 없으면 fetch로 로드
   try {
+    // ⚠️ 여기서 반드시 CONSENT_CACHE 인지 확인!
     if (!CONSENT_CACHE[path]) {
       textArea.textContent = "내용을 불러오는 중...";
       const res = await fetch(path, { cache: "no-store" });
-      if (!res.ok) throw new Error(`consent fetch failed: ${res.status}`);
+      if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
       CONSENT_CACHE[path] = await res.text();
     }
     textArea.textContent = CONSENT_CACHE[path];
@@ -120,8 +124,9 @@ window.loadAndToggleConsent = async function (path, headerEl) {
     textArea.textContent = "약관 내용을 불러오지 못했습니다.";
   }
 
-  item.classList.add("open");
+  item.classList.add("active");
   contentEl.style.display = "block";
+  contentEl.style.maxHeight = "300px"; // 충분한 높이
   if (arrow) arrow.textContent = "▲";
 };
 
