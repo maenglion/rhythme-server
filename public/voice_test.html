@@ -7,6 +7,7 @@
     <title>음성 분석</title>
 </head>
 <script type="module">
+   
   import { VoiceProcessor } from "./voice-processor.js";
   import {
     initStageUI,
@@ -140,6 +141,53 @@ function renderStage() {
       });
 
       console.log("Stage Metrics:", metrics);
+
+            // ✅ DB 전송(POST) — metrics 나온 직후
+      const sid = getSid();
+      const s = STAGES[stageIdx]; // 지금 stage(증가 전)
+      const age = parseInt(localStorage.getItem("rhythmi_age") || "0", 10);
+      const age_group = age < 14 ? "under14" : (age < 19 ? "child" : "adult");
+
+      const payload = {
+        session_id: sid,
+        stage_id: s?.id ?? null,
+        age_group,
+        status: metrics?.status || "completed",
+
+        recorded_ms: metrics?.recorded_ms ?? 0,
+        speech_rate: metrics?.speech_rate ?? null,
+        pause_ratio: metrics?.pause_ratio ?? null,
+        pitch_mean: metrics?.pitch_mean ?? null,
+        pitch_sd: metrics?.pitch_sd ?? null,
+        snr_est_db: metrics?.snr_est_db ?? null,
+        clipping_ratio: metrics?.clipping_ratio ?? null,
+
+        long_pause_count_600ms: metrics?.long_pause_count_600ms ?? null,
+        short_pause_count_200_600ms: metrics?.short_pause_count_200_600ms ?? null,
+        pause_ms: metrics?.pause_ms ?? null,
+        restart_rms_spike_count: metrics?.restart_rms_spike_count ?? null,
+      };
+
+      // ✅ API URL 결정: window.API 있으면 그걸 쓰고, 없으면 상대경로 사용
+      const url = (typeof window.API === "function")
+        ? window.API("/submit-voice-stage")
+        : "/submit-voice-stage";
+
+      console.log("SUBMIT 직전", url, payload);
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      console.log("SUBMIT 응답", res.status);
+      if (!res.ok) {
+        const t = await res.text();
+        console.log("SUBMIT body", t);
+        throw new Error(`submit failed ${res.status}: ${t}`);
+      }
+
 
       // 4. 종료 처리 및 다음 스테이지
       stageIdx += 1;
