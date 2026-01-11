@@ -8,11 +8,14 @@
 </head>
 <script type="module">
   import { VoiceProcessor } from "./voice-processor.js";
-  import {
-    initStageUI,
-    setTimer,
-    setRecordButtonState
-  } from "./voice-ui.js";
+import {
+  initStageUI,
+  setQuestionText,
+  setDescriptionText,
+  setTimer,
+  setRecordButtonState
+} from "./voice-ui.js";
+
 
   // ====== Stage 설계 (너가 준 문장 그대로 박음) ======
   function getStagesByAge(age) {
