@@ -199,7 +199,7 @@ window.startResearch = function(under14) {
     window.nextStep();
 };
 
-window.loadAndToggleConsent = function(fileName, headerElement) {
+window.loadAndToggleConsent = function(path, headerElement) {
     const item = headerElement.closest('.consent-item');
     const textArea = item.querySelector('.consent-text-area');
     if (item.classList.contains('active')) {
