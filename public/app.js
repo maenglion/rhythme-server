@@ -25,56 +25,6 @@ let stageDisplayTime = 0;
 
 // 세션 아이디 
 window.SESSION_ID = window.SESSION_ID || crypto.randomUUID();
-// confirm 대체용 (모달에 계속/취소 버튼을 만들어 Promise로 반환)
-window.showModalConfirm = function (message, { okText = "계속", cancelText = "취소" } = {}) {
-  return new Promise((resolve) => {
-    const modal = document.getElementById("modal");           // 네 모달 id에 맞춰
-    const modalBody = document.getElementById("modalBody");   // 네 모달 바디 id에 맞춰
-    const modalActions = document.getElementById("modalActions"); // 버튼 들어갈 영역(없으면 만들어야 함)
-
-    if (!modal || !modalBody) {
-      // 모달 DOM이 없으면 fallback
-      resolve(window.confirm(message));
-      return;
-    }
-
-    modalBody.textContent = message;
-
-    // 액션 영역이 없으면 body 아래에 임시로 생성
-    let actions = modalActions;
-    if (!actions) {
-      actions = document.createElement("div");
-      actions.id = "modalActions";
-      actions.style.marginTop = "16px";
-      actions.style.display = "flex";
-      actions.style.gap = "8px";
-      actions.style.justifyContent = "center";
-      modalBody.parentElement.appendChild(actions);
-    }
-
-    actions.innerHTML = "";
-
-    const okBtn = document.createElement("button");
-    okBtn.textContent = okText;
-
-    const cancelBtn = document.createElement("button");
-    cancelBtn.textContent = cancelText;
-
-    okBtn.onclick = () => {
-      modal.style.display = "none";
-      resolve(true);
-    };
-    cancelBtn.onclick = () => {
-      modal.style.display = "none";
-      resolve(false);
-    };
-
-    actions.appendChild(okBtn);
-    actions.appendChild(cancelBtn);
-
-    modal.style.display = "block";
-  });
-};
 
 
 // 1. 연구용 실제 문항 배열 (참여자에게는 괄호 안의 내부 지표를 숨기고 텍스트만 노출)
