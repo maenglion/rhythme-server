@@ -101,7 +101,7 @@ window.loadAndToggleConsent = async function (path, headerEl) {
   }
 
   try {
-    // ⚠️ 에러 원인: CONSENT_TEXTS -> CONSENT_CACHE로 변경
+
     if (!CONSENT_CACHE[path]) {
       textArea.textContent = "내용을 불러오는 중...";
       const res = await fetch(path, { cache: "no-store" });
@@ -115,7 +115,7 @@ window.loadAndToggleConsent = async function (path, headerEl) {
   }
 
   item.classList.add("active");
-  // ⚠️ 에러 원인: "!important" 문자열 삭제 (JS 엔진 정지 방지)
+
   contentEl.style.display = "block"; 
   if (arrow) arrow.textContent = "▲";
 };
@@ -178,6 +178,25 @@ window.closeModal = function() {
     const modal = document.getElementById('customModal');
     if (modal) modal.style.display = 'none';
 };
+
+
+// app.js 상단
+window.checkAndGo = function() {
+    const essentials = document.querySelectorAll('.essential');
+    let allChecked = true;
+
+    essentials.forEach(checkbox => {
+        if (!checkbox.checked) allChecked = false;
+    });
+
+    if (allChecked) {
+        location.href = 'voice_info.html';
+    } else {
+        window.showModal("필수 항목에 모두 동의해주세요.");
+    }
+};
+
+// 그 다음에 loadAndToggleConsent 등 다른 함수들...
 
 
 /* ============================================================
