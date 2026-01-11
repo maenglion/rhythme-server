@@ -10,7 +10,7 @@ import {
 const vp = new VoiceProcessor();
 const CLOUD_RUN_URL = "https://rhythme-server-357918245340.asia-northeast3.run.app";
 const API = (path) => `${CLOUD_RUN_URL.replace(/\/$/, '')}${path}`;
-
+const CONSENT_CACHE = {}; // path -> text
 
 
 /* --- [전역 상태 관리] --- */
@@ -87,44 +87,42 @@ window.SESSION_ID = window.SESSION_ID || crypto.randomUUID();
 
 // 토글 
 window.loadAndToggleConsent = async function (path, headerEl) {
+  const item = headerEl.closest(".consent-item");
+  if (!item) return;
+
+  const contentEl = item.querySelector(".consent-content");
+  const textArea = item.querySelector(".consent-text-area");
+  const arrow = headerEl.querySelector(".arrow");
+
+  if (!contentEl || !textArea) return;
+
+  const isOpen = item.classList.contains("open");
+
+  // 닫기
+  if (isOpen) {
+    item.classList.remove("open");
+    contentEl.style.display = "none";
+    if (arrow) arrow.textContent = "▼";
+    return;
+  }
+
+  // 열기: 텍스트 없으면 fetch로 로드
   try {
-    const item = headerEl.closest(".consent-item");
-    if (!item) return;
-
-    const contentEl = item.querySelector(".consent-content");
-    const textArea = item.querySelector(".consent-text-area");
-    const arrow = item.querySelector(".arrow");
-
-    // 토글
-    const isOpen = contentEl.classList.contains("open");
-    if (isOpen) {
-      contentEl.classList.remove("open");
-      if (arrow) arrow.textContent = "▼";
-      return;
-    } else {
-      contentEl.classList.add("open");
-      if (arrow) arrow.textContent = "▲";
+    if (!CONSENT_CACHE[path]) {
+      textArea.textContent = "내용을 불러오는 중...";
+      const res = await fetch(path, { cache: "no-store" });
+      if (!res.ok) throw new Error(`consent fetch failed: ${res.status}`);
+      CONSENT_CACHE[path] = await res.text();
     }
-
-    // 이미 로딩했으면 재요청 안 함
-    if (textArea && textArea.dataset.loaded === "1") return;
-
-    if (textArea) textArea.textContent = "내용을 불러오는 중...";
-
-    const res = await fetch(path, { cache: "no-store" });
-    if (!res.ok) throw new Error(`failed to load ${path}: ${res.status}`);
-    const txt = await res.text();
-
-    if (textArea) {
-      textArea.textContent = txt;
-      textArea.dataset.loaded = "1";
-    }
+    textArea.textContent = CONSENT_CACHE[path];
   } catch (e) {
     console.error(e);
-    const item = headerEl.closest(".consent-item");
-    const textArea = item?.querySelector(".consent-text-area");
-    if (textArea) textArea.textContent = "불러오기 실패. 잠시 후 다시 시도해주세요.";
+    textArea.textContent = "약관 내용을 불러오지 못했습니다.";
   }
+
+  item.classList.add("open");
+  contentEl.style.display = "block";
+  if (arrow) arrow.textContent = "▲";
 };
 
 
