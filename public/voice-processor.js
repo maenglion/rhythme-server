@@ -1,4 +1,5 @@
 // ./voice-processor.js
+
 export class VoiceProcessor {
   constructor() {
     this.ctx = null;
@@ -40,104 +41,145 @@ export class VoiceProcessor {
     return { noise_floor_db: noiseDb };
   }
 
-  async startStage({ durationSec = 40, onTick } = {}) {
-    await this.init();
-    this._stopped = false;
+async startStage({ durationSec = 40, onTick } = {}) {
+  await this.init();
+  this._stopped = false;
 
-    const buf = new Float32Array(this.analyser.fftSize);
+  const buf = new Float32Array(this.analyser.fftSize);
 
-    // 누적 통계
-    let frames = 0;
-    let voicedFrames = 0;
-    let pauseFrames = 0;
+  // 누적 통계
+  let frames = 0;
+  let voicedFrames = 0;
+  let pauseFrames = 0;
+  let rmsSum = 0;
+  let peakClipCount = 0;
+  let peakCount = 0;
+  const pitchList = [];
 
-    let rmsSum = 0;
-    let peakClipCount = 0;
-    let peakCount = 0;
+  const start = performance.now();
+  const endAt = start + durationSec * 1000;
 
-    const pitchList = [];
+  // ✅ stage별 상태(전역 X)
+  let lastNow = start;
+  let pauseSegMs = 0;
+  let pauseMs = 0;
+  let longPauseCount = 0;
+  let shortPauseCount = 0;
 
-    const start = performance.now();
-    const endAt = start + durationSec * 1000;
+  let restartRmsSpikeCount = 0;
+  let rmsBaselineWin = [];
+  const BASE_WIN = 40;
 
-    return new Promise((resolve) => {
-      const loop = () => {
-        if (this._stopped) return finalize("stopped");
+  return new Promise((resolve) => {
+    const finalize = (status) => {
+      if (this._raf) cancelAnimationFrame(this._raf);
 
-        const now = performance.now();
-        const leftMs = Math.max(0, endAt - now);
-        if (onTick) onTick({ leftMs, elapsedMs: now - start });
+      // ✅ 무음 상태로 끝난 경우도 세그먼트 반영
+      if (pauseSegMs >= 600) longPauseCount += 1;
+      else if (pauseSegMs >= 200) shortPauseCount += 1;
 
-        this.analyser.getFloatTimeDomainData(buf);
+      const endNow = performance.now();
+      const recorded_ms = endNow - start;
 
-        const r = rms(buf);
-        const p = peakAbs(buf);
+      const denom = Math.max(1, frames);
+      const speech_rate = (voicedFrames / denom) * 10;
 
-        frames += 1;
-        rmsSum += r;
+      const noise = this.noiseRms ?? 1e-6;
+      const signalRms = rmsSum / Math.max(1, frames);
+      const snr = 20 * Math.log10((signalRms + 1e-9) / (noise + 1e-9));
 
-        peakCount += 1;
-        if (p >= 0.99) peakClipCount += 1;
+      const pause_ratio = pauseMs / Math.max(1, recorded_ms);
+      const clipping_ratio = peakClipCount / Math.max(1, peakCount);
 
-        // VAD(아주 단순): noiseRms 대비 threshold
-        const noise = this.noiseRms ?? 1e-6;
-        const isVoiced = r > noise * 2.5; // MVP용
-        if (isVoiced) voicedFrames += 1;
-        else pauseFrames += 1;
+      const pitch_mean = mean(pitchList);
+      const pitch_sd = std(pitchList);
 
-        // pitch: voiced일 때만 추정
-        if (isVoiced) {
-          const f0 = autoCorrelPitch(buf, this.ctx.sampleRate);
-          if (f0) pitchList.push(f0);
-        }
-
-        if (now >= endAt) return finalize("completed");
-        this._raf = requestAnimationFrame(loop);
-      };
-const finalize = (status) => {
-  if (this._raf) cancelAnimationFrame(this._raf);
-
-  const endNow = performance.now();                 // ✅ 추가
-  const recorded_ms = endNow - start;               // ✅ now -> endNow
-        const denom = Math.max(1, frames);
-const speech_rate = (voicedFrames / denom) * 10;
-        const noise = this.noiseRms ?? 1e-6;
-        const signalRms = rmsSum / Math.max(1, frames);
-        const snr = 20 * Math.log10((signalRms + 1e-9) / (noise + 1e-9));
-
-        const pause_ratio = pauseFrames / Math.max(1, frames);
-        const clipping_ratio = peakClipCount / Math.max(1, peakCount);
-
-        // voiced가 아닌데 r(에너지)이 어느 정도 있는 경우를 감지
-const bg_voice_ratio = pauseFrames / Math.max(1, frames); 
-// 사실상 pause_ratio와 비슷하지만, '침묵 구간 중 환경 소음'의 의미로 활용 가능합니다.
-
-        const pitch_mean = mean(pitchList);
-        const pitch_sd = std(pitchList);
-
-        resolve({
+      resolve({
         status,
         noise_floor_db: toDb(noise),
-    snr_est_db: snr,
-    pitch_mean: pitch_mean ?? null,
-    pitch_sd: pitch_sd ?? null,
-    pause_ratio,
-    clipping_ratio,
-    bg_voice_ratio: (pauseFrames / frames) * 0.5, // 환경 소음 개입 가능성 지수
-    speech_rate: speech_rate, // 추가
-    bg_voice_ratio,   // 추가
-    recorded_ms: Math.floor(recorded_ms) // 추가
-});
-      };
+        snr_est_db: snr,
+        pitch_mean: pitch_mean ?? null,
+        pitch_sd: pitch_sd ?? null,
+        pause_ratio,
+        clipping_ratio,
+        speech_rate,
+        recorded_ms: Math.floor(recorded_ms),
 
-      loop();
-    });
-  }
+        long_pause_count_600ms: longPauseCount,
+        short_pause_count_200_600ms: shortPauseCount,
+        pause_ms: Math.floor(pauseMs),
+        restart_rms_spike_count: restartRmsSpikeCount,
+      });
+    };
 
-  stop() {
-    this._stopped = true;
-  }
+    const loop = () => {
+      if (this._stopped) return finalize("stopped");
+
+      const now = performance.now();                 // ✅ now 먼저
+      const dtMs = Math.max(0, now - lastNow);       // ✅ 그 다음 dt
+      lastNow = now;
+
+      const leftMs = Math.max(0, endAt - now);
+      if (onTick) onTick({ leftMs, elapsedMs: now - start });
+
+      this.analyser.getFloatTimeDomainData(buf);
+
+      const r = rms(buf);
+      const p = peakAbs(buf);
+
+      frames += 1;
+      rmsSum += r;
+
+      peakCount += 1;
+      if (p >= 0.99) peakClipCount += 1;
+
+      const noise = this.noiseRms ?? 1e-6;
+      const isVoiced = r > noise * 2.5;
+
+      if (isVoiced) voicedFrames += 1;
+      else pauseFrames += 1;
+
+      // ✅ baseline(유음) 업데이트
+      if (isVoiced) {
+        rmsBaselineWin.push(r);
+        if (rmsBaselineWin.length > BASE_WIN) rmsBaselineWin.shift();
+      }
+
+      // ✅ pause segment 누적 + 전환 순간 체크
+      if (!isVoiced) {
+        pauseSegMs += dtMs;
+        pauseMs += dtMs;
+      } else {
+        // 무음→유음 전환 순간(렉 종료)
+        if (pauseSegMs >= 600) {
+          longPauseCount += 1;
+
+          // ✅ 재시작 과강조: 전환 직후 현재 r이 baseline보다 큰지
+          if (rmsBaselineWin.length >= 10) {
+            const base = median(rmsBaselineWin);
+            if (base && r > base * 1.8) restartRmsSpikeCount += 1;
+          }
+        } else if (pauseSegMs >= 200) {
+          shortPauseCount += 1;
+        }
+        pauseSegMs = 0;
+      }
+
+      // pitch
+      if (isVoiced) {
+        const f0 = autoCorrelPitch(buf, this.ctx.sampleRate);
+        if (f0) pitchList.push(f0);
+      }
+
+      if (now >= endAt) return finalize("completed");
+      this._raf = requestAnimationFrame(loop);
+    };
+
+    loop();
+  });
 }
+}
+
 
 /* --- helpers --- */
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
