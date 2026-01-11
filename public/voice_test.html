@@ -16,6 +16,11 @@
     setTimer,
     setRecordButtonState
   } from "./voice-ui.js";
+  function apiUrl(path) {
+  const base = localStorage.getItem("API_BASE") || "";
+  return base ? base.replace(/\/$/, "") + path : path;
+}
+
 
  const API_BASE = localStorage.getItem("API_BASE") || "";
 const url = API_BASE
@@ -175,17 +180,20 @@ function renderStage() {
       };
 
       // ✅ API URL 결정: window.API 있으면 그걸 쓰고, 없으면 상대경로 사용
-      const url = (typeof window.API === "function")
-        ? window.API("/submit-voice-stage")
-        : "/submit-voice-stage";
+      // ✅ API URL 결정: localStorage API_BASE가 있으면 Cloud Run으로, 없으면 상대경로(=404날 수 있음)
+const API_BASE_NOW = localStorage.getItem("API_BASE") || "";
+const url = API_BASE_NOW
+  ? API_BASE_NOW.replace(/\/$/, "") + "/submit-voice-stage"
+  : "/submit-voice-stage";
 
-      console.log("SUBMIT 직전", url, payload);
+console.log("SUBMIT 직전", url, payload);
 
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+const res = await fetch(url, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(payload),
+});
+
 
       console.log("SUBMIT 응답", res.status);
       if (!res.ok) {
