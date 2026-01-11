@@ -16,11 +16,12 @@
     setTimer,
     setRecordButtonState
   } from "./voice-ui.js";
+ 
+ 
   function apiUrl(path) {
   const base = localStorage.getItem("API_BASE") || "";
   return base ? base.replace(/\/$/, "") + path : path;
 }
-
 
 const url = apiUrl("/submit-voice-stage");
 
@@ -95,8 +96,7 @@ function getSid() {
 
   // ====== 렌더링 함수 ======
 function renderStage() {
-  const s = STAGES[stageIdx];
-
+const s = STAGES[stageIdx];
   // ✅ 모든 스테이지 완료 → done.html로 sid 붙여 이동 (모달 없음)
   if (!s) {
     const sid = getSid();
@@ -153,54 +153,44 @@ async function runVoiceStage() {
 
     // 3) POST 준비
     const sid = getSid();
-    const age = parseInt(localStorage.getItem("rhythmi_age") || "0", 10);
-    const age_group = age < 14 ? "under14" : (age < 19 ? "child" : "adult");
+  const payload = {
+    session_id: sid,
+    stage_id: s.id,
+    age_group,                // 너가 정한 텍스트 OK
+    status: metrics.status,
 
-    const url = apiUrl("/submit-voice-stage");
+    recorded_ms: metrics.recorded_ms,
+    speech_rate: metrics.speech_rate,
+    pause_ratio: metrics.pause_ratio,
+    pitch_mean: metrics.pitch_mean,
+    pitch_sd: metrics.pitch_sd,
+    snr_est_db: metrics.snr_est_db,
+    clipping_ratio: metrics.clipping_ratio,
 
-    const payload = {
-      session_id: sid,
-      stage_id: s?.id ?? null,
-      age_group,
-      status: metrics?.status || "completed",
+    long_pause_count_600ms: metrics.long_pause_count_600ms,
+    short_pause_count_200_600ms: metrics.short_pause_count_200_600ms,
+    pause_ms: metrics.pause_ms,
+    restart_rms_spike_count: metrics.restart_rms_spike_count,
 
-      start_latency_ms: 0,
-      stop_offset_ms: metrics?.recorded_ms ?? 40000,
-      jitter: 0,
-      shimmer: 0,
+    // 서버가 필수로 요구해서 422 뜬 것들 (일단 0으로 채움)
+    start_latency_ms: 0,
+    stop_offset_ms: metrics.recorded_ms ?? 40000,
+    jitter: 0,
+    shimmer: 0,
+  };
 
-      recorded_ms: metrics?.recorded_ms ?? 0,
-      speech_rate: metrics?.speech_rate ?? null,
-      pause_ratio: metrics?.pause_ratio ?? null,
-      pitch_mean: metrics?.pitch_mean ?? null,
-      pitch_sd: metrics?.pitch_sd ?? null,
-      snr_est_db: metrics?.snr_est_db ?? null,
-      clipping_ratio: metrics?.clipping_ratio ?? null,
+  const url = apiUrl("/submit-voice-stage");
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
 
-      long_pause_count_600ms: metrics?.long_pause_count_600ms ?? null,
-      short_pause_count_200_600ms: metrics?.short_pause_count_200_600ms ?? null,
-      pause_ms: metrics?.pause_ms ?? null,
-      restart_rms_spike_count: metrics?.restart_rms_spike_count ?? null,
-    };
+  if (!res.ok) throw new Error(await res.text());
 
-    console.log("SUBMIT 직전", url, payload);
+  stageIdx += 1;
+  renderStage();
 
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    console.log("SUBMIT 응답", res.status);
-    if (!res.ok) {
-      const t = await res.text();
-      console.log("SUBMIT body", t);
-      throw new Error(`submit failed ${res.status}: ${t}`);
-    }
-
-    // 4) 다음 스테이지로
-    stageIdx += 1;
-    renderStage();
 
   } catch (err) {
     console.error("녹음 중 오류 발생:", err);

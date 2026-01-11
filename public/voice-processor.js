@@ -8,7 +8,6 @@ export class VoiceProcessor {
     this.analyser = null;
     this._raf = null;
     this._stopped = false;
-
     this.noiseRms = null; // baseline RMS
   }
 
