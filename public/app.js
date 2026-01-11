@@ -420,6 +420,7 @@ async function uploadSingleFile(userId, type, file) {
 }
 
 
+
 /* ============================================================
    4. Step 6~7: 음성 분석 엔진 (핵심)
    ============================================================ */
@@ -589,24 +590,22 @@ if (finishBtn) {
 /* ============================================================
    [핵심] 녹음 버튼 이벤트 연결 (이게 있어야 runVoiceStage가 작동함)
    ============================================================ */
-document.addEventListener('DOMContentLoaded', () => {
-    const recBtn = document.querySelector("#recordBtn");
-    
-    if (recBtn) {
-        recBtn.addEventListener("click", async () => {
-            // 버튼의 데이터 상태(recording)를 확인하여 분기
-            // voice-ui.js에서 녹음 시작 시 이 값을 "1"로 바꿉니다.
-            if (recBtn.dataset.recording === "1") {
-                console.log("녹음 중단 요청...");
-                recBtn.disabled = true;   // ✅ 여기로 이동
-                vp.stop(); // voice-processor.js 엔진 정지
-            } else {
-                console.log("녹음 시작 시퀀스 진입...");
-                await runVoiceStage(); // 정의해둔 음성 분석 로직 실행
-            }
-        });
+
+function initVoicePage() {
+  const recBtn = document.getElementById("recordBtn");
+  if (!recBtn) return; // ✅ 음성 페이지 아니면 아무 것도 안 함 (경고도 없음)
+
+  recBtn.addEventListener("click", async () => {
+    if (recBtn.dataset.recording === "1") {
+      console.log("녹음 중단 요청...");
+      recBtn.disabled = true;
+      vp.stop();
     } else {
-        console.error("오류: #recordBtn 요소를 찾을 수 없습니다. HTML ID를 확인하세요.");
+      console.log("녹음 시작 시퀀스 진입...");
+      await runVoiceStage();
     }
-});
+  });
+}
+
+document.addEventListener("DOMContentLoaded", initVoicePage);
 
