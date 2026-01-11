@@ -63,12 +63,15 @@ export function setRecordButtonState({ recording, calibrating = false }) {
     if (calibrating) {
         btn.textContent = "소음 측정 중...";
         btn.disabled = true;
+        btn.dataset.recording = "0"; // ✅ 추가 (안전)
         return;
     }
 
     btn.disabled = false;
     btn.textContent = recording ? "중단하기" : "녹음 시작";
     btn.classList.toggle("recording", recording);
+
+    btn.dataset.recording = recording ? "1" : "0"; // ✅ 이 한 줄이 핵심
     
     // UI 아이콘 변경 (원 -> 사각형)
     if (icon) {

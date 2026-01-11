@@ -22,6 +22,8 @@ let isUnder14 = false;
 let STAGES = [];
 let stageIdx = 0;
 let stageDisplayTime = 0;
+// 세션 아이디 
+window.SESSION_ID = window.SESSION_ID || crypto.randomUUID();
 
 
 // 1. 연구용 실제 문항 배열 (참여자에게는 괄호 안의 내부 지표를 숨기고 텍스트만 노출)
@@ -271,11 +273,19 @@ window.showModal(
 console.log('EC path:', ecResult?.path);
 console.log('EO path:', eoResult?.path);
 
+// ✅ 화면 전환: step5 -> step6
+const step5 = document.getElementById('step5');
+if (step5) step5.style.display = 'none';
+
+const step6 = document.getElementById('step6');
+if (step6) step6.style.display = 'block';
+
+// 버튼은 있으면 숨김 (step5에서 쓰던 것들)
 const uploadBtn = document.getElementById('uploadBtn');
 if (uploadBtn) uploadBtn.style.display = 'none';
 
 const nextBtn = document.getElementById('nextStepBtn');
-if (nextBtn) nextBtn.style.display = 'block';
+if (nextBtn) nextBtn.style.display = 'none';
 
 
   } catch (error) {
@@ -307,62 +317,70 @@ async function uploadSingleFile(userId, type, file) {
 /* ============================================================
    4. Step 6~7: 음성 분석 엔진 (핵심)
    ============================================================ */
-window.goToVoiceTest = function() {
-    const ageInput = document.getElementById('age');
-    const age = ageInput ? parseInt(ageInput.value) : 20;
-    
-    STAGES = getStages(age);
-    stageIdx = 0;
+window.goToVoiceTest = function () {
+  const age = parseInt(document.getElementById('age')?.value || '20', 10);
 
-    // display: none 대신 정의된 nextStep()을 사용하여 .active 클래스 교체
-    // 현재 currentStep이 6(안내)인 상태이므로 호출 시 7(녹음)로 자연스럽게 이동
-    window.nextStep(); 
-    renderStage();
+  STAGES = getStages(age);   // ✅ 연령 기반 스테이지 구성
+  stageIdx = 0;
 
+  window.nextStep();         // ✅ step6 -> step7 (active 전환)
+  renderStage();             // ✅ step7 내용 렌더
 };
 
 function getStages(age) {
-    const isMinor = age < 14;
-    return [
-        { id: 1, q: "Stage 1", d: "지문을 읽어주세요.", text: "지금 나는 내 음성에 귀를 기울이고 있다..." },
-        { id: 2, q: isMinor ? "최근 주제?" : "해결 사례?", d: "말씀해 주세요." }
-    ];
+  const isUnder14 = age < 14;
+
+  return [
+    { id: 1, q: "Stage 1", d: "지문을 읽어주세요.", text: "지금 나는 내 음성에 귀를 기울이고 있다..." },
+    { id: 2, q: isUnder14 ? "최근에 흥미로운 주제는?" : "최근에 해결한 사례는?", d: "자유롭게 말씀해 주세요." },
+  ];
 }
+
 
 
 /* ============================================================
    [신규 추가] Step 7: 음성 테스트 화면 전용 렌더링 함수
    ============================================================ */
+
 function renderStage() {
-    const s = STAGES[stageIdx];
-    if (!s) return;
+  const s = STAGES[stageIdx];
+  if (!s) return;
 
-    // 2. HTML 요소에 데이터 주입
-    // HTML의 id가 'questionText'와 'descriptionText'로 되어 있어야 함
+  const qEl = document.getElementById('question') || document.getElementById('questionText');
+  const dEl = document.getElementById('desc') || document.getElementById('descriptionText');
+  const badge = document.getElementById('stageBadge');
 
-    const qEl = document.getElementById('question') || document.getElementById('questionText');
-    const dEl = document.getElementById('desc') || document.getElementById('descriptionText');
-    const badge = document.getElementById('stageBadge'); // Stage 번호
+  if (qEl) qEl.innerText = s.text || s.q;
+  if (dEl) dEl.innerText = s.d;
+  if (badge) badge.innerText = `Stage ${s.id}`;
 
-    if (qEl) qEl.innerText = s.text || s.q;
-    if (dEl) dEl.innerText = s.d;
-    if (badge) badge.innerText = `Stage ${s.id}`;
+  stageDisplayTime = performance.now();
 
-     stageDisplayTime = performance.now(); // ✅ 여기서 찍는다
+  if (typeof setTimer === 'function') setTimer(40000);
+  if (typeof setRecordButtonState === 'function') setRecordButtonState({ recording: false });
 
-    // 3. 음성 UI 초기화 (보라색 타이머 등)
-    if (typeof setTimer === 'function') setTimer(40000);
-    if (typeof setRecordButtonState === 'function') setRecordButtonState({ recording: false });
-
-    // 4. 녹음 전에는 '다음 단계로' 버튼 숨기기
-    const nBtn = document.getElementById('nextBtn');
-    if (nBtn) nBtn.style.display = 'none';
+  const nBtn = document.getElementById('nextBtn');
+  if (nBtn) nBtn.style.display = 'none';
 }
-
 
 async function runVoiceStage() {
   const s = STAGES[stageIdx];
   const clickTime = performance.now();
+
+  // ✅ "다 말했어요" 버튼: 여기서만 1번 세팅
+  const finishBtn = document.getElementById('finishBtn');
+  if (finishBtn) {
+    finishBtn.disabled = false;
+    finishBtn.innerText = "다 말했어요";
+
+    // 이전 핸들러가 남아있어도 덮어쓰기 됨(중복 방지)
+    finishBtn.onclick = () => {
+      console.log("다 말했어요 클릭 -> stop()");
+      vp.stop();                 // startStage가 "stopped"로 finalize됨
+      finishBtn.disabled = true; // 연타 방지
+      finishBtn.innerText = "저장 중...";
+    };
+  }
 
   setRecordButtonState({ recording: false, calibrating: true });
   const cal = await vp.calibrateSilence(2);
@@ -375,36 +393,39 @@ async function runVoiceStage() {
 
   setRecordButtonState({ recording: false });
 
+  // 녹음이 끝났으면 버튼 정리
+  if (finishBtn) {
+    finishBtn.disabled = true;
+    finishBtn.innerText = "완료";
+  }
+
   const age = parseInt(document.getElementById('age')?.value || '0', 10);
   const age_group = age < 14 ? "under14" : (age < 19 ? "child" : "adult");
 
   const payload = {
-    session_id: document.getElementById('nickname')?.value || "unknown",
+    session_id: window.SESSION_ID,
     stage_id: s.id,
     age_group,
     status: metrics?.status || "completed",
     start_latency_ms: Math.max(0, Math.floor(clickTime - stageDisplayTime)),
-
     recorded_ms: metrics?.recorded_ms ?? 40000,
-    stop_offset_ms: metrics?.stop_offset_ms ?? 40000,
+    stop_offset_ms: metrics?.recorded_ms ?? 40000,
 
     pitch_mean: metrics?.pitch_mean ?? 0,
     pitch_sd: metrics?.pitch_sd ?? 0,
     speech_rate: metrics?.speech_rate ?? 0,
     pause_ratio: metrics?.pause_ratio ?? 0,
-    jitter: metrics?.jitter ?? 0,
-    shimmer: metrics?.shimmer ?? 0,
+    jitter: 0,
+    shimmer: 0,
 
     noise_floor_db: cal?.noise_floor_db ?? null,
-    snr_est_db: cal?.snr_est_db ?? null,
+    snr_est_db: metrics?.snr_est_db ?? null,
     clipping_ratio: metrics?.clipping_ratio ?? null,
     bg_voice_ratio: metrics?.bg_voice_ratio ?? null,
 
-    time_reading_style: metrics?.time_reading_style ?? null,
-    time_digits_rule: metrics?.time_digits_rule ?? null,
+    time_reading_style: null,
+    time_digits_rule: null,
   };
-
-  console.log("Saving voice data:", payload);
 
   const res = await fetch(API('/submit-voice-stage'), {
     method: 'POST',
@@ -416,6 +437,9 @@ async function runVoiceStage() {
     const t = await res.text();
     throw new Error(`submit-voice-stage failed ${res.status}: ${t}`);
   }
+
+  stageIdx += 1;
+  renderStage();
 }
 
 
@@ -441,3 +465,9 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error("오류: #recordBtn 요소를 찾을 수 없습니다. HTML ID를 확인하세요.");
     }
 });
+if (recBtn.dataset.recording === "1") {
+  console.log("녹음 중단 요청...");
+  recBtn.disabled = true;   // ✅ 중복 클릭 방지 (선택)
+  vp.stop();
+}
+

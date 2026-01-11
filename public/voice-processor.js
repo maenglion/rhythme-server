@@ -94,12 +94,13 @@ export class VoiceProcessor {
         if (now >= endAt) return finalize("completed");
         this._raf = requestAnimationFrame(loop);
       };
+const finalize = (status) => {
+  if (this._raf) cancelAnimationFrame(this._raf);
 
-      const finalize = (status) => {
-        if (this._raf) cancelAnimationFrame(this._raf);
-        const recorded_ms = now - start;
-        const speech_rate = (voicedFrames / frames) * 10; // 단순 비율 기반 속도 (음절 분석 전 단계)
-
+  const endNow = performance.now();                 // ✅ 추가
+  const recorded_ms = endNow - start;               // ✅ now -> endNow
+        const denom = Math.max(1, frames);
+const speech_rate = (voicedFrames / denom) * 10;
         const noise = this.noiseRms ?? 1e-6;
         const signalRms = rmsSum / Math.max(1, frames);
         const snr = 20 * Math.log10((signalRms + 1e-9) / (noise + 1e-9));
@@ -124,6 +125,7 @@ const bg_voice_ratio = pauseFrames / Math.max(1, frames);
     clipping_ratio,
     bg_voice_ratio: (pauseFrames / frames) * 0.5, // 환경 소음 개입 가능성 지수
     speech_rate: speech_rate, // 추가
+    bg_voice_ratio,   // 추가
     recorded_ms: Math.floor(recorded_ms) // 추가
 });
       };
