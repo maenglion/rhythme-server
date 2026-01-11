@@ -207,10 +207,9 @@ window.loadAndToggleConsent = function(fileName, headerElement) {
         return;
     }
     document.querySelectorAll('.consent-item').forEach(el => el.classList.remove('active'));
-    textArea.innerText = CONSENT_TEXTS[fileName] || "내용을 준비 중입니다.";
+ textArea.innerText = CONSENT_CACHE[path] || "내용을 준비 중입니다."; 
     item.classList.add('active');
 };
-
 window.checkAndGo = function() {
     const essentials = document.querySelectorAll('.essential');
     let allChecked = true;
