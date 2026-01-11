@@ -277,18 +277,11 @@ footer { width: 100%; text-align: center; padding: 40px 0 24px 0; color: #E5E5E5
     transform: rotate(180deg);
 }
 
-/* 모달 */
-/* 모달 내 버튼 그룹 컨테이너 */
-.modal-btn-group {
-    display: flex;
-    flex-direction: column; /* 세로 배치 */
-    gap: 16px;             /* 버튼 사이 간격 16px */
-    width: 100%;
-}
 
-/* 8-1. 커스텀 모달 스타일 */
+/* 모달 내 버튼 그룹 컨테이너 */
+/* 1. 모달 배경 (오버레이) */
 .modal-overlay {
-    display: none; /* 기본은 숨김 */
+    display: none; /* 기본 숨김, JS에서 flex로 전환 */
     position: fixed; 
     top: 0; left: 0; 
     width: 100%; height: 100%;
@@ -298,26 +291,31 @@ footer { width: 100%; text-align: center; padding: 40px 0 24px 0; color: #E5E5E5
     justify-content: center;
 }
 
+/* 2. 모달 컨텐츠 박스 */
 .modal-content {
     background: #1E1E1E; 
     border: 1px solid #BB86FC; 
-    padding: 30px; 
+    padding: 32px 24px; 
     border-radius: 12px;
     text-align: center; 
     width: 90%; 
-    max-width: 300px; /* 모바일에서 적절한 크기 */
+    max-width: 320px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
+/* 3. 모달 메시지 텍스트 */
 #modalMessage { 
     color: #FFFFFF; 
     font-size: 15px; 
     line-height: 1.6; 
     margin-bottom: 24px; 
-    word-break: keep-all; /* 단어 단위 줄바꿈으로 가독성 향상 */
+    word-break: keep-all;
 }
 
-/* 기본 모달 버튼 스타일 유지 */
+/* 4. 모달 버튼 공통 스타일 */
 .modal-btn {
     width: 100%;
     height: 52px;
@@ -325,32 +323,36 @@ footer { width: 100%; text-align: center; padding: 40px 0 24px 0; color: #E5E5E5
     font-size: 16px;
     font-weight: 700;
     cursor: pointer;
+    border: none;
+    outline: none;
+    transition: all 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
 }
 
-/* 확인 버튼 (Primary: 보라색 배경) */
-.modal-btn.primary {
-    background-color: #BB86FC;
-    color: #000000;
-    border: none;
+/* 5. 버튼 간격 및 배치 (취소가 위, 확인이 아래) */
+#modalCancelBtn {
+    order: 1; /* 위쪽 배치 */
+    background-color: transparent !important;
+    border: 1px solid #FFFFFF !important;
+    color: #FFFFFF !important;
 }
 
-/* 취소 버튼 (Secondary: 보더만 있는 스타일) */
-.modal-btn.secondary {
-    background-color: transparent;
-    color: #FFFFFF;
-    border: 1px solid #FFFFFF;
+#modalOkBtn {
+    order: 2; /* 아래쪽 배치 */
+    margin-top: 16px; /* 버튼 사이 16px 간격 */
+    background-color: #BB86FC !important;
+    color: #000000 !important;
 }
 
-.modal-btn.secondary:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+/* 6. 호버 효과 */
+#modalCancelBtn:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
 }
 
-.modal-btn:hover {
-    background: #A370DB;
+#modalOkBtn:hover {
+    background-color: #A370DB !important;
 }
 
 /* 닉네임, 나이와 동일한 스타일을 PIN 칸에도 적용 */

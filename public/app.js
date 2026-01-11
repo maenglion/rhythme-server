@@ -10,8 +10,8 @@ import {
 const vp = new VoiceProcessor();
 const CLOUD_RUN_URL = "https://rhythme-server-357918245340.asia-northeast3.run.app";
 const API = (path) => `${CLOUD_RUN_URL.replace(/\/$/, '')}${path}`;
-const CONSENT_CACHE = {}; // path -> text
 
+const CONSENT_CACHE = {};
 
 /* --- [전역 상태 관리] --- */
 let currentStep = 1;
@@ -80,15 +80,7 @@ cancelBtn.style.display = 'inline-block';
   });
 };
 
-
-
-// 세션 아이디 
-window.SESSION_ID = window.SESSION_ID || crypto.randomUUID();
-
-// 토글 
-// app.js 상단에 이미 있다고 하신 부분
-// const CONSENT_CACHE = {}; 
-
+// 2. 토글 함수 수정
 window.loadAndToggleConsent = async function (path, headerEl) {
   const item = headerEl.closest(".consent-item");
   if (!item) return;
@@ -99,19 +91,17 @@ window.loadAndToggleConsent = async function (path, headerEl) {
 
   if (!contentEl || !textArea) return;
 
-  // active 클래스를 사용하여 CSS와 일치시킵니다.
-  const isOpen = item.classList.contains("active");
+  const isActive = item.classList.contains("active");
 
-  if (isOpen) {
+  if (isActive) {
     item.classList.remove("active");
-    contentEl.style.maxHeight = "0";
-    setTimeout(() => { if(!item.classList.contains('active')) contentEl.style.display = "none"; }, 300);
+    contentEl.style.display = "none"; 
     if (arrow) arrow.textContent = "▼";
     return;
   }
 
   try {
-    // ⚠️ 여기서 반드시 CONSENT_CACHE 인지 확인!
+    // ⚠️ 에러 원인: CONSENT_TEXTS -> CONSENT_CACHE로 변경
     if (!CONSENT_CACHE[path]) {
       textArea.textContent = "내용을 불러오는 중...";
       const res = await fetch(path, { cache: "no-store" });
@@ -125,11 +115,14 @@ window.loadAndToggleConsent = async function (path, headerEl) {
   }
 
   item.classList.add("active");
-  contentEl.style.display = "block";
-  contentEl.style.maxHeight = "300px"; // 충분한 높이
+  // ⚠️ 에러 원인: "!important" 문자열 삭제 (JS 엔진 정지 방지)
+  contentEl.style.display = "block"; 
   if (arrow) arrow.textContent = "▲";
 };
 
+
+// 세션 아이디 
+window.SESSION_ID = window.SESSION_ID || crypto.randomUUID();
 
 // 1. 연구용 실제 문항 배열 (참여자에게는 괄호 안의 내부 지표를 숨기고 텍스트만 노출)
 const childQuestions = [
