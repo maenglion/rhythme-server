@@ -182,20 +182,23 @@ window.closeModal = function() {
 
 // app.js 상단
 window.checkAndGo = function() {
+    // 'essential' 클래스가 붙은 체크박스만 검사
     const essentials = document.querySelectorAll('.essential');
     let allChecked = true;
 
     essentials.forEach(checkbox => {
-        if (!checkbox.checked) allChecked = false;
+        // 부모 요소가 숨겨져 있지 않은 경우에만 체크 여부 확인 (미성년자 동의 로직 대응)
+        if (checkbox.offsetParent !== null && !checkbox.checked) {
+            allChecked = false;
+        }
     });
 
     if (allChecked) {
         location.href = 'voice_info.html';
     } else {
-        window.showModal("필수 항목에 모두 동의해주세요.");
+        window.showModal("필수 항목에 모두 동의해 주세요.");
     }
 };
-
 // 그 다음에 loadAndToggleConsent 등 다른 함수들...
 
 

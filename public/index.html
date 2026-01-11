@@ -75,6 +75,20 @@
     </div>
   </div>
 
+  <div class="consent-item">
+  <div class="consent-header" onclick="loadAndToggleConsent('terms-of-use/qeeg.txt', this)">
+    <input type="checkbox" id="checkQeeg" onclick="event.stopPropagation()">
+    <div class="header-text">
+      <span class="subject">qEEG(뇌파) 자료 업로드 및 처리 동의</span>
+      <span class="badge select-badge">선택</span> </div>
+    <span class="arrow">▼</span>
+  </div>
+
+  <div class="consent-content">
+    <div class="consent-text-area">내용을 불러오는 중...</div>
+  </div>
+</div>
+
   <button class="next-btn" onclick="checkAndGo()">동의 완료 및 다음</button>
 </section>
 
