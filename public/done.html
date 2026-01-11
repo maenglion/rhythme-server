@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="styles.css">
+    <title>검사 완료 - Rhythmi</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden; /* 배경 애니메이션용 */
+        }
+
+        .done-container {
+            width: 100%;
+            max-width: 400px;
+            padding: 40px 24px;
+            text-align: center;
+            z-index: 10;
+        }
+
+        /* 체크 아이콘 애니메이션 */
+        .check-icon {
+            width: 80px;
+            height: 80px;
+            background: #BB86FC;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            font-size: 40px;
+            animation: bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .thanks-title {
+            font-size: 26px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            line-height: 1.4;
+            color: #BB86FC;
+        }
+
+        .info-card {
+            background: #1E1E1E;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 30px;
+            text-align: left;
+            border: 1px solid rgba(187, 134, 252, 0.2);
+            animation: fadeInUp 1s ease both 0.3s;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .info-card p {
+            font-size: 15px;
+            line-height: 1.7;
+            color: #E0E0E0;
+            margin: 0 0 15px 0;
+        }
+
+        .notice-badge {
+            display: inline-block;
+            background: rgba(187, 134, 252, 0.1);
+            color: #BB86FC;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .medical-disclaimer {
+            font-size: 13px;
+            color: #888;
+            line-height: 1.5;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+        }
+
+        .report-btn {
+            width: 100%;
+            height: 60px;
+            background: linear-gradient(135deg, #BB86FC 0%, #9965f4 100%);
+            color: #000;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(187, 134, 252, 0.3);
+            transition: transform 0.2s;
+        }
+
+        .report-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* 배경에 은은한 빛 효과 */
+        .bg-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(187, 134, 252, 0.15) 0%, transparent 70%);
+            transform: translate(-50%, -50%);
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-glow"></div>
+    
+    <div class="done-container">
+        <div class="check-icon">✓</div>
+        
+        <h1 class="thanks-title">참여해주셔서<br>진심으로 감사합니다.</h1>
+
+        <div class="info-card">
+            <span class="notice-badge">BETA 참여 감사 이벤트</span>
+            <p>신경다양성인(ADHD, ASD 등)의 고유한 음성 리듬을 연구하는 본 프로젝트에 소중한 데이터를 보태주셨습니다.</p>
+            <p>제공해주신 데이터는 <strong>음성XSQ 모델</strong>의 가설 검증을 위해 소중히 사용됩니다.</p>
+            
+            <div class="medical-disclaimer">
+                ⚠️ 본 결과는 의학적 진단이나 전문가의 소견을 대체할 수 없으며, 모델의 정합성 연구를 위한 참고 지표로만 활용됩니다.
+                베타 리포트에는 SQ 요약, 음성 Stage 변화(읽기/설명/고부하) 비교 결과가 포함됩니다.
+                qEEG는 업로드한 경우, 이미지에 표기된 수치 기반 요약이 제공될 수 있습니다(beta)
+            </div>
+        </div>
+
+       <button id="goReportBtn" class="report-btn">분석 리포트 확인하기</button>
+
+    </div>
+
+<script>
+  // 1) sid 확보: URL > localStorage
+  const sidFromUrl = new URLSearchParams(location.search).get("sid");
+  const sidFromStore = localStorage.getItem("SESSION_ID");
+  const sid = sidFromUrl || sidFromStore;
+
+  // 2) localStorage 동기화
+  if (sid) localStorage.setItem("SESSION_ID", sid);
+
+  // 3) 완료 이벤트 기록
+  if (sid) {
+    navigator.sendBeacon("/event", JSON.stringify({
+      session_id: sid,
+      name: "test_completed",
+      ts: Date.now()
+    }));
+  }
+
+  // 4) report로 이동(클릭 시)
+  document.getElementById("goReportBtn")?.addEventListener("click", () => {
+    const target = sid ? `./report.html?sid=${encodeURIComponent(sid)}` : "./report.html";
+    location.href = target;
+  });
+</script>
+
+
+</body>
+</html>

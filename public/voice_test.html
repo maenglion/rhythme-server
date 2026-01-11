@@ -65,24 +65,35 @@
   let stageIdx = 0;
   let STAGES = [];
 
-  // ====== 렌더링 함수 ======
- function renderStage() {
-  const s = STAGES[stageIdx];
-  if (!s) {
-    // 1. 커스텀 모달 띄우기 (window.showModal이 정의되어 있어야 함)
-    if (window.showModal) {
-        window.showModal("모든 검사가 완료되었습니다.");
-        setTimeout(() => {
-            location.href = "done.html";
-        }, 2000);
-    } else {
-        // 혹시 모달 함수가 로드 안 됐을 경우를 위한 백업
-        alert("모든 검사가 완료되었습니다.");
-        location.href = "done.html";
-    }
-    return;
+function getSid() {
+  const urlSid = new URLSearchParams(location.search).get("sid");
+  const storeSid = localStorage.getItem("SESSION_ID");
+  const winSid = window.SESSION_ID;
+
+  let sid = urlSid || storeSid || winSid;
+
+  // ✅ 없으면 생성
+  if (!sid) {
+    sid = (crypto?.randomUUID ? crypto.randomUUID() : `sid_${Date.now()}_${Math.random().toString(16).slice(2)}`);
   }
 
+  window.SESSION_ID = sid;
+  localStorage.setItem("SESSION_ID", sid);
+  return sid;
+}
+
+
+
+  // ====== 렌더링 함수 ======
+function renderStage() {
+  const s = STAGES[stageIdx];
+
+  // ✅ 모든 스테이지 완료 → done.html로 sid 붙여 이동 (모달 없음)
+  if (!s) {
+    const sid = getSid();
+    location.href = sid ? `./done.html?sid=${encodeURIComponent(sid)}` : "./done.html";
+    return;
+  }
     const badge = document.getElementById("stageBadge");
     if (badge) badge.innerText = `Stage ${s.id}`;
 
