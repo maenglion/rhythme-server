@@ -2,7 +2,7 @@
 
 export function setQuestionText(text) {
   const el = document.querySelector("#question");
-  if (el) el.innerText = text ?? "";
+  if (el) el.innerHTML = text ?? ""; // <br> 태그 반영을 위해 innerHTML 권장
 }
 
 export function setDescriptionText(text) {
@@ -19,52 +19,59 @@ export function setTimer(leftMs, totalSec = 40) {
   timerText.textContent = `${left}s`;
 
   if (timerCircle) {
-    // 너 SVG 값에 맞춰서 (index.html: 283 / voice_test.html: 502) 중 하나 쓰면 됨
-    const CIRC = timerCircle.getAttribute("stroke-dasharray")
-      ? Number(timerCircle.getAttribute("stroke-dasharray"))
-      : 502;
-
+    const CIRC = 502; // stroke-dasharray 값에 맞춤
     const progress = leftMs / (totalSec * 1000);
     const offset = CIRC - (progress * CIRC);
 
     timerCircle.style.strokeDashoffset = String(offset);
-    timerCircle.style.strokeWidth = String(1 + (progress * 3));
   }
 }
 
 export function setRecordButtonState({ recording, calibrating }) {
-    const btn = document.getElementById('recordBtn');
-    const icon = document.getElementById('recordIcon');
-    const status = document.getElementById('recordStatus');
-    const timerLine = document.getElementById('timerLine');
+  const status = document.getElementById('recordStatus');
+  const circle = document.getElementById('recordCircle');
+  const calib = document.getElementById('calibratingText');
+  const finishBtn = document.getElementById('finishBtn');
+  const recordBtn = document.getElementById('recordBtn');
 
-    if (calibrating) {
-        status.innerText = "소음 측정 중...";
-        icon.style.borderRadius = "4px"; // 사각형(Stop 아이콘 느낌)
-        icon.style.background = "#BB86FC"; // 보라색으로 변경
-        icon.style.borderRadius = "50%";
-        return;
-    }
+  if (!status || !circle || !calib) return;
 
-    if (recording) {
-        status.innerText = "녹음 중";
-        status.style.color = "#BB86FC"; // 글씨도 보라색으로 강조
-        icon.style.background = "#BB86FC"; // 보라색
-        icon.style.borderRadius = "4px"; // 사각형(Stop 아이콘 느낌)
-        timerLine.style.stroke = "#BB86FC";
-    } else {
-        status.innerText = "녹음 시작";
-        status.style.color = "#fff";
-        icon.style.borderRadius = "4px"; // 사각형(Stop 아이콘 느낌)
-        icon.style.background = "#dc6363ff"; // 다시 빨간색 원으로
-        icon.style.borderRadius = "50%";
-    }
+  if (calibrating) {
+    calib.style.visibility = "visible";
+    circle.style.visibility = "hidden"; // display:none 대신 visibility 사용 (영역 유지)
+    status.innerText = "준비 중...";
+    status.style.color = "#BB86FC";
+    if (recordBtn) recordBtn.style.pointerEvents = "none"; // 측정 중 중복 클릭 방지
+    return;
+  }
+
+  if (recording) {
+    calib.style.visibility = "hidden";
+    circle.style.visibility = "hidden"; 
+    status.innerText = "녹음 중";
+    status.style.color = "#BB86FC";
+    status.style.fontWeight = "900";
+    if (finishBtn) finishBtn.style.display = 'block';
+    if (recordBtn) recordBtn.style.pointerEvents = "none"; // 녹음 중엔 중단은 아래 버튼으로
+  } else {
+    calib.style.visibility = "hidden";
+    circle.style.visibility = "visible"; // 다시 빨간 원 등장
+    status.innerText = "녹음 시작";
+    status.style.color = "#fff";
+    status.style.fontWeight = "900";
+    if (finishBtn) finishBtn.style.display = 'none';
+    if (recordBtn) recordBtn.style.pointerEvents = "auto"; // 클릭 가능하게 복구
+  }
 }
 
 export function initStageUI() {
-  // 기본 상태: 녹음 전
+  // 초기 UI 세팅
   setRecordButtonState({ recording: false, calibrating: false });
-
-  // 타이머 UI 초기화(원하면)
-  // setTimer(40_000, 40);
+  
+  // 혹시 모르니 타이머도 40s로 초기화
+  const timerText = document.querySelector("#timer");
+  if(timerText) timerText.textContent = "40s";
+  
+  const timerCircle = document.querySelector("#timerLine");
+  if(timerCircle) timerCircle.style.strokeDashoffset = "0";
 }
