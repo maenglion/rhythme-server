@@ -49,8 +49,8 @@ export function setRecordButtonState({ recording, calibrating = false }) {
   btn.dataset.recording = recording ? "1" : "0"; // ✅ 이게 핵심(상태 꼬임 방지)
 
   // 버튼 텍스트/아이콘
-  const label = btn.querySelector("span") || btn;
-  if (label) label.textContent = recording ? "중단하기" : "녹음 시작";
+  //const label = btn.querySelector("span") || btn;
+  //if (label) label.textContent = recording ? "중단하기" : "녹음 시작";
   btn.classList.toggle("recording", !!recording);
 
   if (icon) icon.style.borderRadius = recording ? "4px" : "50%";

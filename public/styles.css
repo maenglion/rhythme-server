@@ -433,12 +433,37 @@ footer { width: 100%; text-align: center; padding: 40px 0 24px 0; color: #E5E5E5
 
 /* VOICE_TEXT 영역
 
-/* Stage 1 전용 지문 스타일 */
-#question.stage1-text {
-    font-size: 16px;           /* 글자 크기를 16~18px로 축소 */
-    line-height: 1.8;          /* 줄 간격을 넓혀서 읽기 편하게 */
-    text-align: center;        /* 중앙 정렬 */
-    word-break: keep-all;      /* 단어 단위로 줄바꿈 (한글 가독성 핵심) */
-    margin: 20px 0;
-    color: #E0E0E0;            /* 약간 연한 회색으로 피로도 감소 */
+/* Stage 1 지문 최적화 */
+#question {
+    font-size: 17px !important;    /* 기존보다 훨씬 작게 (읽기 적당한 크기) */
+    line-height: 1.8 !important;   /* 줄 간격 넉넉히 */
+    color: #E0E0E0;                /* 눈이 덜 아픈 연회색 */
+    text-align: center;
+    width: 100%;
+    max-width: 310px;              /* 좌우 여백 확보 */
+    margin: 0 auto 40px auto;
+    word-break: keep-all;          /* 단어 단위 줄바꿈 (가독성 핵심) */
+    white-space: pre-wrap;         /* \n이나 <br> 줄바꿈 허용 */
+}
+
+/* 녹음 버튼 중앙 정렬 (글자 없이 아이콘만) */
+.record-btn {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#recordIcon {
+    width: 24px;
+    height: 24px;
+    background: #ff4444;
+    border-radius: 50%;
+    transition: all 0.2s ease;
 }
