@@ -12,9 +12,8 @@ export class VoiceProcessor {
   }
 
   stop() {
-    this._stopped = true;
-    if (this._raf) cancelAnimationFrame(this._raf);
-  }
+    this._stopped = true; }
+
 
   async init() {
     if (this.ctx) return;
@@ -181,9 +180,8 @@ async startStage({ durationSec = 40, onTick } = {}) {
 
     loop();
   });
+} 
 }
-}
-
 
 /* --- helpers --- */
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
