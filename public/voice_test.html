@@ -196,7 +196,7 @@ import {
             <p id="desc" class="description">제시된 지문을 또박또박 읽어주세요.</p>
             <h2 id="question" class="question-title" style="text-align: center; margin-bottom: 30px;">지문 로딩 중...</h2>
 
-       <div class="recorder-wrapper" style="position: relative; width: 200px; height: 260px; margin: 0 auto; display: flex; flex-direction: column; align-items: center;">
+           <div class="recorder-wrapper" style="position: relative; width: 200px; height: 260px; margin: 0 auto; display: flex; flex-direction: column; align-items: center;">
     
     <div style="position: relative; width: 180px; height: 180px; display: flex; align-items: center; justify-content: center;">
         <svg width="180" height="180" style="transform: rotate(-90deg); position: absolute; top: 0; left: 0;">
@@ -208,16 +208,16 @@ import {
         <div id="timer" style="font-size: 32px; color: #BB86FC; font-weight: bold; z-index: 10;">40s</div>
     </div>
     
-    <div style="margin-top: 24px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+    <div style="margin-top: 20px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
         <button id="recordBtn" style="background: none; border: none; cursor: pointer; padding: 0;">
-            <span id="recordStatus" style="font-size: 20px; font-weight: 900; color: #BB86FC; transition: all 0.2s ease;">녹음 시작</span>
+            <span id="recordStatus" style="font-size: 20px; font-weight: 900; transition: all 0.2s ease;">녹음 시작</span>
         </button>
 
         <span id="calibratingText" style="font-size: 14px; color: rgba(187, 134, 252, 0.5); font-weight: 400; visibility: hidden;">소음 측정 중...</span>
     </div>
 </div>
             <div style="margin-top: 40px;">
-                <button id="finishBtn" class="next-btn secondary-btn" style="display: none;">완료</button>
+                <button id="finishBtn" class="next-btn secondary-btn" style="display: none;">다 말했어요</button>
             </div>
         </div>
     </div>
