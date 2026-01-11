@@ -8,7 +8,12 @@ export class VoiceProcessor {
     this.analyser = null;
     this._raf = null;
     this._stopped = false;
-    this.noiseRms = null; // baseline RMS
+    this.noiseRms = null;
+  }
+
+  stop() {
+    this._stopped = true;
+    if (this._raf) cancelAnimationFrame(this._raf);
   }
 
   async init() {
