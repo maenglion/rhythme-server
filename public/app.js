@@ -452,11 +452,47 @@ function getStages(age) {
 
 function renderStage() {
   const s = STAGES[stageIdx];
-  if (!s) return;
+
+  // ✅ 종료 화면(마지막 stage 끝난 뒤)
+  if (!s) {
+    const badgeEl = document.getElementById("stageBadge");
+    if (badgeEl) badgeEl.innerText = "완료";
+
+    setQuestionText("녹음이 완료되었습니다.");
+    setDescriptionText("참여해주셔서 감사합니다.");
+
+    const recBtn = document.getElementById("recordBtn");
+    if (recBtn) recBtn.style.display = "none";
+
+    const finishBtn = document.getElementById("finishBtn");
+    if (finishBtn) {
+      finishBtn.style.display = "inline-block";
+      finishBtn.disabled = false;
+      finishBtn.innerText = "완료";
+      finishBtn.onclick = () => {
+        // location.href = "done.html";
+      };
+    }
+    return;
+  }
+
+  // ✅ 일반 stage 화면
+  const badgeEl = document.getElementById("stageBadge");
+  if (badgeEl) badgeEl.innerText = `Stage ${s.id}`;
+
+  setQuestionText(s.text || s.q || "");
+  setDescriptionText(s.d || "");
+
+  setTimer(40000);
+  setRecordButtonState({ recording: false, calibrating: false });
+
+  const finishBtn = document.getElementById("finishBtn");
+  if (finishBtn) finishBtn.style.display = "none";
+
 
   const qEl = document.getElementById('question') || document.getElementById('questionText');
   const dEl = document.getElementById('desc') || document.getElementById('descriptionText');
-  const badge = document.getElementById('stageBadge');
+
 
   if (qEl) qEl.innerText = s.text || s.q;
   if (dEl) dEl.innerText = s.d;
@@ -501,11 +537,12 @@ async function runVoiceStage() {
 
   setRecordButtonState({ recording: false });
 
-  // 녹음이 끝났으면 버튼 정리
-  if (finishBtn) {
-    finishBtn.disabled = true;
-    finishBtn.innerText = "완료";
-  }
+  // 녹음이 끝났으면 "다 말했어요" 버튼은 숨김(완료는 renderStage에서 처리)
+if (finishBtn) {
+  finishBtn.disabled = true;
+  finishBtn.style.display = "none";
+  finishBtn.onclick = null;
+}
 
   const age = parseInt(document.getElementById('age')?.value || '0', 10);
   const age_group = age < 14 ? "under14" : (age < 19 ? "child" : "adult");
