@@ -19,13 +19,13 @@
   // ====== Stage 설계 ======
   function getStagesByAge(age) {
     const isUnder14 = age < 14;
-    const STAGE1_TEXT = `지금 나는 내 음성에 귀를 기울인다. 글을 소리 내어 읽을 때는 세 가지를 지킨다:
+    const STAGE1_TEXT = `지금 나는 내 음성에 귀를 기울인다. 글을 소리 내어 읽을 때는 세 가지를 지킨다.
 첫째, 쉼표에서는 잠깐 쉰다. 
 둘째, 마침표에서는 숨을 고른다. 
-셋째, 눈은 글을 따라 천천히 내려간다
+셋째, 눈은 글을 따라 천천히 내려간다.
 
 매일 저녁 나는 오늘 있었던 일들을 체크한다.
-그 과정을 통해 숫자,친숙한 단어, 가끔은 낯선 단어들이 나의 하루에 녹아있다.
+그 과정을 통해 숫자, 친숙한 단어, 가끔은 낯선 단어들이 나의 하루에 녹아있다.
 
 09:30, 12:10, 18:45
 기준, 예외, 패턴, 규칙
@@ -66,14 +66,22 @@
   let STAGES = [];
 
   // ====== 렌더링 함수 ======
-  function renderStage() {
-    const s = STAGES[stageIdx];
-    if (!s) {
-      // 모든 스테이지 완료 시 처리 (예: 결과 페이지로 이동)
-      alert("모든 검사가 완료되었습니다.");
-      location.href = "done.html"; 
-      return;
+ function renderStage() {
+  const s = STAGES[stageIdx];
+  if (!s) {
+    // 1. 커스텀 모달 띄우기 (window.showModal이 정의되어 있어야 함)
+    if (window.showModal) {
+        window.showModal("모든 검사가 완료되었습니다.");
+        setTimeout(() => {
+            location.href = "done.html";
+        }, 2000);
+    } else {
+        // 혹시 모달 함수가 로드 안 됐을 경우를 위한 백업
+        alert("모든 검사가 완료되었습니다.");
+        location.href = "done.html";
     }
+    return;
+  }
 
     const badge = document.getElementById("stageBadge");
     if (badge) badge.innerText = `Stage ${s.id}`;
