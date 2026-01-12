@@ -759,13 +759,20 @@ function initVoicePage() {
   });
 }
 
-// 페이지가 로드될 때 실행
 document.addEventListener("DOMContentLoaded", () => {
   initVoicePage();
 
-  // Step 5에서 "음성분석 이어하기" 버튼이 있는 경우의 이벤트
+  const finishBtn = document.getElementById("finishBtn");
+  if (finishBtn) {
+    // 혹시 inline onclick 있었으면 제거
+    finishBtn.onclick = null;
+    finishBtn.style.display = "none";
+    finishBtn.disabled = true;
+  }
+
   const nextBtn = document.getElementById("nextStepBtn");
   if (nextBtn) {
+    nextBtn.onclick = null; // ✅ inline onclick 무력화
     nextBtn.addEventListener("click", () => {
       const sid = localStorage.getItem("SESSION_ID");
       if (!sid) {
@@ -777,4 +784,3 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
-// 괄호가 정확히 여기서 끝납니다.
