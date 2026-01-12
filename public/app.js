@@ -166,7 +166,7 @@ const adultQuestions = [
 /* ============================================================
    1. 공통 및 단계 이동 제어 (window 등록 필수)
    ============================================================ */
-indow.showStep = function(stepNum) {
+window.showStep = function(stepNum) {
   document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
   const target = document.getElementById(`step${stepNum}`);
   if (target) {
