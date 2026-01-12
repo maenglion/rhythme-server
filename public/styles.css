@@ -31,25 +31,9 @@ body {
 }
 
 /* 3. 단계별 섹션 제어 */
-/* 기본적으로 모든 스텝은 숨김 */
-.step { 
-    display: none; 
-    width: 100%; 
-    flex-direction: column; 
-    align-items: center; /* 중앙 정렬이 필요하다면 추가 */
-}
-
-/* active 클래스가 붙은 스텝만 보여줌 */
-.step.active { 
-    display: flex; 
-    animation: fadeIn 0.4s ease; 
-}
-
-/* 부드러운 전환 효과 */
-@keyframes fadeIn { 
-    from { opacity: 0; transform: translateY(10px); } /* 살짝 위로 올라오는 효과 추가 시 */
-    to { opacity: 1; transform: translateY(0); } 
-}
+.step { display: none; width: 100%; flex-direction: column; }
+.step.active { display: flex; animation: fadeIn 0.4s ease; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 /* 4. 텍스트 및 레이블 간격 */
 .title { font-size: 24px; font-weight: 700; margin-bottom: 24px; line-height: 1.3; }
