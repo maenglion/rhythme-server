@@ -5,22 +5,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="styles.css">
   <title>분석 레포트 beta 1.1</title>
+</head>
+
+<body>
+  <h2>🎙️ 음성 리포트</h2>
+  <div class="muted" id="meta"></div>
+
+  <div class="row" id="cards"></div>
+
+  <h3>Stage별 결과</h3>
+  <div id="stageTable"></div>
+
+  <button id="goSurveyBtn">설문 계속하기</button>
 
   <script>
+    const API_BASE = "https://rhythme-server-as3ud42lpa-du.a.run.app";
+
+    const fmt = (x, d=2) => (x === null || x === undefined) ? "-" : Number(x).toFixed(d);
+
     function getSid() {
-      const urlSid = new URLSearchParams(location.search).get("sid");
+      const qs = new URLSearchParams(location.search);
+      const urlSid = qs.get("sid") || qs.get("session_id");
       const storeSid = localStorage.getItem("SESSION_ID");
       const winSid = window.SESSION_ID;
       const sid = urlSid || storeSid || winSid;
 
       if (!sid) {
-        if (typeof window.showModal === "function") {
-          window.showModal("세션이 없습니다. 처음부터 다시 진행해주세요.");
-          setTimeout(() => location.href = "./index.html", 300);
-        } else {
-          alert("세션이 없습니다. 처음부터 다시 진행해주세요.");
-          location.href = "./index.html";
-        }
+        alert("세션이 없습니다. 처음부터 다시 진행해주세요.");
+        location.href = "./index.html";
         return null;
       }
 
@@ -29,20 +41,106 @@
       return sid;
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-      const sid = getSid(); // ✅ report 진입 즉시 체크
+    function qualityLabel(nonOk, snrAvg){
+      if (nonOk > 0) return { label: "주의", note: "일부 stage 품질 이슈가 있어 해석 제한이 있을 수 있어요." };
+      if (snrAvg !== null && snrAvg !== undefined && snrAvg < 10) return { label: "주의", note: "SNR이 낮아 주변 소음 영향이 있을 수 있어요." };
+      return { label: "양호", note: "녹음 품질이 전반적으로 양호해요." };
+    }
+
+    function deltas(stages){
+      const s1 = stages.find(s => s.stage_id === 1);
+      if (!s1) return null;
+      return stages.map(s => {
+        if (s.stage_id === 1) return { stage_id: 1, d_sr: 0, d_pr: 0, d_psd: 0 };
+        return {
+          stage_id: s.stage_id,
+          d_sr: (s.speech_rate - s1.speech_rate),
+          d_pr: (s.pause_ratio - s1.pause_ratio),
+          d_psd: (s.pitch_sd - s1.pitch_sd),
+        };
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      const sid = getSid();
       if (!sid) return;
 
-      document.getElementById("goSurveyBtn").addEventListener("click", () => {
-        const sid2 = getSid();
-        if (!sid2) return;
-        location.href = `./survey.html?sid=${encodeURIComponent(sid2)}`;
-      });
+      const goBtn = document.getElementById("goSurveyBtn");
+      if (goBtn) {
+        goBtn.addEventListener("click", () => {
+          const sid2 = getSid();
+          if (!sid2) return;
+          location.href = `./survey.html?sid=${encodeURIComponent(sid2)}`;
+        });
+      }
+
+      const res = await fetch(`${API_BASE}/report/voice?session_id=${encodeURIComponent(sid)}`);
+      if (!res.ok) {
+        const t = await res.text();
+        document.body.innerHTML = `<p>불러오기 실패: ${res.status}</p><pre>${t}</pre>`;
+        return;
+      }
+
+      const data = await res.json();
+      document.getElementById("meta").textContent = `session_id: ${data.session_id}`;
+
+      const s = data.summary;
+      const q = qualityLabel(s.non_ok_count, s.snr_avg);
+
+      document.getElementById("cards").innerHTML = `
+        <div class="card">
+          <div class="muted">데이터 품질</div>
+          <div><span class="badge">${q.label}</span></div>
+          <div class="muted" style="margin-top:6px;">SNR 평균: ${fmt(s.snr_avg,1)} / non-ok: ${s.non_ok_count}</div>
+          <div class="muted">${q.note}</div>
+        </div>
+        <div class="card">
+          <div class="muted">요약(평균)</div>
+          <div>말속도: ${fmt(s.speech_rate_avg,2)}</div>
+          <div>쉼 비율: ${fmt(s.pause_ratio_avg,3)}</div>
+          <div>억양 변동(pitch_sd): ${fmt(s.pitch_sd_avg,1)}</div>
+        </div>
+        <div class="card">
+          <div class="muted">범위(4 stage)</div>
+          <div>말속도: ${fmt(s.speech_rate_min,2)} ~ ${fmt(s.speech_rate_max,2)}</div>
+          <div>쉼 비율: ${fmt(s.pause_ratio_min,3)} ~ ${fmt(s.pause_ratio_max,3)}</div>
+          <div>pitch_mean: ${fmt(s.pitch_mean_min,1)} ~ ${fmt(s.pitch_mean_max,1)}</div>
+        </div>
+      `;
+
+      const ds = deltas(data.stages) || [];
+      const dMap = new Map(ds.map(x => [x.stage_id, x]));
+
+      const rows = data.stages.map(st => {
+        const d = dMap.get(st.stage_id);
+        const dSr = d ? fmt(d.d_sr,2) : "-";
+        const dPr = d ? fmt(d.d_pr,3) : "-";
+        const dPsd = d ? fmt(d.d_psd,1) : "-";
+        return `
+          <tr>
+            <td>${st.stage_id}</td>
+            <td>${st.quality_flag}</td>
+            <td>${fmt(st.pitch_sd,1)} <span class="muted">(Δ ${dPsd})</span></td>
+            <td>${fmt(st.speech_rate,2)} <span class="muted">(Δ ${dSr})</span></td>
+            <td>${fmt(st.pause_ratio,3)} <span class="muted">(Δ ${dPr})</span></td>
+            <td>${fmt(st.snr,1)}</td>
+            <td class="muted">${st.created_at}</td>
+          </tr>
+        `;
+      }).join("");
+
+      document.getElementById("stageTable").innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Stage</th><th>품질</th><th>pitch_sd</th><th>speech_rate</th><th>pause_ratio</th><th>SNR</th><th>timestamp</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <p class="muted" style="margin-top:8px;">* Δ는 Stage1(읽기) 대비 변화량</p>
+      `;
     });
   </script>
-</head>
-
-<body>
-  <button id="goSurveyBtn">설문 계속하기</button>
 </body>
 </html>
