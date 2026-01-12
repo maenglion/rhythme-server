@@ -142,10 +142,36 @@
     </div>
 
     <script>
-        document.getElementById('goStage').onclick = () => {
-            // 인덱스에서 선택했던 정보를 유지하며 실제 테스트 페이지로 이동
-            location.href = 'voice_test.html';
-        };
-    </script>
+     
+  function getSid() {
+    const urlSid = new URLSearchParams(location.search).get("sid");
+    const storeSid = localStorage.getItem("SESSION_ID");
+    const winSid = window.SESSION_ID;
+    const sid = urlSid || storeSid || winSid;
+
+    if (!sid) {
+      if (typeof window.showModal === "function") {
+        window.showModal("세션이 없습니다. 처음부터 다시 진행해주세요.");
+        setTimeout(() => location.href = "./index.html", 300);
+      } else {
+        alert("세션이 없습니다. 처음부터 다시 진행해주세요.");
+        location.href = "./index.html";
+      }
+      return null;
+    }
+
+    window.SESSION_ID = sid;
+    localStorage.setItem("SESSION_ID", sid);
+    return sid;
+  }
+
+  // ✅ 버튼 클릭 시 sid를 URL로 물고 간다
+  document.getElementById('goStage').onclick = () => {
+    const sid = getSid();
+    if (!sid) return;
+    location.href = `voice_test.html?sid=${encodeURIComponent(sid)}`;
+  };
+</script>
+
 </body>
 </html>

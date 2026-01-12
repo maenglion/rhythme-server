@@ -21,23 +21,29 @@
   // ---------------------------
   // Session helper (단일 진실)
   // ---------------------------
-  function getSid() {
-    const urlSid = new URLSearchParams(location.search).get("sid");
-    const storeSid = localStorage.getItem("SESSION_ID");
-    const winSid = window.SESSION_ID;
+function getSid() {
+  const urlSid = new URLSearchParams(location.search).get("sid");
+  const storeSid = localStorage.getItem("SESSION_ID");
+  const winSid = window.SESSION_ID;
 
-    let sid = urlSid || storeSid || winSid;
+  const sid = urlSid || storeSid || winSid;
 
-    if (!sid) {
-      sid = (crypto?.randomUUID)
-        ? crypto.randomUUID()
-        : `sid_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  if (!sid) {
+    if (typeof window.showModal === "function") {
+      window.showModal("세션이 없습니다. 처음부터 다시 진행해주세요.");
+      setTimeout(() => location.href = "./index.html", 300);
+    } else {
+      alert("세션이 없습니다. 처음부터 다시 진행해주세요.");
+      location.href = "./index.html";
     }
-
-    window.SESSION_ID = sid;
-    localStorage.setItem("SESSION_ID", sid);
-    return sid;
+    return null;
   }
+
+  window.SESSION_ID = sid;
+  localStorage.setItem("SESSION_ID", sid);
+  return sid;
+}
+
 
   // ---------------------------
   // Progress (테스트 이어하기/초기화)
@@ -200,8 +206,9 @@
     try {
       const s = STAGES[stageIdx];
       if (!s) return;
+const sid = getSid();
+if (!sid) return;
 
-      const sid = getSid();
       const age = parseInt(localStorage.getItem("rhythmi_age") || "0", 10);
       const age_group = age < 14 ? "under14" : (age < 19 ? "child" : "adult");
 

@@ -148,30 +148,37 @@
        <button id="goReportBtn" class="report-btn">분석 리포트 확인하기</button>
 
     </div>
-
 <script>
-  // 1) sid 확보: URL > localStorage
-  const sidFromUrl = new URLSearchParams(location.search).get("sid");
-  const sidFromStore = localStorage.getItem("SESSION_ID");
-  const sid = sidFromUrl || sidFromStore;
+function getSid() {
+  const urlSid = new URLSearchParams(location.search).get("sid");
+  const storeSid = localStorage.getItem("SESSION_ID");
+  const winSid = window.SESSION_ID;
+  const sid = urlSid || storeSid || winSid;
 
-  // 2) localStorage 동기화
-  if (sid) localStorage.setItem("SESSION_ID", sid);
-
-  // 3) 완료 이벤트 기록
-  if (sid) {
-    navigator.sendBeacon("/event", JSON.stringify({
-      session_id: sid,
-      name: "test_completed",
-      ts: Date.now()
-    }));
+  if (!sid) {
+    if (typeof window.showModal === "function") {
+      window.showModal("세션이 없습니다. 처음부터 다시 진행해주세요.");
+      setTimeout(() => location.href = "./index.html", 300);
+    } else {
+      alert("세션이 없습니다. 처음부터 다시 진행해주세요.");
+      location.href = "./index.html";
+    }
+    return null;
   }
 
-  // 4) report로 이동(클릭 시)
-  document.getElementById("goReportBtn")?.addEventListener("click", () => {
-    const target = sid ? `./report.html?sid=${encodeURIComponent(sid)}` : "./report.html";
-    location.href = target;
-  });
+  window.SESSION_ID = sid;
+  localStorage.setItem("SESSION_ID", sid);
+  return sid;
+}
+
+const sid = getSid(); // ✅ 진입 즉시 체크
+
+// ✅ goReportBtn 하나만
+document.getElementById("goReportBtn")?.addEventListener("click", () => {
+  const sid2 = getSid();
+  if (!sid2) return;
+  location.href = `./report.html?sid=${encodeURIComponent(sid2)}`;
+});
 </script>
 
 

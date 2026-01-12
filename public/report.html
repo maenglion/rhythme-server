@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles.css">
+  <title>분석 레포트 beta 1.1</title>
+
+  <script>
+    function getSid() {
+      const urlSid = new URLSearchParams(location.search).get("sid");
+      const storeSid = localStorage.getItem("SESSION_ID");
+      const winSid = window.SESSION_ID;
+      const sid = urlSid || storeSid || winSid;
+
+      if (!sid) {
+        if (typeof window.showModal === "function") {
+          window.showModal("세션이 없습니다. 처음부터 다시 진행해주세요.");
+          setTimeout(() => location.href = "./index.html", 300);
+        } else {
+          alert("세션이 없습니다. 처음부터 다시 진행해주세요.");
+          location.href = "./index.html";
+        }
+        return null;
+      }
+
+      window.SESSION_ID = sid;
+      localStorage.setItem("SESSION_ID", sid);
+      return sid;
+    }
+
+    const sid = getSid(); // ✅ report 진입 즉시 체크
+
+ document.getElementById("goSurveyBtn")?.addEventListener("click", () => {
+    const sid = getSid();
+    if (!sid) return;
+    location.href = `./survey.html?sid=${encodeURIComponent(sid)}`;
+  });
+
+
+  </script>
+</head>
+
+<body>
+ <button id="goSurveyBtn">설문 계속하기</button>
+</body>
+</html>

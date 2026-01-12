@@ -182,22 +182,45 @@ window.closeModal = function() {
 
 // app.js 상단
 window.checkAndGo = function() {
-    // 'essential' 클래스가 붙은 체크박스만 검사
+    // --- 1단계: 필수 동의 체크 ---
     const essentials = document.querySelectorAll('.essential');
     let allChecked = true;
 
     essentials.forEach(checkbox => {
-        // 부모 요소가 숨겨져 있지 않은 경우에만 체크 여부 확인 (미성년자 동의 로직 대응)
+        // 부모 요소가 보이지 않는 경우(미성년자 미선택 등)는 제외하고 체크 확인
         if (checkbox.offsetParent !== null && !checkbox.checked) {
             allChecked = false;
         }
     });
 
-    if (allChecked) {
-        location.href = 'voice_info.html';
-    } else {
-        window.showModal("필수 항목에 모두 동의해 주세요.");
+    if (!allChecked) {
+        if (window.showModal) {
+            window.showModal("필수 항목에 모두 동의해 주세요.");
+        } else {
+            alert("필수 항목에 모두 동의해 주세요.");
+        }
+        return; // 체크 안 됐으면 여기서 중단
     }
+
+    // --- 2단계: 세션 ID 생성 및 저장 (맹 연구원님이 주신 코드) ---
+    let sid = localStorage.getItem("SESSION_ID");
+    if (!sid) {
+        sid = (crypto?.randomUUID)
+            ? crypto.randomUUID()
+            : `sid_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+        localStorage.setItem("SESSION_ID", sid);
+    }
+    window.SESSION_ID = sid; // 디버깅용 전역 변수 설정
+
+    console.log("[SID] created/kept:", sid);
+
+    // 선택 동의(qeeg) 여부도 이때 같이 저장하면 좋습니다.
+    const qeegAgreed = document.getElementById('checkQeeg')?.checked || false;
+    localStorage.setItem("QEEG_AGREED", qeegAgreed);
+
+    // --- 3단계: 다음 페이지로 이동 ---
+    // sid를 URL 뒤에 붙여서 보내면 voice_info.html에서 훨씬 안정적으로 ID를 인식합니다.
+    location.href = `voice_info.html?sid=${encodeURIComponent(sid)}`;
 };
 // 그 다음에 loadAndToggleConsent 등 다른 함수들...
 
