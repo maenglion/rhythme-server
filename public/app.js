@@ -124,6 +124,19 @@ window.loadAndToggleConsent = async function (path, headerEl) {
 // 세션 아이디 
 window.SESSION_ID = window.SESSION_ID || crypto.randomUUID();
 
+function ensureSid() {
+  let sid = localStorage.getItem("SESSION_ID");
+  if (!sid) {
+    sid = (crypto?.randomUUID)
+      ? crypto.randomUUID()
+      : `sid_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    localStorage.setItem("SESSION_ID", sid);
+  }
+  window.SESSION_ID = sid;
+  return sid;
+}
+
+
 // 1. 연구용 실제 문항 배열 (참여자에게는 괄호 안의 내부 지표를 숨기고 텍스트만 노출)
 const childQuestions = [
     "설명서를 끝까지 보지 않아도 다음에 무엇을 해야 할지 스스로 유추한다.",
@@ -182,11 +195,11 @@ window.closeModal = function() {
 
 // app.js 상단
 window.checkAndGo = function () {
-  // 1) 필수동의 체크 (기존 그대로)
-  const essentials = document.querySelectorAll('.essential');
+  // 1) 필수 동의 체크(기존 로직 유지)
+  const essentials = document.querySelectorAll(".essential");
   let allChecked = true;
-  essentials.forEach(chk => {
-    if (chk.offsetParent !== null && !chk.checked) allChecked = false;
+  essentials.forEach(cb => {
+    if (cb.offsetParent !== null && !cb.checked) allChecked = false;
   });
 
   if (!allChecked) {
@@ -195,28 +208,21 @@ window.checkAndGo = function () {
     return;
   }
 
-  // 2) 세션 ID 생성/저장 (그대로 OK)
-  let sid = localStorage.getItem("SESSION_ID");
-  if (!sid) {
-    sid = (crypto?.randomUUID)
-      ? crypto.randomUUID()
-      : `sid_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-    localStorage.setItem("SESSION_ID", sid);
-  }
-  window.SESSION_ID = sid;
-  console.log("[SID] created/kept:", sid);
-
-  // 선택 동의(qeeg) 저장도 OK
-  const qeegAgreed = document.getElementById('checkQeeg')?.checked || false;
+  // 2) 선택 동의 저장만(선택)
+  const qeegAgreed = document.getElementById("checkQeeg")?.checked || false;
   localStorage.setItem("QEEG_AGREED", String(qeegAgreed));
 
-  // 3) ✅ 여기서 voice_info로 가지 말고, Step3으로 진행만
-  // 너희 앱이 step 전환을 어떻게 하던 그 함수/로직을 호출해야 함
-  // (아래 둘 중 하나로 맞춰)
+  // 3) ✅ 여기서 sid 만들지 말고, ✅ 여기서 voice_info로 가지 말고
+  //    ✅ Step3로만 이동
   if (typeof window.showStep === "function") {
     window.showStep(3);
+  } else {
+    document.querySelectorAll(".step").forEach(el => (el.style.display = "none"));
+    const el = document.getElementById("step3");
+    if (el) el.style.display = "block";
   }
 };
+
 
 
 /* ============================================================
@@ -352,6 +358,8 @@ window.getSTag = function(score) {
 
 
 window.submitAll = async function(evt) {
+  const sid = ensureSid();
+  console.log("[SID] created at submitAll:", sid);
   const ecFile = document.getElementById('qeegEC')?.files[0];
   const eoFile = document.getElementById('qeegEO')?.files[0];
   const nickname = document.getElementById('nickname').value;
@@ -391,7 +399,9 @@ if (answers.length !== 10) {
   const totalScore = answers.reduce((a,b)=>a+b,0);
   const sTag = window.getSTag(totalScore);
   const surveyPayload = {
+    session_id: sid,  
     user_id: nickname,
+    nickname: nickname,  
     age: parseInt(age),
     gender,
     is_child: isChild,
@@ -417,8 +427,8 @@ if (answers.length !== 10) {
       throw new Error(`submit-survey failed ${surveyRes.status}: ${t}`);
     }
 
-const ecResult = ecFile ? await uploadSingleFile(nickname, 'EC', ecFile) : null;
-const eoResult = eoFile ? await uploadSingleFile(nickname, 'EO', eoFile) : null;
+const ecResult = ecFile ? await uploadSingleFile(sid, 'EC', ecFile) : null;
+const eoResult = eoFile ? await uploadSingleFile(sid, 'EO', eoFile) : null;
 
 window.showModal(
   `✅ 저장 완료\n\nEC: ${ecFile?.name || 'none'}\nEO: ${eoFile?.name || 'none'}`
@@ -431,16 +441,28 @@ console.log('EO path:', eoResult?.path);
 const uploadBtn = document.getElementById('uploadBtn');
 if (uploadBtn) uploadBtn.style.display = 'none';
 
-const nextBtn = document.getElementById('nextStepBtn');
-if (nextBtn) nextBtn.style.display = 'none';
+  // ✅ Step5 완료 처리
+  const nextBtn = document.getElementById("nextStepBtn");
+  if (nextBtn) {
+    nextBtn.style.display = "inline-block";
+    nextBtn.onclick = () => {
+      const sid2 = localStorage.getItem("SESSION_ID"); // 이미 만들어진 것 사용(생성 금지)
+      if (!sid2) {
+        alert("세션이 없습니다. 처음부터 다시 진행해주세요.");
+        location.href = "./index.html";
+        return;
+      }
+      location.href = `voice_info.html?sid=${encodeURIComponent(sid2)}`;
+    };
+  }
+
 
 // ✅ 화면 전환: step5 -> step6
-localStorage.setItem('rhythmi_user_id', nickname);
+localStorage.setItem('rhythmi_session_id', sid);   // ✅ 기준키
+localStorage.setItem('rhythmi_user_id', nickname); // ✅ 표시용
 localStorage.setItem('rhythmi_age', String(age));
 localStorage.setItem('rhythmi_gender', gender);
 
-// 기존 step6 토글 대신
-location.href = 'voice_info.html';
 
 
   } catch (error) {
@@ -467,6 +489,37 @@ async function uploadSingleFile(userId, type, file) {
   }
   return res.json();
 }
+
+
+/* ============================================================
+   세션 아이디 생성 
+   ============================================================ */
+
+function ensureSidAtStep5End() {
+  let sid = localStorage.getItem("SESSION_ID");
+  if (!sid) {
+    sid = (crypto?.randomUUID)
+      ? crypto.randomUUID()
+      : `sid_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    localStorage.setItem("SESSION_ID", sid);
+  }
+  window.SESSION_ID = sid;
+  return sid;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("nextStepBtn");
+  if (!btn) return;
+
+  // ✅ inline onclick 무력화(중요)
+  btn.onclick = null;
+
+  btn.addEventListener("click", () => {
+    const sid = ensureSidAtStep5End();
+    console.log("[SID] created at step5 end:", sid);
+    location.href = `voice_info.html?sid=${encodeURIComponent(sid)}`;
+  });
+});
 
 
 
