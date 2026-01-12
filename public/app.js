@@ -310,9 +310,38 @@ window.validateStep3 = function() {
 };
 
 window.validateStep4 = function () {
-  // TODO: 나중에 Step4(SQ 문항) 검증 넣을 자리
-  // 지금은 흐름부터 살리기 위해 무조건 Step5로 이동
+  const step4 = document.getElementById("step4");
+  if (!step4) { window.showModal("Step4 영역을 찾을 수 없습니다."); return; }
 
+  // ✅ Step4 안의 SQ 라디오 그룹(name이 sq_ 로 시작하는 것들)을 수집
+  const radios = Array.from(step4.querySelectorAll('input[type="radio"][name^="sq_"]'));
+  const names = Array.from(new Set(radios.map(r => r.name)));
+
+  if (names.length === 0) {
+    window.showModal("SQ 문항을 찾지 못했습니다. (name이 sq_ 로 시작하는 라디오가 필요)");
+    return;
+  }
+
+  const answers = {};
+  for (const n of names) {
+    const checked = step4.querySelector(`input[type="radio"][name="${n}"]:checked`);
+    if (!checked) {
+      window.showModal("모든 설문 문항에 답해주세요.");
+      return;
+    }
+    // 보통 value가 0~3, 1~5 같은 점수로 들어감
+    answers[n] = checked.value;
+  }
+ // ✅ 완료 표시 + 저장
+  localStorage.setItem("rhythmi_sq_answers", JSON.stringify(answers));
+  localStorage.setItem("rhythmi_sq_done", "1");
+  localStorage.setItem("rhythmi_sq_version", "v1"); // SQ 늘릴 때 버전 올리면 됨
+
+  // (선택) 점수 합산이 필요한 경우
+  const score = names.reduce((sum, n) => sum + Number(answers[n] ?? 0), 0);
+  localStorage.setItem("rhythmi_sq_score", String(score));
+
+  // ✅ 이제서야 Step5로 이동
   if (typeof window.showStep === "function") {
     window.showStep(5);
   } else {
