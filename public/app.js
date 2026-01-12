@@ -137,6 +137,17 @@ function ensureSid() {
 }
 
 
+window.startSQTest = function () {
+  // Step4로 이동
+  if (typeof window.showStep === "function") {
+    window.showStep(4);
+  } else {
+    document.querySelectorAll(".step").forEach(el => (el.style.display = "none"));
+    const s4 = document.getElementById("step4");
+    if (s4) s4.style.display = "block";
+  }
+};
+
 // 1. 연구용 실제 문항 배열 (참여자에게는 괄호 안의 내부 지표를 숨기고 텍스트만 노출)
 const childQuestions = [
     "설명서를 끝까지 보지 않아도 다음에 무엇을 해야 할지 스스로 유추한다.",
