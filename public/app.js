@@ -136,18 +136,6 @@ function ensureSid() {
   return sid;
 }
 
-
-window.startSQTest = function () {
-  // Step4로 이동
-  if (typeof window.showStep === "function") {
-    window.showStep(4);
-  } else {
-    document.querySelectorAll(".step").forEach(el => (el.style.display = "none"));
-    const s4 = document.getElementById("step4");
-    if (s4) s4.style.display = "block";
-  }
-};
-
 // 1. 연구용 실제 문항 배열 (참여자에게는 괄호 안의 내부 지표를 숨기고 텍스트만 노출)
 const childQuestions = [
     "설명서를 끝까지 보지 않아도 다음에 무엇을 해야 할지 스스로 유추한다.",
@@ -298,100 +286,98 @@ window.toggleDiagnosis = function(element, value) {
 };
 
 window.validateStep3 = function() {
-    const ageVal = document.getElementById('age').value;
-    const nickVal = document.getElementById('nickname').value.trim();
-    const pinVal = document.getElementById('userPin').value;
-    const age = parseInt(ageVal);
+  const ageVal = document.getElementById('age')?.value;
+  const nickVal = document.getElementById('nickname')?.value?.trim();
+  const pinVal = document.getElementById('userPin')?.value || "";
+  const age = parseInt(ageVal, 10);
 
-    if (!nickVal || nickVal.length < 2) { window.showModal("닉네임을 2자 이상 입력해주세요."); return; }
-    if (pinVal.length !== 4) { window.showModal("PIN 4자리를 입력해주세요."); return; }
-    if (!ageVal || isNaN(age)) { window.showModal("나이를 입력해주세요."); return; }
-    if ((!isUnder14 && age < 14) || (isUnder14 && age >= 14)) {
-        window.showModal("⚠️ 선택하신 참여 유형과 실제 나이가 일치하지 않습니다.");
-        return;
-    }
-// ✅ 검증 통과했으면 Step4로 이동
-  if (typeof window.showStep === "function") {
-    window.showStep(4);
-  } else {
+  if (!nickVal || nickVal.length < 2) { window.showModal("닉네임을 2자 이상 입력해주세요."); return; }
+  if (pinVal.length !== 4) { window.showModal("PIN 4자리를 입력해주세요."); return; }
+  if (!ageVal || Number.isNaN(age)) { window.showModal("나이를 입력해주세요."); return; }
+  if ((!isUnder14 && age < 14) || (isUnder14 && age >= 14)) {
+    window.showModal("⚠️ 선택하신 참여 유형과 실제 나이가 일치하지 않습니다.");
+    return;
+  }
+
+  // ✅ 검증 통과 → SQ 시작(= Step4로 이동 + 1번 질문 렌더)
+  window.startSQTest();
+};
+/* ============================================================
+   3. Step 4~5: 설문 및 qEEG 업로드
+   ============================================================ */
+
+// ✅ 설문 상태(전역)
+
+function getSQQuestions() {
+  const age = parseInt(document.getElementById('age')?.value || "0", 10);
+  return (age < 19) ? childQuestions : adultQuestions;
+}
+
+// ✅ Step4 시작
+window.startSQTest = function () {
+  currentQIndex = 0;
+  const questions = getSQQuestions();
+  answers = new Array(questions.length).fill(null);
+
+  if (typeof window.showStep === "function") window.showStep(4);
+  else {
     document.querySelectorAll(".step").forEach(el => (el.style.display = "none"));
     const s4 = document.getElementById("step4");
     if (s4) s4.style.display = "block";
   }
+
+  renderQuestion(); // ✅ 1번 질문 바로 뜨게
 };
 
-window.validateStep4 = function () {
-  const step4 = document.getElementById("step4");
-  if (!step4) { window.showModal("Step4 영역을 찾을 수 없습니다."); return; }
+// ✅ 질문 렌더
+function renderQuestion() {
+  const questions = getSQQuestions();
 
-  // ✅ Step4 안의 SQ 라디오 그룹(name이 sq_ 로 시작하는 것들)을 수집
-  const radios = Array.from(step4.querySelectorAll('input[type="radio"][name^="sq_"]'));
-  const names = Array.from(new Set(radios.map(r => r.name)));
-
-  if (names.length === 0) {
-    window.showModal("SQ 문항을 찾지 못했습니다. (name이 sq_ 로 시작하는 라디오가 필요)");
+  if (currentQIndex >= questions.length) {
+    window.nextStep(); // ✅ 설문 완료 → step5로
     return;
   }
 
-  const answers = {};
-  for (const n of names) {
-    const checked = step4.querySelector(`input[type="radio"][name="${n}"]:checked`);
-    if (!checked) {
-      window.showModal("모든 설문 문항에 답해주세요.");
-      return;
-    }
-    // 보통 value가 0~3, 1~5 같은 점수로 들어감
-    answers[n] = checked.value;
-  }
- // ✅ 완료 표시 + 저장
-  localStorage.setItem("rhythmi_sq_answers", JSON.stringify(answers));
+  document.querySelectorAll('.ans-btn').forEach(btn => btn.classList.remove('selected'));
+
+  const qText = document.getElementById('questionText');
+  if (qText) qText.innerText = questions[currentQIndex] || "";
+
+  const count = document.getElementById('questionCount');
+  if (count) count.innerText = `${currentQIndex + 1} / ${questions.length}`;
+
+  const progress = ((currentQIndex + 1) / questions.length) * 100;
+  const bar = document.getElementById('progressBar');
+  if (bar) bar.style.width = `${progress}%`;
+}
+
+// ✅ 답 클릭
+window.handleAnswer = function (val, evt) {
+  const el = evt?.currentTarget;
+  if (!el) return;
+
+  document.querySelectorAll('.ans-btn').forEach(btn => btn.classList.remove('selected'));
+  el.classList.add('selected');
+
+  setTimeout(() => {
+    answers[currentQIndex] = val;
+    currentQIndex++;
+    renderQuestion();
+  }, 150);
+};
+
+// ✅ 설문 완료 → Step5로 이동 + 로컬 저장(가드용)
+window.nextStep = function () {
   localStorage.setItem("rhythmi_sq_done", "1");
-  localStorage.setItem("rhythmi_sq_version", "v1"); // SQ 늘릴 때 버전 올리면 됨
+  localStorage.setItem("rhythmi_sq_answers", JSON.stringify(answers));
+  localStorage.setItem("rhythmi_sq_version", "v1");
 
-  // (선택) 점수 합산이 필요한 경우
-  const score = names.reduce((sum, n) => sum + Number(answers[n] ?? 0), 0);
-  localStorage.setItem("rhythmi_sq_score", String(score));
-
-  // ✅ 이제서야 Step5로 이동
-  if (typeof window.showStep === "function") {
-    window.showStep(5);
-  } else {
+  if (typeof window.showStep === "function") window.showStep(5);
+  else {
     document.querySelectorAll(".step").forEach(el => (el.style.display = "none"));
     const s5 = document.getElementById("step5");
     if (s5) s5.style.display = "block";
   }
-};
-
-/* ============================================================
-   3. Step 4~5: 설문 및 qEEG 업로드
-   ============================================================ */
-function renderQuestion() {
-    const age = parseInt(document.getElementById('age').value);
-    const questions = (age < 19) ? childQuestions : adultQuestions;
-    if (currentQIndex >= questions.length) { window.nextStep(); return; }
-
-    document.querySelectorAll('.ans-btn').forEach(btn => btn.classList.remove('selected'));
-    document.getElementById('questionText').innerText = questions[currentQIndex];
-    const progress = ((currentQIndex + 1) / questions.length) * 100;
-    document.getElementById('progressBar').style.width = `${progress}%`;
-    document.getElementById('questionCount').innerText = `${currentQIndex + 1} / ${questions.length}`;
-}
-
-window.handleAnswer = function(val, evt) {
-    // 1. 이벤트 객체와 타겟 요소 가드
-    const el = evt?.currentTarget;
-    if (!el) return;
-
-    // 2. 시각적 피드백
-    document.querySelectorAll('.ans-btn').forEach(btn => btn.classList.remove('selected'));
-    el.classList.add('selected');
-
-    // 3. 데이터 기록 및 다음 문항
-    setTimeout(() => {
-        answers.push(val);
-        currentQIndex++;
-        renderQuestion();
-    }, 250); 
 };
 
 window.updateFileName = function(type) {
@@ -449,7 +435,8 @@ window.submitAll = async function(evt) {
 }
 
 
-if (answers.length !== 10) {
+const expectedLen = getSQQuestions().length;
+if (answers.filter(v => v !== null && v !== undefined).length !== expectedLen) {
   window.showModal("설문이 완료되지 않았습니다.");
   if (currentBtn) { currentBtn.disabled = false; currentBtn.innerText = "음성분석 시작"; }
   return;
