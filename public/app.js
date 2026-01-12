@@ -706,14 +706,13 @@ if (finishBtn) {
   renderStage();
 }
 
-
 /* ============================================================
-   [핵심] 녹음 버튼 이벤트 연결 (이게 있어야 runVoiceStage가 작동함)
+   [핵심] 초기화 및 버튼 이벤트 연결
    ============================================================ */
 
 function initVoicePage() {
   const recBtn = document.getElementById("recordBtn");
-  if (!recBtn) return; // ✅ 음성 페이지 아니면 아무 것도 안 함 (경고도 없음)
+  if (!recBtn) return; 
 
   recBtn.addEventListener("click", async () => {
     if (recBtn.dataset.recording === "1") {
@@ -727,17 +726,22 @@ function initVoicePage() {
   });
 }
 
-document.addEventListener("DOMContentLoaded", initVoicePage);
+// 페이지가 로드될 때 실행
+document.addEventListener("DOMContentLoaded", () => {
+  initVoicePage();
 
-const btn = document.getElementById("nextStepBtn");
-if (btn) {
-  btn.addEventListener("click", () => {
-    const sid = localStorage.getItem("SESSION_ID"); // 생성 금지
-    if (!sid) {
-      alert("세션이 없습니다. Step5 제출을 먼저 완료해주세요.");
-      location.href = "./index.html";
-      return;
-    }
-    location.href = `voice_info.html?sid=${encodeURIComponent(sid)}`;
-  });
-}
+  // Step 5에서 "음성분석 이어하기" 버튼이 있는 경우의 이벤트
+  const nextBtn = document.getElementById("nextStepBtn");
+  if (nextBtn) {
+    nextBtn.addEventListener("click", () => {
+      const sid = localStorage.getItem("SESSION_ID");
+      if (!sid) {
+        alert("세션이 없습니다. Step5 제출을 먼저 완료해주세요.");
+        location.href = "./index.html";
+        return;
+      }
+      location.href = `voice_info.html?sid=${encodeURIComponent(sid)}`;
+    });
+  }
+});
+// 괄호가 정확히 여기서 끝납니다.
