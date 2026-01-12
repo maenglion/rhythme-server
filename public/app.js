@@ -308,6 +308,20 @@ window.validateStep3 = function() {
     if (s4) s4.style.display = "block";
   }
 };
+
+window.validateStep4 = function () {
+  // TODO: 나중에 Step4(SQ 문항) 검증 넣을 자리
+  // 지금은 흐름부터 살리기 위해 무조건 Step5로 이동
+
+  if (typeof window.showStep === "function") {
+    window.showStep(5);
+  } else {
+    document.querySelectorAll(".step").forEach(el => (el.style.display = "none"));
+    const s5 = document.getElementById("step5");
+    if (s5) s5.style.display = "block";
+  }
+};
+
 /* ============================================================
    3. Step 4~5: 설문 및 qEEG 업로드
    ============================================================ */
