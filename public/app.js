@@ -485,6 +485,24 @@ window.showModal(
   `✅ 저장 완료\n\nEC: ${ecFile?.name || 'none'}\nEO: ${eoFile?.name || 'none'}`
 );
 
+// ✅ 여기 추가: 모달 확인 버튼 누르면 voice_info.html로 이동
+const okBtn = document.getElementById("modalOkBtn");
+if (okBtn) {
+  okBtn.onclick = () => {
+    window.closeModal?.();
+
+    // 이미 만들어진 sid 사용 (생성 금지)
+    const sid2 = localStorage.getItem("SESSION_ID") || sid;
+    if (!sid2) {
+      alert("세션이 없습니다. 처음부터 다시 진행해주세요.");
+      location.href = "./index.html";
+      return;
+    }
+
+    location.href = `voice_info.html?sid=${encodeURIComponent(sid2)}`;
+  };
+}
+
 console.log('EC path:', ecResult?.path);
 console.log('EO path:', eoResult?.path);
 
@@ -662,34 +680,49 @@ if (finishBtn) {
   finishBtn.style.display = "none";
   finishBtn.onclick = null;
 }
-
+// 임시 서버 테스트용 
   const age = parseInt(document.getElementById('age')?.value || '0', 10);
-  const age_group = age < 14 ? "under14" : (age < 19 ? "child" : "adult");
+const age_group = age < 14 ? "under14" : (age < 19 ? "child" : "adult");
 
-  const payload = {
-    session_id: window.SESSION_ID,
-    stage_id: s.id,
-    age_group,
-    status: metrics?.status || "completed",
-    start_latency_ms: Math.max(0, Math.floor(clickTime - stageDisplayTime)),
-    recorded_ms: metrics?.recorded_ms ?? 40000,
-    stop_offset_ms: metrics?.recorded_ms ?? 40000,
+const num0 = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
 
-    pitch_mean: metrics?.pitch_mean ?? 0,
-    pitch_sd: metrics?.pitch_sd ?? 0,
-    speech_rate: metrics?.speech_rate ?? 0,
-    pause_ratio: metrics?.pause_ratio ?? 0,
-    jitter: 0,
-    shimmer: 0,
+const int0 = (v) => {
+  const n = Math.floor(Number(v));
+  return Number.isFinite(n) ? Math.max(0, n) : 0;
+};
 
-    noise_floor_db: cal?.noise_floor_db ?? null,
-    snr_est_db: metrics?.snr_est_db ?? null,
-    clipping_ratio: metrics?.clipping_ratio ?? null,
-    bg_voice_ratio: metrics?.bg_voice_ratio ?? null,
+const payload = {
+  session_id: localStorage.getItem("SESSION_ID") || window.SESSION_ID, // ✅ 기준 통일
+  stage_id: Number(s.id), // ✅ 숫자 확정
+  age_group,
+  status: String(metrics?.status || "completed"),
 
-    time_reading_style: null,
-    time_digits_rule: null,
-  };
+  start_latency_ms: int0(clickTime - stageDisplayTime),
+  recorded_ms: int0(metrics?.recorded_ms ?? 40000),
+  stop_offset_ms: int0(metrics?.recorded_ms ?? 40000),
+
+  pitch_mean: num0(metrics?.pitch_mean),
+  pitch_sd: num0(metrics?.pitch_sd),
+  speech_rate: num0(metrics?.speech_rate),
+  pause_ratio: num0(metrics?.pause_ratio),
+
+  jitter: 0,
+  shimmer: 0,
+
+  // ✅ null 보내지 말고 0으로 (NOT NULL 대비)
+  noise_floor_db: num0(cal?.noise_floor_db ?? metrics?.noise_floor_db),
+  snr_est_db: num0(metrics?.snr_est_db),
+  clipping_ratio: num0(metrics?.clipping_ratio),
+  bg_voice_ratio: num0(metrics?.bg_voice_ratio),
+
+  // ✅ 시간도 null 금지
+  time_reading_style: 0,
+  time_digits_rule: 0,
+};
+
 
   const res = await fetch(API('/submit-voice-stage'), {
     method: 'POST',
