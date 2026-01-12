@@ -166,16 +166,18 @@ const adultQuestions = [
 /* ============================================================
    1. 공통 및 단계 이동 제어 (window 등록 필수)
    ============================================================ */
-window.nextStep = function() {
-    const prev = document.getElementById(`step${currentStep}`);
-    if (prev) prev.classList.remove('active');
-    currentStep++;
-    const next = document.getElementById(`step${currentStep}`);
-    if (next) {
-        next.classList.add('active');
-        window.scrollTo(0, 0);
-    }
-    if (currentStep === 4) renderQuestion();
+indow.showStep = function(stepNum) {
+  document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+  const target = document.getElementById(`step${stepNum}`);
+  if (target) {
+    target.classList.add('active');
+    window.scrollTo(0, 0);
+    currentStep = stepNum;
+  }
+};
+
+window.goToNextStep = function() {
+  window.showStep(currentStep + 1);
 };
 
 window.showModal = function(msg) {
@@ -240,7 +242,7 @@ window.startResearch = function(under14) {
             parentalCheckbox.classList.remove('essential');
         }
     }
-    window.nextStep();
+    window.showStep(3); 
 };
 
 window.loadAndToggleConsent = async function(path, headerElement) {
@@ -313,7 +315,6 @@ function getSQQuestions() {
   return (age < 19) ? childQuestions : adultQuestions;
 }
 
-// ✅ Step4 시작
 window.startSQTest = function () {
   currentQIndex = 0;
   const questions = getSQQuestions();
@@ -326,15 +327,16 @@ window.startSQTest = function () {
     if (s4) s4.style.display = "block";
   }
 
-  renderQuestion(); // ✅ 1번 질문 바로 뜨게
+  renderQuestion(); // ✅ 여기(함수 안)에서만 호출
 };
+
 
 // ✅ 질문 렌더
 function renderQuestion() {
   const questions = getSQQuestions();
 
   if (currentQIndex >= questions.length) {
-    window.nextStep(); // ✅ 설문 완료 → step5로
+    window.showStep(5);  // ✅ 설문 완료 → step5로
     return;
   }
 
@@ -367,18 +369,20 @@ window.handleAnswer = function (val, evt) {
 };
 
 // ✅ 설문 완료 → Step5로 이동 + 로컬 저장(가드용)
-window.nextStep = function () {
+
+function completeSQTest() {
   localStorage.setItem("rhythmi_sq_done", "1");
   localStorage.setItem("rhythmi_sq_answers", JSON.stringify(answers));
   localStorage.setItem("rhythmi_sq_version", "v1");
 
+  // ✅ 무조건 Step5로
   if (typeof window.showStep === "function") window.showStep(5);
   else {
     document.querySelectorAll(".step").forEach(el => (el.style.display = "none"));
     const s5 = document.getElementById("step5");
     if (s5) s5.style.display = "block";
   }
-};
+}
 
 window.updateFileName = function(type) {
     const fileInput = document.getElementById(`qeeg${type}`);
@@ -539,38 +543,6 @@ async function uploadSingleFile(userId, type, file) {
 
 
 /* ============================================================
-   세션 아이디 생성 
-   ============================================================ */
-
-function ensureSidAtStep5End() {
-  let sid = localStorage.getItem("SESSION_ID");
-  if (!sid) {
-    sid = (crypto?.randomUUID)
-      ? crypto.randomUUID()
-      : `sid_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-    localStorage.setItem("SESSION_ID", sid);
-  }
-  window.SESSION_ID = sid;
-  return sid;
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  const btn = document.getElementById("nextStepBtn");
-  if (!btn) return;
-
-  // ✅ inline onclick 무력화(중요)
-  btn.onclick = null;
-
-  btn.addEventListener("click", () => {
-    const sid = ensureSidAtStep5End();
-    console.log("[SID] created at step5 end:", sid);
-    location.href = `voice_info.html?sid=${encodeURIComponent(sid)}`;
-  });
-});
-
-
-
-/* ============================================================
    4. Step 6~7: 음성 분석 엔진 (핵심)
    ============================================================ */
 window.goToVoiceTest = function () {
@@ -578,8 +550,7 @@ window.goToVoiceTest = function () {
 
   STAGES = getStages(age);   // ✅ 연령 기반 스테이지 구성
   stageIdx = 0;
-
-  window.nextStep();         // ✅ step6 -> step7 (active 전환)
+  window.goToNextStep();         // ✅ step6 -> step7 (active 전환)
   renderStage();             // ✅ step7 내용 렌더
 };
 
@@ -758,3 +729,15 @@ function initVoicePage() {
 
 document.addEventListener("DOMContentLoaded", initVoicePage);
 
+const btn = document.getElementById("nextStepBtn");
+if (btn) {
+  btn.addEventListener("click", () => {
+    const sid = localStorage.getItem("SESSION_ID"); // 생성 금지
+    if (!sid) {
+      alert("세션이 없습니다. Step5 제출을 먼저 완료해주세요.");
+      location.href = "./index.html";
+      return;
+    }
+    location.href = `voice_info.html?sid=${encodeURIComponent(sid)}`;
+  });
+}
