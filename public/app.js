@@ -299,9 +299,15 @@ window.validateStep3 = function() {
         window.showModal("⚠️ 선택하신 참여 유형과 실제 나이가 일치하지 않습니다.");
         return;
     }
-    window.nextStep();
+// ✅ 검증 통과했으면 Step4로 이동
+  if (typeof window.showStep === "function") {
+    window.showStep(4);
+  } else {
+    document.querySelectorAll(".step").forEach(el => (el.style.display = "none"));
+    const s4 = document.getElementById("step4");
+    if (s4) s4.style.display = "block";
+  }
 };
-
 /* ============================================================
    3. Step 4~5: 설문 및 qEEG 업로드
    ============================================================ */
