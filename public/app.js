@@ -181,48 +181,42 @@ window.closeModal = function() {
 
 
 // app.js 상단
-window.checkAndGo = function() {
-    // --- 1단계: 필수 동의 체크 ---
-    const essentials = document.querySelectorAll('.essential');
-    let allChecked = true;
+window.checkAndGo = function () {
+  // 1) 필수동의 체크 (기존 그대로)
+  const essentials = document.querySelectorAll('.essential');
+  let allChecked = true;
+  essentials.forEach(chk => {
+    if (chk.offsetParent !== null && !chk.checked) allChecked = false;
+  });
 
-    essentials.forEach(checkbox => {
-        // 부모 요소가 보이지 않는 경우(미성년자 미선택 등)는 제외하고 체크 확인
-        if (checkbox.offsetParent !== null && !checkbox.checked) {
-            allChecked = false;
-        }
-    });
+  if (!allChecked) {
+    if (typeof window.showModal === "function") window.showModal("필수 항목에 모두 동의해 주세요.");
+    else alert("필수 항목에 모두 동의해 주세요.");
+    return;
+  }
 
-    if (!allChecked) {
-        if (window.showModal) {
-            window.showModal("필수 항목에 모두 동의해 주세요.");
-        } else {
-            alert("필수 항목에 모두 동의해 주세요.");
-        }
-        return; // 체크 안 됐으면 여기서 중단
-    }
+  // 2) 세션 ID 생성/저장 (그대로 OK)
+  let sid = localStorage.getItem("SESSION_ID");
+  if (!sid) {
+    sid = (crypto?.randomUUID)
+      ? crypto.randomUUID()
+      : `sid_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    localStorage.setItem("SESSION_ID", sid);
+  }
+  window.SESSION_ID = sid;
+  console.log("[SID] created/kept:", sid);
 
-    // --- 2단계: 세션 ID 생성 및 저장 (맹 연구원님이 주신 코드) ---
-    let sid = localStorage.getItem("SESSION_ID");
-    if (!sid) {
-        sid = (crypto?.randomUUID)
-            ? crypto.randomUUID()
-            : `sid_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-        localStorage.setItem("SESSION_ID", sid);
-    }
-    window.SESSION_ID = sid; // 디버깅용 전역 변수 설정
+  // 선택 동의(qeeg) 저장도 OK
+  const qeegAgreed = document.getElementById('checkQeeg')?.checked || false;
+  localStorage.setItem("QEEG_AGREED", String(qeegAgreed));
 
-    console.log("[SID] created/kept:", sid);
-
-    // 선택 동의(qeeg) 여부도 이때 같이 저장하면 좋습니다.
-    const qeegAgreed = document.getElementById('checkQeeg')?.checked || false;
-    localStorage.setItem("QEEG_AGREED", qeegAgreed);
-
-    // --- 3단계: 다음 페이지로 이동 ---
-    // sid를 URL 뒤에 붙여서 보내면 voice_info.html에서 훨씬 안정적으로 ID를 인식합니다.
-    location.href = `voice_info.html?sid=${encodeURIComponent(sid)}`;
+  // 3) ✅ 여기서 voice_info로 가지 말고, Step3으로 진행만
+  // 너희 앱이 step 전환을 어떻게 하던 그 함수/로직을 호출해야 함
+  // (아래 둘 중 하나로 맞춰)
+  if (typeof window.showStep === "function") {
+    window.showStep(3);
+  }
 };
-// 그 다음에 loadAndToggleConsent 등 다른 함수들...
 
 
 /* ============================================================
