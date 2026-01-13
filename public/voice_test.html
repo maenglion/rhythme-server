@@ -21,6 +21,51 @@ function apiUrl(path) {
   return new URL(clean, base).toString();
 }
 
+// ✅ 자동 로그 수집(사용자 액션 0)
+async function logClientError(err, context = {}) {
+  const sid =
+    new URLSearchParams(location.search).get("sid") ||
+    localStorage.getItem("SESSION_ID");
+
+  const payload = {
+    session_id: sid,
+    where: "voice_test",
+    message: String(err?.message || err),
+    name: err?.name,
+    stack: err?.stack,
+    ua: navigator.userAgent,
+    href: location.href,
+    ...context,
+  };
+
+  try {
+    await fetch(apiUrl("/client-log"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      keepalive: true, // ✅ 모바일/인앱에서 페이지 전환 중에도 최대한 보내기
+    });
+  } catch (_) {
+    // 실패해도 사용자 UX는 방해하지 않음
+    console.warn("client-log failed", payload);
+  }
+}
+
+// ✅ 전역 에러도 자동 수집
+window.addEventListener("error", (e) => {
+  logClientError(e.error || e.message, {
+    type: "window.error",
+    filename: e.filename,
+    lineno: e.lineno,
+    colno: e.colno,
+  });
+});
+
+window.addEventListener("unhandledrejection", (e) => {
+  logClientError(e.reason, { type: "unhandledrejection" });
+});
+
+
   // ---------------------------
   // Session helper (단일 진실)
   // ---------------------------
@@ -202,106 +247,143 @@ function getSid() {
   // ---------------------------
   // 녹음 + 전송
   // ---------------------------
-  async function runVoiceStage() {
-    const recBtn = document.querySelector("#recordBtn");
-    const finishBtn = document.getElementById("finishBtn");
+ async function runVoiceStage() {
+  const recBtn = document.querySelector("#recordBtn");
+  const finishBtn = document.getElementById("finishBtn");
 
-    try {
-      const s = STAGES[stageIdx];
-      if (!s) return;
-const sid = getSid();
-if (!sid) return;
+  const s = STAGES[stageIdx];
+  if (!s) return;
 
-      const age = parseInt(localStorage.getItem("rhythmi_age") || "0", 10);
-      const age_group = age < 14 ? "under14" : (age < 19 ? "child" : "adult");
+  // ✅ sid는 try 밖에서 잡아야 catch에서도 안전하게 사용 가능
+  const sid = getSid();
+  if (!sid) {
+    alert("세션이 없습니다. 처음부터 다시 진행해주세요.");
+    location.href = "./index.html";
+    return;
+  }
 
-      // 1) 캘리브레이션
-      setRecordButtonState({ recording: false, calibrating: true });
-      await vp.calibrateSilence(2);
+  // age_group 계산
+  const age = parseInt(localStorage.getItem("rhythmi_age") || "0", 10);
+  const age_group = age < 14 ? "under14" : (age < 19 ? "child" : "adult");
 
-      // 2) 녹음 시작 UI
-      setRecordButtonState({ recording: true, calibrating: false });
-      if (recBtn) recBtn.dataset.recording = "1";
+  try {
+    // 1) 캘리브레이션
+    setRecordButtonState({ recording: false, calibrating: true });
+    await vp.calibrateSilence(2);
 
-      // 3) 조기 종료 버튼
-      if (finishBtn) {
-        finishBtn.style.display = "inline-block";
-        finishBtn.onclick = () => {
+    // 2) 녹음 시작 UI
+    setRecordButtonState({ recording: true, calibrating: false });
+    if (recBtn) recBtn.dataset.recording = "1";
+
+    // 3) 조기 종료 버튼
+    if (finishBtn) {
+      finishBtn.style.display = "inline-block";
+      finishBtn.onclick = () => {
+        try {
           if (typeof vp.stop === "function") vp.stop();
-          else vp._stopped = true; // stop() 없을 때도 최소한 멈추게
+          else vp._stopped = true;
+        } finally {
           finishBtn.style.display = "none";
-        };
-      }
-
-      // 4) 녹음
-      const metrics = await vp.startStage({
-        durationSec: 40,
-        onTick: ({ leftMs }) => setTimer(leftMs, 40)
-      });
-
-      console.log("Stage Metrics:", metrics);
-
-      // 5) 서버 전송
-      const payload = {
-        session_id: sid,
-        stage_id: s.id,
-        age_group,
-        status: metrics.status,
-
-        recorded_ms: metrics.recorded_ms,
-        speech_rate: metrics.speech_rate,
-        pause_ratio: metrics.pause_ratio,
-        pitch_mean: metrics.pitch_mean,
-        pitch_sd: metrics.pitch_sd,
-        snr_est_db: metrics.snr_est_db,
-        clipping_ratio: metrics.clipping_ratio,
-
-        long_pause_count_600ms: metrics.long_pause_count_600ms,
-        short_pause_count_200_600ms: metrics.short_pause_count_200_600ms,
-        pause_ms: metrics.pause_ms,
-        restart_rms_spike_count: metrics.restart_rms_spike_count,
-
-        // 서버 필수 필드(임시값)
-        start_latency_ms: 0,
-        stop_offset_ms: metrics.recorded_ms ?? 40000,
-        jitter: 0,
-        shimmer: 0,
+        }
       };
+    }
 
-      const url = apiUrl("/submit-voice-stage");
-      console.log("SUBMIT 직전", url, payload);
+    // 4) 녹음
+    const metrics = await vp.startStage({
+      durationSec: 40,
+      onTick: ({ leftMs }) => setTimer(leftMs, 40),
+    });
 
-      const res = await fetch(url, { method: "POST",
+    console.log("Stage Metrics:", metrics);
+
+    // 5) 서버 전송 payload
+    const payload = {
+      session_id: sid,
+      stage_id: s.id,
+      age_group,
+      status: metrics?.status,
+
+      recorded_ms: metrics?.recorded_ms,
+      speech_rate: metrics?.speech_rate,
+      pause_ratio: metrics?.pause_ratio,
+      pitch_mean: metrics?.pitch_mean,
+      pitch_sd: metrics?.pitch_sd,
+      snr_est_db: metrics?.snr_est_db,
+      clipping_ratio: metrics?.clipping_ratio,
+
+      long_pause_count_600ms: metrics?.long_pause_count_600ms,
+      short_pause_count_200_600ms: metrics?.short_pause_count_200_600ms,
+      pause_ms: metrics?.pause_ms,
+      restart_rms_spike_count: metrics?.restart_rms_spike_count,
+
+      // 서버 필수 필드(임시값)
+      start_latency_ms: 0,
+      stop_offset_ms: metrics?.recorded_ms ?? 40000,
+      jitter: 0,
+      shimmer: 0,
+    };
+
+    const url = apiUrl("/submit-voice-stage");
+
+    // ✅ submit 실패는 여기서만 처리하고 return (바깥 catch로 던지지 않음)
+    try {
+      const res = await fetch(url, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
-      const bodyText = await res.text();
-      console.log("SUBMIT 응답", res.status, bodyText);
-
       if (!res.ok) {
-        throw new Error(`submit failed ${res.status}: ${bodyText}`);
+        const txt = await res.text().catch(() => "");
+        await logClientError(new Error("submit-voice-stage not ok"), {
+          type: "submit_failed",
+          url,
+          status: res.status,
+          body: txt.slice(0, 300),
+          stageIdx,
+          sid,
+        });
+        alert("오류가 발생했습니다. 카톡에서 다시 시도해 주세요.");
+        return;
       }
-
-      // ✅ POST 성공 직후 진행상태 저장
-      saveProgress(sid, {
-        stageIdx: stageIdx + 1,
-        startedAt: loadProgress(sid)?.startedAt ?? Date.now()
-      });
-
-      // 6) 다음 stage
-      stageIdx += 1;
-      renderStage();
-
     } catch (err) {
-      console.error("오류:", err);
-      alert("녹음/전송 중 오류가 발생했습니다. 콘솔 로그를 확인해주세요.");
-
-      setRecordButtonState({ recording: false, calibrating: false });
-      const recBtn2 = document.querySelector("#recordBtn");
-      if (recBtn2) recBtn2.dataset.recording = "0";
+      await logClientError(err, { type: "submit_exception", url, stageIdx, sid });
+      alert("오류가 발생했습니다. 카톡에서 다시 시도해 주세요.");
+      return;
     }
+
+    // ✅ POST 성공 직후 진행상태 저장
+    saveProgress(sid, {
+      stageIdx: stageIdx + 1,
+      startedAt: loadProgress(sid)?.startedAt ?? Date.now(),
+    });
+
+    // 6) 다음 stage
+    stageIdx += 1;
+    renderStage();
+
+  } catch (err) {
+    console.error("오류:", err);
+
+    // ✅ 녹음/권한/MediaRecorder 등 나머지 에러 자동로그
+    try {
+      await logClientError(err, { type: "outer_catch", stageIdx, sid });
+    } catch (_) {}
+
+    alert("오류가 발생했습니다. 카톡에서 다시 시도해 주세요.");
+
+    setRecordButtonState({ recording: false, calibrating: false });
+    if (recBtn) recBtn.dataset.recording = "0";
+
+  } finally {
+    // ✅ 버튼/핸들러 정리(성공/실패/return 모두 포함)
+    if (finishBtn) {
+      finishBtn.style.display = "none";
+      finishBtn.onclick = null;
+    }
+    if (recBtn) recBtn.dataset.recording = "0";
   }
+}
 
   // ---------------------------
   // 초기화
