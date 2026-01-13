@@ -2,8 +2,9 @@
   const STORAGE_SID_KEY = "SESSION_ID";
 
   // ✅ 네가 준 구글폼 주소(폼 고유 URL)
-  const FORM_BASE =
-    "https://docs.google.com/forms/d/e/1FAIpQLSdYVDquseww9O3hvJgRyYmlZxT0BhZ5e_gxmG8mgFWAbx3a4Q/viewform";
+const FORM_BASE =
+  "https://docs.google.com/forms/d/e/1FAIpQLSdYVDquseww9O3hvJgRyYmlZxT0BhZ5e_gxmG8mgFWAbx3a4Q/viewform";
+
 
   function getSid() {
     return (
