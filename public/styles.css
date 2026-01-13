@@ -50,17 +50,30 @@ body {
 .input-group.last { margin-bottom: 24px; }
 
 /* 6. 입력창 및 버튼 (기존 스타일 계승) */
-input[type="text"], .input-readonly {
-    width: 100%;
+input[type="number"], input[type="text"] {
+    width: 100% !important; /* 부모인 container 너비에 맞춤 */
     height: 52px;
     background: #1E1E1E;
     border: 1px solid #333;
     border-radius: 8px;
     color: #FFF;
     padding: 0 16px;
-    box-sizing: border-box;
+    box-sizing: border-box; /* 패딩이 너비를 먹지 않게 함 */
     font-size: 16px;
     outline: none;
+    margin-top: 8px;
+}
+
+/* 포커스 되었을 때 우리 포인트 컬러(보라색) 적용 */
+input:focus {
+    border-color: #BB86FC;
+}
+
+/* Chrome, Safari에서 숫자 입력창 화살표 제거 */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 .next-btn, #goSurveyBtn, #goReportBtn {
