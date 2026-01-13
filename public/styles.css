@@ -1,15 +1,19 @@
 /* 1. 기본 배경 및 레이아웃 */
+/* 1. 기본 배경 및 레이아웃 (전체 페이지 공통) */
 body {
-    background-color: #121212;
-    color: #FFFFFF;
+    background-color: #121212 !important; /* 화이트 테마 방지 */
+    color: #FFFFFF !important;
     font-family: 'Pretendard', -apple-system, sans-serif;
     margin: 0; padding: 0;
-    display: flex; flex-direction: column; align-items: center;
+    display: flex; 
+    flex-direction: column; 
+    align-items: center;
+    line-height: 1.6;
 }
 
 .container {
     width: 100%;
-    max-width: 343px;
+    max-width: 343px; /* 이미지 가이드의 너비 유지 */
     padding: 40px 0;
     box-sizing: border-box;
 }
@@ -45,7 +49,8 @@ body {
 .input-group { margin-bottom: 16px; }
 .input-group.last { margin-bottom: 24px; }
 
-input[type="text"], input[type="number"] {
+/* 6. 입력창 및 버튼 (기존 스타일 계승) */
+input[type="text"], .input-readonly {
     width: 100%;
     height: 52px;
     background: #1E1E1E;
@@ -56,6 +61,30 @@ input[type="text"], input[type="number"] {
     box-sizing: border-box;
     font-size: 16px;
     outline: none;
+}
+
+.next-btn, #goSurveyBtn, #goReportBtn {
+    width: 100%;
+    height: 52px;
+    background-color: #FFFFFF !important; /* 이미지처럼 화이트 버튼 */
+    color: #000000 !important;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
+.next-btn:hover { background-color: #E5E5E5 !important; }
+
+/* 7. 반응형 대응 */
+@media (max-width: 375px) {
+    .container { padding: 20px 16px; }
 }
 
 /* 6. 성별 선택 (이미지 가이드 반영: 라벨 버튼형) */
@@ -497,10 +526,6 @@ body {
   margin: 0 auto;
 }
 
-h2, h3 {
-  color: #2c3e50;
-  margin-top: 30px;
-}
 
 /* 유틸리티 클래스 */
 .muted {
@@ -515,21 +540,6 @@ h2, h3 {
   padding-bottom: 10px;
 }
 
-/* 카드 레이아웃 (Grid 시스템) */
-.row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 16px;
-  margin-bottom: 30px;
-}
-
-.card {
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e9ecef;
-}
 
 .card .muted:first-child {
   font-weight: bold;
@@ -537,44 +547,79 @@ h2, h3 {
   color: #495057;
 }
 
-/* 품질 뱃지 스타일 */
+
+/* 2. 텍스트 및 헤더 */
+h2, h3 { 
+    color: #BB86FC; /* 포인트 보라색 */
+    margin-top: 24px; 
+    font-weight: 700; 
+    text-align: left;
+    width: 100%;
+}
+.muted { color: #757575 !important; font-size: 13px; }
+
+/* 3. 분석 리포트 카드 레이아웃 */
+.row {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    margin-top: 20px;
+}
+
+.card {
+    background: #1E1E1E !important;
+    border: 1px solid #333 !important;
+    border-radius: 12px;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.card .muted:first-child {
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #BB86FC !important;
+}
+
+/* 4. 품질 뱃지 (아이콘 없이 깔끔하게) */
 .badge {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 20px;
-  background-color: #e7f5ff;
-  color: #007bff;
-  font-weight: bold;
-  font-size: 0.9rem;
-  margin-bottom: 8px;
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 4px;
+    background-color: #BB86FC;
+    color: #000;
+    font-weight: bold;
+    font-size: 12px;
 }
 
 /* 테이블 스타일링 */
 #stageTable {
-  width: 100%;
-  overflow-x: auto;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    width: 100%;
+    overflow-x: auto; /* 모바일 대응 */
+    margin-top: 16px;
+    border-radius: 8px;
+    border: 1px solid #333;
 }
 
 table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 600px;
+    width: 100%;
+    border-collapse: collapse;
+    background: #1E1E1E;
+    min-width: 450px; /* 테이블 내용 겹침 방지 */
 }
 
 th, td {
-  padding: 12px 15px;
-  text-align: left;
-  border-bottom: 1px solid #eee;
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #333;
+    font-size: 13px;
+    color: #E5E5E5;
 }
 
 th {
-  background-color: #f1f3f5;
-  color: #495057;
-  font-weight: 600;
-  font-size: 0.9rem;
+    background-color: #2D2D2D;
+    color: #BB86FC;
+    font-weight: 600;
 }
 
 tr:last-child td {
