@@ -13,10 +13,13 @@
   // ---------------------------
   // API helper
   // ---------------------------
-  function apiUrl(path) {
-    const base = localStorage.getItem("API_BASE") || "";
-    return base ? base.replace(/\/$/, "") + path : path;
-  }
+const API_BASE = "https://rhythme-server-357918245340.asia-northeast3.run.app";
+
+function apiUrl(path) {
+  const base = API_BASE.endsWith("/") ? API_BASE : API_BASE + "/";
+  const clean = String(path || "").replace(/^\//, "");
+  return new URL(clean, base).toString();
+}
 
   // ---------------------------
   // Session helper (단일 진실)
@@ -268,8 +271,7 @@ if (!sid) return;
       const url = apiUrl("/submit-voice-stage");
       console.log("SUBMIT 직전", url, payload);
 
-      const res = await fetch(url, {
-        method: "POST",
+      const res = await fetch(url, { method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
