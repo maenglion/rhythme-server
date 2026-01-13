@@ -141,6 +141,58 @@
         <p class="muted" style="margin-top:8px;">* Δ는 Stage1(읽기) 대비 변화량</p>
       `;
     });
+
+function clamp01(x){ return Math.max(0, Math.min(1, x)); }
+function mean(arr){ return arr.reduce((a,b)=>a+b,0)/arr.length; }
+function std(arr){
+  const m = mean(arr);
+  const v = mean(arr.map(x => (x-m)**2));
+  return Math.sqrt(v);
+}
+function pctDelta(v, base){
+  if (v == null || base == null || base === 0) return null;
+  return (v - base) / base * 100;
+}
+
+function computeVoiceSQ(stages){
+  const s1 = stages.find(s => s.stage_id === 1);
+  if (!s1) return null;
+
+  const sr = stages.map(s => s.speech_rate).filter(v => v != null);
+  const pr = stages.map(s => s.pause_ratio).filter(v => v != null);
+  const psd = stages.map(s => s.pitch_sd).filter(v => v != null);
+
+  const srMean = mean(sr), srStd = std(sr);
+  const prMean = mean(pr), prStd = std(pr);
+
+  // A) Cadence Stability: 표준편차가 작을수록 높음
+  // K는 민감도(추천 2~4 사이). 일단 3으로
+  const K = 3;
+  const cadence = Math.round(100 * clamp01(1 - (srStd/srMean)*K));
+
+  // B) Load Response: Stage3,4 기준(없으면 있는 것만)
+  const loadStages = stages.filter(s => [3,4].includes(s.stage_id));
+  const load = loadStages.map(s => {
+    const dPause = pctDelta(s.pause_ratio, s1.pause_ratio) ?? 0;  // 멈춤↑면 +
+    const dSpeed = pctDelta(s.speech_rate, s1.speech_rate) ?? 0;  // 속도↑면 +
+    // 부하 점수: (멈춤 증가) + (속도 감소를 +로 환산)
+    return dPause + (-dSpeed);
+  });
+  const loadScore = load.length ? Math.round(50 + mean(load)) : null; // 50 기준으로 흔들리게(베타)
+
+  // C) Arousal: pitch_sd 상승률(Stage2~4 평균)
+  const talkStages = stages.filter(s => [2,3,4].includes(s.stage_id));
+  const ar = talkStages.map(s => pctDelta(s.pitch_sd, s1.pitch_sd)).filter(v => v != null);
+  const arousal = ar.length ? Math.round(50 + mean(ar)) : null; // 50 기준(베타)
+
+  // 종합(가중치는 나중에 조정)
+  const parts = [cadence, loadScore, arousal].filter(v => v != null);
+  const vsq = parts.length ? Math.round(mean(parts)) : null;
+
+  return { cadence, loadScore, arousal, vsq };
+}
+
+
   </script>
 </body>
 </html>
