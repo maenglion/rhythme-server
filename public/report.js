@@ -288,29 +288,42 @@
   // report.js
 
 async function fetchReportData(sid) {
-  const url = API("/report-data") + "?sid=" + encodeURIComponent(sid);
+  if (!sid) throw new Error("sid is empty");
 
-  const res = await fetch(url, {
-    method: "GET",
-    cache: "no-store",
-    headers: { "Accept": "application/json" },
-  });
+  // 1) query 방식 먼저, 2) path 방식 fallback
+  const urls = [
+    apiUrl("/report-data") + "?sid=" + encodeURIComponent(sid),
+    apiUrl("/report-data/" + encodeURIComponent(sid)),
+  ];
 
-  if (!res.ok) {
-    const t = await res.text();
-    // ✅ 나중에 로그만 봐도 즉시 원인 찾게 url 포함
-    throw new Error(`report-data failed ${res.status}: ${t} (url=${url})`);
+  let lastText = "";
+
+  for (const url of urls) {
+    console.log("[report] fetchReportData ->", url);
+
+    const res = await fetch(url, {
+      method: "GET",
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+
+    if (res.ok) {
+      return await res.json();
+    }
+
+    lastText = await res.text().catch(() => "");
+    // ✅ 404면 다음 URL 시도
+    if (res.status === 404) continue;
+
+    // ✅ 404 말고 다른 에러는 즉시 터뜨림
+    throw new Error(`report-data failed ${res.status}: ${lastText} (url=${url})`);
   }
 
-  return res.json();
+  // 둘 다 404였던 경우
+  throw new Error(`report-data failed 404 on both endpoints. last=${lastText}`);
 }
-// 날짜 
-const createdAtRaw = data.report_created_at ?? data.created_at ?? null;
-document.getElementById("reportCreatedAt").textContent =
-  createdAtRaw ? new Date(createdAtRaw).toLocaleString("ko-KR") : "-";
 
 
-// report.js
 
 function showToast(msg) {
   const el = document.getElementById("toast");
