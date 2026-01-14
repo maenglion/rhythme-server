@@ -304,6 +304,10 @@ async function fetchReportData(sid) {
 
   return res.json();
 }
+// 날짜 
+const createdAtRaw = data.report_created_at ?? data.created_at ?? null;
+document.getElementById("reportCreatedAt").textContent =
+  createdAtRaw ? new Date(createdAtRaw).toLocaleString("ko-KR") : "-";
 
 
 // report.js
