@@ -149,9 +149,9 @@ const SCALE_LIKERT = [
 
 const SCALE_AB = [
   { v: 1, label: "A에 매우 가깝다" },
-  { v: 2, label: "A에 조금 가깝다" },
+  { v: 2, label: "A에 더 가깝다" },
   { v: 3, label: "반반" },
-  { v: 4, label: "B에 조금 가깝다" },
+  { v: 4, label: "B에 더 가깝다" },
   { v: 5, label: "B에 매우 가깝다" },
 ];
 
