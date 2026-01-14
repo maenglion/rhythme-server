@@ -17,6 +17,7 @@ const CONSENT_CACHE = {};
 let currentStep = 1;
 let currentQIndex = 0;
 let answers = [];
+let answersById = {};
 let diagnoses = [];
 let isUnder14 = false;
 let STAGES = [];
@@ -137,31 +138,94 @@ function ensureSid() {
 }
 
 // 1. 연구용 실제 문항 배열 (참여자에게는 괄호 안의 내부 지표를 숨기고 텍스트만 노출)
-const childQuestions = [
-    "설명서를 끝까지 보지 않아도 다음에 무엇을 해야 할지 스스로 유추한다.",
-    "물건이나 환경의 배치가 왜 그렇게 되어 있는지 자주 질문하거나 설명한다.",
-    "장난감, 기계, 프로그램의 작동 원리가 궁금해 분해하거나 직접 만들어 보려 한다.",
-    "기계나 앱, 게임에서 이것저것 눌러보며 작동 원리를 빠르게 파악한다.",
-    "이야기나 영상에서 등장인물의 감정보다 세계관의 규칙·설정·작동 방식에 더 집중한다.",
-    "가상의 이야기보다 사실 기반 콘텐츠(다큐, 과학·역사)에서 원인과 구조를 찾는 것을 즐긴다.",
-    "동물·사물·사람 등에서 차이점과 공통점을 스스로 분류하려 한다.",
-    "숫자, 규칙, 퍼즐처럼 명확한 규칙이 있는 문제를 이해하고 푸는 것을 좋아한다.",
-    "관심 있는 주제(공룡, 우주, 기차 등)가 생기면 종류와 특징을 끝까지 파고든다.",
-    "문제가 생기면 감정을 나누기보다 지금 할 수 있는 행동과 다음 단계를 먼저 생각한다."
+// ✅ 5점 척도 라벨
+const SCALE_LIKERT = [
+  { v: 1, label: "전혀 아니다" },
+  { v: 2, label: "아니다" },
+  { v: 3, label: "보통" },
+  { v: 4, label: "그렇다" },
+  { v: 5, label: "매우 그렇다" },
 ];
 
-const adultQuestions = [
-    "처음 가보는 복잡한 환승역이나 지하철 노선도를 볼 때, 전체 구조가 머릿속에 재구성된다.",
-    "어떤 선택을 할 때, 감정적 평가보다 지표 간의 관계(효율, 시간 비용 등)를 먼저 본다.",
-    "외국어를 배울 때 문장을 외우기보다 문법 규칙이 변형되는 구조를 파악하는 것이 편하다.",
-    "도로 정체가 발생하면 사고 유무, 신호 주기 등 원인을 추론하려 한다.",
-    "새로운 기기 사용 시 설명서 없이 이것저것 눌러보며 내부 동작 논리를 파악한다.",
-    "일반 물건보다 전자기기처럼 고관여 상품의 상세 사양(Spec) 비교에서 즐거움을 느낀다.",
-    "주변 사람들의 감정 변화보다 시스템의 오류나 논리적 불일치를 더 빨리 발견한다.",
-    "무언가 고장 났을 때 어떤 하위 요소에서 오류가 시작됐는지 단계별로 떠올린다.",
-    "복잡한 데이터나 정보에서 남들이 보지 못하는 반복 규칙이나 사이클을 찾는 것이 즐겁다.",
-    "나의 신체리듬을 데이터화하고 컨디션을 최적화하는 시스템적인 방법을 구상해본다."
+const SCALE_AB = [
+  { v: 1, label: "A에 매우 가깝다" },
+  { v: 2, label: "A에 조금 가깝다" },
+  { v: 3, label: "반반" },
+  { v: 4, label: "B에 조금 가깝다" },
+  { v: 5, label: "B에 매우 가깝다" },
 ];
+
+// ✅ 문항: type = 'likert' (기존 문장형), type = 'ab' (A/B 선택형)
+// id는 q1~q10은 기존 DB 컬럼 매핑을 위해 유지 추천
+const childItems = [
+  { id: "q1", type: "likert", text: "설명서를 끝까지 보지 않아도 다음에 무엇을 해야 할지 스스로 유추한다." },
+  { id: "q2", type: "likert", text: "물건이나 환경의 배치가 왜 그렇게 되어 있는지 자주 질문하거나 설명한다." },
+  { id: "q3", type: "likert", text: "장난감, 기계, 프로그램의 작동 원리가 궁금해 분해하거나 직접 만들어 보려 한다." },
+  { id: "q4", type: "likert", text: "기계나 앱, 게임에서 이것저것 눌러보며 작동 원리를 빠르게 파악한다." },
+  { id: "q5", type: "likert", text: "이야기나 영상에서 등장인물의 감정보다 세계관의 규칙·설정·작동 방식에 더 집중한다." },
+  { id: "q6", type: "likert", text: "가상의 이야기보다 사실 기반 콘텐츠(다큐, 과학·역사)에서 원인과 구조를 찾는 것을 즐긴다." },
+  { id: "q7", type: "likert", text: "동물·사물·사람 등에서 차이점과 공통점을 스스로 분류하려 한다." },
+  { id: "q8", type: "likert", text: "숫자, 규칙, 퍼즐처럼 명확한 규칙이 있는 문제를 이해하고 푸는 것을 좋아한다." },
+  { id: "q9", type: "likert", text: "관심 있는 주제(공룡, 우주, 기차 등)가 생기면 종류와 특징을 끝까지 파고든다." },
+  { id: "q10", type: "likert", text: "문제가 생기면 감정을 나누기보다 지금 할 수 있는 행동과 다음 단계를 먼저 생각한다." },
+
+  // ✅ 듣기 예민함(추가 2문항): DB컬럼이 아직 없으면 qeeg_info에 JSON으로 담는 방식 추천
+  {
+    id: "q11",
+    type: "ab",
+    a: "대화할 때 상대의 말속도나 말 사이 간격에 더 집중한다.",
+    b: "상대방이 전달하려고 하는 바에 더 집중하는 편이다.",
+    sqSide: "A",
+  },
+  {
+    id: "q12",
+    type: "ab",
+    a: "문장의 내용 보다 운율, 톤, 인토네이션 등의 변화가 먼저 귀에 들어온다.",
+    b: "문장의 내용과 전달하고 싶은 바에 집중하며 워딩 위주의 분석을 한다.",
+    sqSide: "A",
+  },
+];
+
+const adultItems = [
+  { id: "q1", type: "likert", text: "처음 가보는 복잡한 환승역이나 지하철 노선도를 볼 때, 전체 구조가 머릿속에 재구성된다." },
+  { id: "q2", type: "likert", text: "어떤 선택을 할 때, 감정적 평가보다 지표 간의 관계(효율, 시간 비용 등)를 먼저 본다." },
+  { id: "q3", type: "likert", text: "외국어를 배울 때 문장을 외우기보다 문법 규칙이 변형되는 구조를 파악하는 것이 편하다." },
+  { id: "q4", type: "likert", text: "도로 정체가 발생하면 사고 유무, 신호 주기 등 원인을 추론하려 한다." },
+  { id: "q5", type: "likert", text: "새로운 기기 사용 시 설명서 없이 이것저것 눌러보며 내부 동작 논리를 파악한다." },
+  { id: "q6", type: "likert", text: "일반 물건보다 전자기기처럼 고관여 상품의 상세 사양(Spec) 비교에서 즐거움을 느낀다." },
+  { id: "q7", type: "ab",
+    a: "편한 대화에서도 정리(1-2-3) 형태로 말하는 편이라, 지적을 받곤 한다.",
+    b: "핵심만 먼저 말하고, 나머지는 상황/질문에 따라 채우는 편이다.",
+    sqSide: "A",
+  },
+  { id: "q8", type: "ab",
+    a: "계획이 깨지면 불편/초조가 크게 올라가고, 다시 계획을 세워야 마음이 가라앉는다.",
+    b: "계획이 깨지는 건 흔한 일이라, 당황하지 않고 조정하면 된다고 느낀다.",
+    sqSide: "A",
+  },
+  { id: "q9", type: "ab",
+    a: "정답 없는 문제는 가설/판단 기준을 먼저 세우고, 그 기준을 검증하는 방식으로 찾는다.",
+    b: "정답 없는 문제는 자료를 넓게 모은 뒤에 방향을 잡는다.",
+    sqSide: "A",
+  },
+  { id: "q10", type: "ab",
+    a: "다수가 따르는 비논리는 관습/운영 효율이 있어 남아있는 경우가 많아, 크게 문제 삼지 않는 편이다.",
+    b: "다수가 따르더라도 비논리가 계속 보이면, 불편을 감수하고라도 고치려 했던 경험이 꾸준히 있다.",
+    sqSide: "B", // ✅ 여기만 B가 SQ 방향
+  },
+
+  { id: "q11", type: "ab",
+    a: "대화할 때 상대의 말속도나 말 사이 간격에 더 집중한다.",
+    b: "상대방이 전달하려고 하는 바에 더 집중하는 편이다.",
+    sqSide: "A",
+  },
+  { id: "q12", type: "ab",
+    a: "문장의 내용 보다 운율, 톤, 인토네이션 등의 변화가 먼저 귀에 들어온다.",
+    b: "문장의 내용과 전달하고 싶은 바에 집중하며 워딩 위주의 분석을 한다.",
+    sqSide: "A",
+  },
+];
+
 
 /* ============================================================
    1. 공통 및 단계 이동 제어 (window 등록 필수)
@@ -310,15 +374,24 @@ window.validateStep3 = function() {
 
 // ✅ 설문 상태(전역)
 
-function getSQQuestions() {
-  const age = parseInt(document.getElementById('age')?.value || "0", 10);
-  return (age < 19) ? childQuestions : adultQuestions;
-}
+// ✅ 현재 설문 문항 세트 선택
+let __sqItemsCache = null;
+let __sqCurrent = null;
 
+function getSQQuestions() {
+  // 너희 기존 로컬스토리지 키 사용
+  const age = parseInt(localStorage.getItem("rhythmi_age") || "0", 10);
+  const isChild = age > 0 && age < 14;
+
+  __sqItemsCache = isChild ? childItems : adultItems;
+  return __sqItemsCache;
+}
 window.startSQTest = function () {
   currentQIndex = 0;
   const questions = getSQQuestions();
   answers = new Array(questions.length).fill(null);
+  answersById = {};
+
 
   if (typeof window.showStep === "function") window.showStep(4);
   else {
@@ -332,57 +405,131 @@ window.startSQTest = function () {
 
 
 // ✅ 질문 렌더
+function escapeHtml(str) {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+
+// ✅ 질문 렌더 (기존 함수 교체)
 function renderQuestion() {
   const questions = getSQQuestions();
+  const q = questions[currentQIndex];
 
-  if (currentQIndex >= questions.length) {
-    window.showStep(5);  // ✅ 설문 완료 → step5로
+  if (!q) {
+    completeSQTest();     // ✅ 완료 처리 먼저
+    window.showStep?.(5); // ✅ 설문 완료 → step5
     return;
   }
 
-  document.querySelectorAll('.ans-btn').forEach(btn => btn.classList.remove('selected'));
+  __sqCurrent = q;
 
-  const qText = document.getElementById('questionText');
-  if (qText) qText.innerText = questions[currentQIndex] || "";
+  // 선택 초기화
+  document.querySelectorAll(".ans-btn").forEach((btn) => btn.classList.remove("selected"));
 
-  const count = document.getElementById('questionCount');
+  // 질문 텍스트
+  const qText = document.getElementById("questionText");
+  if (qText) {
+    if (q.type === "ab") {
+      qText.innerHTML = `
+        <div class="q-title">둘 중 어떤 쪽에 더 가까운가요?</div>
+        <div class="q-ab"><b>A.</b> ${escapeHtml(q.a)}</div>
+        <div class="q-ab"><b>B.</b> ${escapeHtml(q.b)}</div>
+      `;
+    } else {
+      qText.textContent = q.text || "";
+    }
+  }
+
+  // 버튼 라벨/클릭 바인딩 (ans-btn 5개를 척도에 맞게 바꿈)
+  const scale = (q.type === "ab") ? SCALE_AB : SCALE_LIKERT;
+  const btns = Array.from(document.querySelectorAll(".ans-btn"));
+
+  // 5개만 쓰는 전제 (더 많으면 앞 5개만)
+  for (let i = 0; i < btns.length; i++) {
+    const btn = btns[i];
+    const s = scale[i];
+
+    if (!s) {
+      btn.style.display = "none";
+      continue;
+    }
+    btn.style.display = "";
+    btn.innerText = s.label;
+    btn.dataset.value = String(s.v);
+
+    // HTML에 onclick이 있어도 여기서 덮어씌워서 일관성 확보
+    btn.onclick = (evt) => window.handleAnswer(s.v, evt);
+  }
+
+  // 진행 표시
+  const count = document.getElementById("questionCount");
   if (count) count.innerText = `${currentQIndex + 1} / ${questions.length}`;
 
   const progress = ((currentQIndex + 1) / questions.length) * 100;
-  const bar = document.getElementById('progressBar');
+  const bar = document.getElementById("progressBar");
   if (bar) bar.style.width = `${progress}%`;
 }
 
+
 // ✅ 답 클릭
+// ✅ 답 클릭 (기존 함수 교체)
 window.handleAnswer = function (val, evt) {
   const el = evt?.currentTarget;
-  if (!el) return;
+  if (!el || !__sqCurrent) return;
 
-  document.querySelectorAll('.ans-btn').forEach(btn => btn.classList.remove('selected'));
-  el.classList.add('selected');
+  document.querySelectorAll(".ans-btn").forEach((btn) => btn.classList.remove("selected"));
+  el.classList.add("selected");
 
   setTimeout(() => {
-    answers[currentQIndex] = val;
+    // index 기반(기존 호환)
+    answers[currentQIndex] = Number(val);
+
+    // id 기반(신규)
+    answersById[__sqCurrent.id] = Number(val);
+
     currentQIndex++;
     renderQuestion();
   }, 150);
 };
 
-// ✅ 설문 완료 → Step5로 이동 + 로컬 저장(가드용)
 
-function completeSQTest() {
-  localStorage.setItem("rhythmi_sq_done", "1");
-  localStorage.setItem("rhythmi_sq_answers", JSON.stringify(answers));
-  localStorage.setItem("rhythmi_sq_version", "v1");
+function renderSurvey(items, containerId = "survey") {
+  const wrap = document.getElementById(containerId);
+  if (!wrap) return;
 
-  // ✅ 무조건 Step5로
-  if (typeof window.showStep === "function") window.showStep(5);
-  else {
-    document.querySelectorAll(".step").forEach(el => (el.style.display = "none"));
-    const s5 = document.getElementById("step5");
-    if (s5) s5.style.display = "block";
-  }
+  wrap.innerHTML = items.map((q, idx) => {
+    const scale = (q.type === "ab") ? SCALE_AB : SCALE_LIKERT;
+    const head = (q.type === "ab")
+      ? `
+        <div class="q-title">둘 중 어떤 쪽에 더 가까운가요?</div>
+        <div class="q-ab"><b>A.</b> ${q.a}</div>
+        <div class="q-ab"><b>B.</b> ${q.b}</div>
+      `
+      : `<div class="q-text">${q.text}</div>`;
+
+    const opts = scale.map(s => `
+      <label class="opt">
+        <input type="radio" name="${q.id}" value="${s.v}">
+        <span>${s.label}</span>
+      </label>
+    `).join("");
+
+    return `
+      <div class="card question-card">
+        <div class="q-no">Q${idx + 1}</div>
+        ${head}
+        <div class="opts">${opts}</div>
+      </div>
+    `;
+  }).join("");
 }
+
+
 
 window.updateFileName = function(type) {
     const fileInput = document.getElementById(`qeeg${type}`);
@@ -406,17 +553,116 @@ window.getSTag = function(score) {
   return "Low S";
 };
 
+// ===============================
+// SQ v2_14 (likert + AB-5) helpers
+// ===============================
 
-window.submitAll = async function(evt) {
-  const sid = ensureSid();
-  console.log("[SID] created at submitAll:", sid);
-  const ecFile = document.getElementById('qeegEC')?.files[0];
-  const eoFile = document.getElementById('qeegEO')?.files[0];
-  const nickname = document.getElementById('nickname').value;
-  const age = document.getElementById('age').value;
-  const genderElem = document.querySelector('input[name="gender"]:checked');
-  const gender = genderElem ? genderElem.value : 'unknown';
-  const isChild = parseInt(age) <= 18;
+// ✅ 기존 DB 컬럼 매핑은 q1~q10까지만 유지
+const LEGACY_KEYS = [
+  "q1_spatial", "q2_decision_alg", "q3_linguistic", "q4_causal", "q5_reverse_eng",
+  "q6_decision_adv", "q7_social_pattern", "q8_error_analysis", "q9_abstract_pattern", "q10_self_opt",
+];
+
+// ✅ 문항 1개를 SQ 방향(0~4)으로 점수화
+function scoreItemTo0_4(q, v1to5) {
+  if (typeof v1to5 !== "number") return null;
+
+  // AB 5점: 1(A매우)~5(B매우)
+  if (q.type === "ab") {
+    const side = q.sqSide || "A"; // A가 SQ면 A쪽일수록 점수↑
+    return (side === "A") ? (5 - v1to5) : (v1to5 - 1); // 0~4
+  }
+
+  // Likert 5점: 1~5 -> 0~4
+  return (v1to5 - 1);
+}
+
+function computeSqScore100(items, answersById) {
+  let sum = 0, max = 0;
+
+  for (const q of items) {
+    const v = answersById?.[q.id];
+    const s = scoreItemTo0_4(q, v);
+    if (s === null) continue;
+    sum += s;
+    max += 4;
+  }
+
+  return max ? Math.round(100 * (sum / max)) : 0;
+}
+
+function buildLegacyMapFromAnswers(answersById) {
+  // q1~q10만 기존 컬럼에 맞춰 넣기
+  return Object.fromEntries(
+    LEGACY_KEYS.map((k, i) => [k, answersById?.[`q${i + 1}`] ?? null])
+  );
+}
+
+function buildSurveyPayloadV2({
+  sid,
+  nickname,
+  age,
+  gender,
+  isChild,
+  diagnoses,
+  items,
+  answersById,
+  ecFile,
+  eoFile,
+}) {
+  const legacyMap = buildLegacyMapFromAnswers(answersById);
+  const score100 = computeSqScore100(items, answersById);
+
+  return {
+    session_id: sid,
+    user_id: sid, // ✅ 분석 연결 위해 sid로 통일
+    age,
+    gender,
+    is_child: isChild,
+    diagnoses: (diagnoses || []).join(", "),
+
+    ...legacyMap,
+
+    total_score: score100,
+    s_tag: "SQ(v2-14)",
+
+    // ✅ 전체 원본응답 + 파일명 + 버전은 qeeg_info로
+    qeeg_info: JSON.stringify({
+      survey_version: "v2_14",
+      nickname: nickname || null,
+      answers: answersById,
+      files: {
+        EC: ecFile ? ecFile.name : null,
+        EO: eoFile ? eoFile.name : null,
+      },
+      createdAt: Date.now(),
+    }),
+  };
+}
+
+/* ============================================================
+   최종 데이터 제출 (설문 + qEEG 업로드)
+   ============================================================ */
+window.submitAll = async function (evt) {
+  // ✅ sid 생성 금지: 읽기만
+  const sid =
+    localStorage.getItem("SESSION_ID") ||
+    new URLSearchParams(location.search).get("sid");
+
+  if (!sid) {
+    alert("세션이 없습니다. 처음부터 다시 진행해주세요.");
+    location.href = "./index.html";
+    return;
+  }
+  console.log("[SID] used at submitAll:", sid);
+
+  const ecFile = document.getElementById("qeegEC")?.files?.[0] || null;
+  const eoFile = document.getElementById("qeegEO")?.files?.[0] || null;
+
+  const nickname = (document.getElementById("nickname")?.value || "").trim();
+  const age = parseInt(document.getElementById("age")?.value || "0", 10);
+  const gender = document.querySelector('input[name="gender"]:checked')?.value || "unknown";
+  const isChild = age > 0 && age <= 18;
 
   const currentBtn = evt?.currentTarget;
   if (currentBtn) {
@@ -424,122 +670,116 @@ window.submitAll = async function(evt) {
     currentBtn.innerText = "데이터 분석중...";
   }
 
- if (!ecFile || !eoFile) {
-  const confirmGo = await window.showConfirmModal(
-    "⚠️ qEEG 파일이 선택되지 않았습니다.\n\n파일 없이 진행할까요?"
-  );
+  try {
+    // 1) qEEG 파일 없을 때 confirm
+    if (!ecFile || !eoFile) {
+      const confirmGo = await window.showConfirmModal?.(
+        "⚠️ qEEG 파일이 선택되지 않았습니다.\n\n파일 없이 진행할까요?"
+      );
+      if (!confirmGo) {
+        if (currentBtn) {
+          currentBtn.disabled = false;
+          currentBtn.innerText = "음성분석 시작";
+        }
+        return;
+      }
+    }
 
-  if (!confirmGo) {
+    // 2) 설문 완료 체크 (answersById 기준)
+    const items = getSQQuestions(); // adultItems / childItems
+    const expectedLen = items.length;
+    const answeredCount = items.filter(q => answersById?.[q.id] !== undefined && answersById?.[q.id] !== null).length;
+
+    if (answeredCount !== expectedLen) {
+      window.showModal?.("설문이 완료되지 않았습니다.");
+      if (currentBtn) {
+        currentBtn.disabled = false;
+        currentBtn.innerText = "음성분석 시작";
+      }
+      return;
+    }
+
+    // 3) payload 생성
+    const surveyPayload = buildSurveyPayloadV2({
+      sid,
+      nickname,
+      age,
+      gender,
+      isChild,
+      diagnoses: window.diagnoses || [],
+      items,
+      answersById,
+      ecFile,
+      eoFile,
+    });
+
+    // 4) 설문 저장
+    const surveyRes = await fetch(API("/submit-survey"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(surveyPayload),
+    });
+
+    if (!surveyRes.ok) {
+      const t = await surveyRes.text().catch(() => "");
+      throw new Error(`submit-survey failed ${surveyRes.status}: ${t}`);
+    }
+
+    // 5) qEEG 업로드 (있으면)
+    const ecResult = ecFile ? await uploadSingleFile(sid, "EC", ecFile) : null;
+    const eoResult = eoFile ? await uploadSingleFile(sid, "EO", eoFile) : null;
+
+    // 6) 로컬 저장(기존 흐름 유지)
+    localStorage.setItem("rhythmi_session_id", sid);
+    localStorage.setItem("rhythmi_user_id", nickname || sid);
+    localStorage.setItem("rhythmi_age", String(age));
+    localStorage.setItem("rhythmi_gender", gender);
+
+    // 7) 안내 + 다음 이동
+    window.showModal?.(
+      `✅ 저장 완료\n\nEC: ${ecFile?.name || "none"}\nEO: ${eoFile?.name || "none"}`
+    );
+
+    const goNext = () => {
+      window.closeModal?.();
+      location.href = `voice_info.html?sid=${encodeURIComponent(sid)}`;
+    };
+
+    const okBtn = document.getElementById("modalOkBtn");
+    if (okBtn) okBtn.onclick = goNext;
+    else goNext();
+
+    console.log("EC path:", ecResult?.path);
+    console.log("EO path:", eoResult?.path);
+
+  } catch (error) {
+    console.error("Submit Error:", error);
+    alert("서버 오류: " + (error?.message || String(error)));
     if (currentBtn) {
       currentBtn.disabled = false;
       currentBtn.innerText = "음성분석 시작";
     }
-    return;
-  }
-}
-
-
-const expectedLen = getSQQuestions().length;
-if (answers.filter(v => v !== null && v !== undefined).length !== expectedLen) {
-  window.showModal("설문이 완료되지 않았습니다.");
-  if (currentBtn) { currentBtn.disabled = false; currentBtn.innerText = "음성분석 시작"; }
-  return;
-}
-
-
-  const totalScore = answers.reduce((a,b)=>a+b,0);
-  const sTag = window.getSTag(totalScore);
-  const surveyPayload = {
-    session_id: sid,  
-    user_id: nickname,
-    nickname: nickname,  
-    age: parseInt(age),
-    gender,
-    is_child: isChild,
-    diagnoses: diagnoses.join(', '),
-    q1_spatial: answers[0], q2_decision_alg: answers[1], q3_linguistic: answers[2],
-    q4_causal: answers[3], q5_reverse_eng: answers[4], q6_decision_adv: answers[5],
-    q7_social_pattern: answers[6], q8_error_analysis: answers[7], q9_abstract_pattern: answers[8],
-    q10_self_opt: answers[9],
-    total_score: totalScore,
-    s_tag: sTag,
-    qeeg_info: `EC: ${ecFile ? ecFile.name : 'none'}, EO: ${eoFile ? eoFile.name : 'none'}`
-  };
-
-  try {
-    const surveyRes = await fetch(API('/submit-survey'), {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify(surveyPayload),
-});
-
-    if (!surveyRes.ok) {
-      const t = await surveyRes.text();
-      throw new Error(`submit-survey failed ${surveyRes.status}: ${t}`);
-    }
-
-const ecResult = ecFile ? await uploadSingleFile(sid, 'EC', ecFile) : null;
-const eoResult = eoFile ? await uploadSingleFile(sid, 'EO', eoFile) : null;
-
-window.showModal(
-  `✅ 저장 완료\n\nEC: ${ecFile?.name || 'none'}\nEO: ${eoFile?.name || 'none'}`
-);
-
-// ✅ 여기 추가: 모달 확인 버튼 누르면 voice_info.html로 이동
-const okBtn = document.getElementById("modalOkBtn");
-if (okBtn) {
-  okBtn.onclick = () => {
-    window.closeModal?.();
-
-    // 이미 만들어진 sid 사용 (생성 금지)
-    const sid2 = localStorage.getItem("SESSION_ID") || sid;
-    if (!sid2) {
-      alert("세션이 없습니다. 처음부터 다시 진행해주세요.");
-      location.href = "./index.html";
-      return;
-    }
-
-    location.href = `voice_info.html?sid=${encodeURIComponent(sid2)}`;
-  };
-}
-
-console.log('EC path:', ecResult?.path);
-console.log('EO path:', eoResult?.path);
-
-// 버튼은 있으면 숨김 (step5에서 쓰던 것들)
-const uploadBtn = document.getElementById('uploadBtn');
-if (uploadBtn) uploadBtn.style.display = 'none';
-
-  // ✅ Step5 완료 처리
-  const nextBtn = document.getElementById("nextStepBtn");
-  if (nextBtn) {
-    nextBtn.style.display = "inline-block";
-    nextBtn.onclick = () => {
-      const sid2 = localStorage.getItem("SESSION_ID"); // 이미 만들어진 것 사용(생성 금지)
-      if (!sid2) {
-        alert("세션이 없습니다. 처음부터 다시 진행해주세요.");
-        location.href = "./index.html";
-        return;
-      }
-      location.href = `voice_info.html?sid=${encodeURIComponent(sid2)}`;
-    };
-  }
-
-
-// ✅ 화면 전환: step5 -> step6
-localStorage.setItem('rhythmi_session_id', sid);   // ✅ 기준키
-localStorage.setItem('rhythmi_user_id', nickname); // ✅ 표시용
-localStorage.setItem('rhythmi_age', String(age));
-localStorage.setItem('rhythmi_gender', gender);
-
-
-
-  } catch (error) {
-    console.error('Submit Error:', error);
-    alert('서버 오류: ' + error.message);
-    if (currentBtn) { currentBtn.disabled = false; currentBtn.innerText = "음성분석 시작"; }
   }
 };
+
+
+// ✅ 설문 완료 로컬 저장(필요하면 유지)
+function completeSQTest() {
+  const items = getSQQuestions();
+  const score100 = computeSqScore100(items, answersById);
+
+  localStorage.setItem("rhythmi_sq_done", "1");
+  localStorage.setItem("rhythmi_sq_answers", JSON.stringify(answers)); // index 기반 호환
+  localStorage.setItem("rhythmi_sq_answers_by_id", JSON.stringify(answersById)); // id 기반
+  localStorage.setItem("rhythmi_sq_version", "v2_14");
+  localStorage.setItem("rhythmi_sq_score_100", String(score100));
+
+  localStorage.setItem(
+    "rhythmi_confidence_note",
+    "신뢰도(Confidence)는 설문(자기보고) 점수와 음성 기반 지표(말의 리듬/속도/휴지/억양 변동)에서 추정된 성향이 얼마나 일치하는지로 계산됩니다. 두 값의 차이가 클수록, 의도적 응답/상황 요인(피로·주변 소음·감정 상태 등) 가능성이 있어 신뢰도가 낮아질 수 있습니다."
+  );
+}
+
 
 async function uploadSingleFile(userId, type, file) {
   const formData = new FormData();
