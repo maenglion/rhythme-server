@@ -1,6 +1,6 @@
 // report.js (no module)
 (function () {
-  const CLOUD_RUN_URL = "https://rhythme-server-357918245340.asia-northeast3.run.app";
+  const CLOUD_RUN_URL = "https://rhythme-server-as3ud42lpa-du.a.run.app";
   const apiUrl = (path) => `${CLOUD_RUN_URL.replace(/\/$/, "")}${path}`;
 
   const $ = (id) => document.getElementById(id);
