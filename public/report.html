@@ -1,198 +1,121 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>리포트</title>
   <link rel="stylesheet" href="styles.css">
-  <title>분석 레포트 beta 1.1</title>
+  <style>
+    :root { --primary:#BB86FC; --card:#1E1E1E; --muted:#AAA; --bg:#121212; --line:#2c2c2c; }
+    body{ background:var(--bg); color:#fff; margin:0; font-family: Pretendard, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+    .wrap{ max-width:520px; margin:0 auto; padding:20px; }
+    .card{ background:var(--card); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:16px; margin:14px 0; }
+    .badge{ display:inline-block; padding:6px 10px; border-radius:999px; background:rgba(187,134,252,.18); border:1px solid rgba(187,134,252,.35); font-weight:900; font-size:12px; }
+    h1{ font-size:24px; margin:8px 0 2px; }
+    .sub{ color:#9a9a9a; font-size:13px; line-height:1.6; }
+    .title{ color:var(--primary); font-weight:900; margin:0 0 10px; font-size:16px; }
+    .kpi{ display:flex; gap:10px; flex-wrap:wrap; }
+    .kpi .item{ flex:1; min-width:140px; background:rgba(0,0,0,.18); border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:12px; }
+    .kpi .label{ font-size:12px; color:var(--muted); }
+    .kpi .value{ font-size:20px; font-weight:900; margin-top:4px; color:#fff; }
+    .matrix{ width:100%; border-collapse:collapse; font-size:13px; }
+    .matrix th,.matrix td{ border-top:1px solid var(--line); padding:10px 8px; vertical-align:top; }
+    .matrix th{ color:#cfcfcf; text-align:left; font-size:12px; }
+    .hr{ height:1px; background:var(--line); margin:12px 0; }
+    .note{ font-size:12px; color:#888; line-height:1.6; }
+    .warn{ color:#ffcf6e; font-size:12px; }
+    svg{ width:100%; height:auto; display:block; }
+  </style>
 </head>
 
 <body>
-  <h2> 음성 리포트</h2>
-  <div class="muted" id="meta"></div>
+  <div class="wrap">
 
-  <div class="row" id="cards"></div>
+    <div class="card">
+      <span class="badge">INSIGHT</span>
+      <h1 id="insightTitle">리포트 생성 중...</h1>
+      <div class="sub" id="insightDesc">잠시만요. 데이터를 불러오는 중입니다.</div>
+      <div class="hr"></div>
+      <div class="sub">리포트 생성일: <b id="createdAt">-</b></div>
+      <div class="sub">세션: <span id="sidText">-</span></div>
+      <div class="warn" id="under14Warn" style="display:none; margin-top:10px;">
+        14세 미만은 현재 최적화가 덜 되어 참고용으로만 해석해주세요.
+      </div>
+    </div>
 
-  <h3>Stage별 결과</h3>
-  <div id="stageTable"></div>
-
-<button data-nav="survey.html">설문시작</button>
-
-  <script>
-    const API_BASE = "https://rhythme-server-as3ud42lpa-du.a.run.app";
-
-    const fmt = (x, d=2) => (x === null || x === undefined) ? "-" : Number(x).toFixed(d);
-
-    function getSid() {
-      const qs = new URLSearchParams(location.search);
-      const urlSid = qs.get("sid") || qs.get("session_id");
-      const storeSid = localStorage.getItem("SESSION_ID");
-      const winSid = window.SESSION_ID;
-      const sid = urlSid || storeSid || winSid;
-
-      if (!sid) {
-        alert("세션이 없습니다. 처음부터 다시 진행해주세요.");
-        location.href = "./index.html";
-        return null;
-      }
-
-      window.SESSION_ID = sid;
-      localStorage.setItem("SESSION_ID", sid);
-      return sid;
-    }
-
-    function qualityLabel(nonOk, snrAvg){
-      if (nonOk > 0) return { label: "주의", note: "일부 stage 품질 이슈가 있어 해석 제한이 있을 수 있어요." };
-      if (snrAvg !== null && snrAvg !== undefined && snrAvg < 10) return { label: "주의", note: "SNR이 낮아 주변 소음 영향이 있을 수 있어요." };
-      return { label: "양호", note: "녹음 품질이 전반적으로 양호해요." };
-    }
-
-    function deltas(stages){
-      const s1 = stages.find(s => s.stage_id === 1);
-      if (!s1) return null;
-      return stages.map(s => {
-        if (s.stage_id === 1) return { stage_id: 1, d_sr: 0, d_pr: 0, d_psd: 0 };
-        return {
-          stage_id: s.stage_id,
-          d_sr: (s.speech_rate - s1.speech_rate),
-          d_pr: (s.pause_ratio - s1.pause_ratio),
-          d_psd: (s.pitch_sd - s1.pitch_sd),
-        };
-      });
-    }
-
-    document.addEventListener("DOMContentLoaded", async () => {
-      const sid = getSid();
-      if (!sid) return;
-
-      const goBtn = document.getElementById("goSurveyBtn");
-      if (goBtn) {
-        goBtn.addEventListener("click", () => {
-          const sid2 = getSid();
-          if (!sid2) return;
-          location.href = `./survey.html?sid=${encodeURIComponent(sid2)}`;
-        });
-      }
-
-      const res = await fetch(`${API_BASE}/report/voice?session_id=${encodeURIComponent(sid)}`);
-      if (!res.ok) {
-        const t = await res.text();
-        document.body.innerHTML = `<p>불러오기 실패: ${res.status}</p><pre>${t}</pre>`;
-        return;
-      }
-
-      const data = await res.json();
-      document.getElementById("meta").textContent = `session_id: ${data.session_id}`;
-
-      const s = data.summary;
-      const q = qualityLabel(s.non_ok_count, s.snr_avg);
-
-      document.getElementById("cards").innerHTML = `
-        <div class="card">
-          <div class="muted">데이터 품질</div>
-          <div><span class="badge">${q.label}</span></div>
-          <div class="muted" style="margin-top:6px;">SNR 평균: ${fmt(s.snr_avg,1)} / non-ok: ${s.non_ok_count}</div>
-          <div class="muted">${q.note}</div>
+    <div class="card">
+      <div class="title">요약 지표</div>
+      <div class="kpi">
+        <div class="item">
+          <div class="label">SQ(설문)</div>
+          <div class="value" id="sqScore">-</div>
         </div>
-        <div class="card">
-          <div class="muted">요약(평균)</div>
-          <div>말속도: ${fmt(s.speech_rate_avg,2)}</div>
-          <div>쉼 비율: ${fmt(s.pause_ratio_avg,3)}</div>
-          <div>억양 변동(pitch_sd): ${fmt(s.pitch_sd_avg,1)}</div>
+        <div class="item">
+          <div class="label">Confidence</div>
+          <div class="value" id="confidence">-</div>
         </div>
-        <div class="card">
-          <div class="muted">범위(4 stage)</div>
-          <div>말속도: ${fmt(s.speech_rate_min,2)} ~ ${fmt(s.speech_rate_max,2)}</div>
-          <div>쉼 비율: ${fmt(s.pause_ratio_min,3)} ~ ${fmt(s.pause_ratio_max,3)}</div>
-          <div>pitch_mean: ${fmt(s.pitch_mean_min,1)} ~ ${fmt(s.pitch_mean_max,1)}</div>
+        <div class="item">
+          <div class="label">음성 품질</div>
+          <div class="value" id="voiceQuality">-</div>
         </div>
-      `;
+      </div>
+      <div class="note" style="margin-top:10px;">
+        ※ 본 리포트는 의료 진단이 아닌 연구/베타 분석용 요약입니다.
+      </div>
+    </div>
 
-      const ds = deltas(data.stages) || [];
-      const dMap = new Map(ds.map(x => [x.stage_id, x]));
-
-      const rows = data.stages.map(st => {
-        const d = dMap.get(st.stage_id);
-        const dSr = d ? fmt(d.d_sr,2) : "-";
-        const dPr = d ? fmt(d.d_pr,3) : "-";
-        const dPsd = d ? fmt(d.d_psd,1) : "-";
-        return `
+    <div class="card">
+      <div class="title">3D 교차 분석 매트릭스</div>
+      <table class="matrix">
+        <thead>
           <tr>
-            <td>${st.stage_id}</td>
-            <td>${st.quality_flag}</td>
-            <td>${fmt(st.pitch_sd,1)} <span class="muted">(Δ ${dPsd})</span></td>
-            <td>${fmt(st.speech_rate,2)} <span class="muted">(Δ ${dSr})</span></td>
-            <td>${fmt(st.pause_ratio,3)} <span class="muted">(Δ ${dPr})</span></td>
-            <td>${fmt(st.snr,1)}</td>
-            <td class="muted">${st.created_at}</td>
+            <th style="width:28%;">축</th>
+            <th style="width:32%;">근거(설문↔음성)</th>
+            <th>해석(요약)</th>
           </tr>
-        `;
-      }).join("");
+        </thead>
+        <tbody id="matrixBody">
+          <tr><td colspan="3" class="sub">로딩 중...</td></tr>
+        </tbody>
+      </table>
+    </div>
 
-      document.getElementById("stageTable").innerHTML = `
-        <table>
-          <thead>
-            <tr>
-              <th>Stage</th><th>품질</th><th>pitch_sd</th><th>speech_rate</th><th>pause_ratio</th><th>SNR</th><th>timestamp</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
-        <p class="muted" style="margin-top:8px;">* Δ는 Stage1(읽기) 대비 변화량</p>
-      `;
-    });
+    <div class="card">
+      <div class="title">스테이지별 변화 그래프</div>
+      <div class="sub">Stage 1~4에서 지표가 어떻게 변하는지(취미/참고용) 보여줍니다.</div>
+      <div style="margin-top:12px;">
+        <div class="sub" style="margin-bottom:6px;">Pause Ratio</div>
+        <div id="chartPause"></div>
+      </div>
+      <div style="margin-top:14px;">
+        <div class="sub" style="margin-bottom:6px;">Pitch SD</div>
+        <div id="chartPitch"></div>
+      </div>
+      <div style="margin-top:14px;">
+        <div class="sub" style="margin-bottom:6px;">Speech Rate</div>
+        <div id="chartRate"></div>
+      </div>
+    </div>
 
-function clamp01(x){ return Math.max(0, Math.min(1, x)); }
-function mean(arr){ return arr.reduce((a,b)=>a+b,0)/arr.length; }
-function std(arr){
-  const m = mean(arr);
-  const v = mean(arr.map(x => (x-m)**2));
-  return Math.sqrt(v);
-}
-function pctDelta(v, base){
-  if (v == null || base == null || base === 0) return null;
-  return (v - base) / base * 100;
-}
+    <div class="card" id="qeegCard" style="display:none;">
+      <div class="title">qEEG-음성 연결 가설 (연구용)</div>
+      <div class="sub" id="qeegSummary">-</div>
+      <div class="note" style="margin-top:10px;">
+        ※ qEEG는 연구적 힌트(가설) 구간이며, 진단이 아닙니다.
+      </div>
+    </div>
 
-function computeVoiceSQ(stages){
-  const s1 = stages.find(s => s.stage_id === 1);
-  if (!s1) return null;
+    <div class="card">
+      <div class="title">참여 감사</div>
+      <div class="note">
+        “음성 내용(텍스트)”은 저장하지 않고, 리듬/속도/휴지/억양 등 수치 지표만 저장합니다.
+        당신의 데이터는 신경다양성 연구를 위한 기초 자료로 활용됩니다.
+      </div>
+    </div>
 
-  const sr = stages.map(s => s.speech_rate).filter(v => v != null);
-  const pr = stages.map(s => s.pause_ratio).filter(v => v != null);
-  const psd = stages.map(s => s.pitch_sd).filter(v => v != null);
+  </div>
 
-  const srMean = mean(sr), srStd = std(sr);
-  const prMean = mean(pr), prStd = std(pr);
-
-  // A) Cadence Stability: 표준편차가 작을수록 높음
-  // K는 민감도(추천 2~4 사이). 일단 3으로
-  const K = 3;
-  const cadence = Math.round(100 * clamp01(1 - (srStd/srMean)*K));
-
-  // B) Load Response: Stage3,4 기준(없으면 있는 것만)
-  const loadStages = stages.filter(s => [3,4].includes(s.stage_id));
-  const load = loadStages.map(s => {
-    const dPause = pctDelta(s.pause_ratio, s1.pause_ratio) ?? 0;  // 멈춤↑면 +
-    const dSpeed = pctDelta(s.speech_rate, s1.speech_rate) ?? 0;  // 속도↑면 +
-    // 부하 점수: (멈춤 증가) + (속도 감소를 +로 환산)
-    return dPause + (-dSpeed);
-  });
-  const loadScore = load.length ? Math.round(50 + mean(load)) : null; // 50 기준으로 흔들리게(베타)
-
-  // C) Arousal: pitch_sd 상승률(Stage2~4 평균)
-  const talkStages = stages.filter(s => [2,3,4].includes(s.stage_id));
-  const ar = talkStages.map(s => pctDelta(s.pitch_sd, s1.pitch_sd)).filter(v => v != null);
-  const arousal = ar.length ? Math.round(50 + mean(ar)) : null; // 50 기준(베타)
-
-  // 종합(가중치는 나중에 조정)
-  const parts = [cadence, loadScore, arousal].filter(v => v != null);
-  const vsq = parts.length ? Math.round(mean(parts)) : null;
-
-  return { cadence, loadScore, arousal, vsq };
-}
-  </script>
   <script src="./session-guard.js"></script>
-
+  <script type="module" src="./report.js"></script>
 </body>
 </html>
