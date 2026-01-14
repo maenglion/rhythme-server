@@ -1,181 +1,258 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="stylesheet" href="styles.css">
-    <title>음성 분석 안내</title>
-    <style>
-   /* 전체 레이아웃을 화면 중앙으로 배치 */
-   body {
-    margin: 0;
-    padding: 0;
-    background-color: #121212;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-height: 100vh;
-    color: #fff;
-    font-family: 'Pretendard', sans-serif;
-}
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="./styles.css" />
+  <title>음성 분석 안내</title>
 
+  <style>
+    :root { --primary: #BB86FC; --bg-card: #1E1E1E; }
 
-/* 컨테이너: 버튼 사이즈에 맞춰 너비 확장 */
-.container {
-    width: 100%;
-    /* 버튼의 최대 너비와 일치하도록 설정 */
-    max-width: 400px; 
-    padding: 40px 24px;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-}
+    body { background:#121212; color:#FFF; font-family:'Pretendard', sans-serif; margin:0; }
+    .container { max-width: 480px; margin: 0 auto; padding: 20px; }
 
-/* 설명 문구 텍스트 크기 상향 */
-.guide-desc {
-    color: #A0A0A0;
-    /* 기존보다 1단계 키운 사이즈 */
-    font-size: 15px; 
-    line-height: 1.7;
-    margin: 0;
-    word-break: keep-all;
-}
+    .reward-hero{
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 14px;
+      background: rgba(187,134,252,0.10);
+    }
+    .reward-badge{
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 900;
+      background: rgba(187,134,252,0.22);
+      margin-bottom: 10px;
+    }
+    .reward-title{ font-size: 18px; font-weight: 900; margin-bottom: 6px; }
+    .reward-sub{ font-size: 14px; opacity: 0.9; line-height: 1.6; }
+    .reward-list{ margin: 10px 0 0 18px; font-size: 14px; opacity: 0.95; line-height: 1.7; }
+    .reward-note{ margin-top: 10px; font-size: 12px; opacity: 0.7; line-height: 1.6; }
 
-/* 가이드 항목 간격 조정 */
-.guide-item {
-    margin-bottom: 32px;
-}
-
-.guide-title {
-    display: block;
-    color: #BB86FC;
-    font-weight: 700;
-    font-size: 18px;
-    margin-bottom: 10px;
-}
-
-/* 테스트 구성 박스 내부 간격 */
-.test-config-box {
-    background: #1E1E1E;
-    border-radius: 12px;
-    padding: 28px;
-    margin-bottom: 40px;
-}
-
-.config-text {
-    font-size: 17px;
-    font-weight: 600;
-    line-height: 1.6;
-}
-
-/* 하단 알림 영역 */
-.permission-alert {
-    background: rgba(187, 134, 252, 0.05);
-    border: 1px dashed rgba(187, 134, 252, 0.5);
-    border-radius: 12px;
-    padding: 20px;
-    margin: 20px 0 40px 0;
-    text-align: center;
-}
-
-/* 확인 버튼: 너비 100% 유지 */
-.next-btn {
-    width: 100%;
-    height: 56px;
-    background-color: #FFFFFF;
-    color: #000000;
-    border: none;
-    border-radius: 12px;
-    font-size: 18px;
-    font-weight: 700;
-    cursor: pointer;
-}
-  </style>
-</head>
-<body style="display: block;"> <div class="container">
-        <div class="progress-container">
-            <div class="progress-bar" style="width: 85%;"></div>
-        </div>
-
-        <header>
-            <h1 class="title">음성 분석 테스트<br>진행 가이드</h1>
-            <p class="description">정확한 분석을 위해 아래 내용을 숙지해 주세요.</p>
-        </header>
-
-        <main>
-            <div class="research-intro" style="margin-top: 24px;">
-                <span class="badge" style="margin-bottom: 12px; display: inline-block;">테스트 구성</span>
-                <p style="line-height: 1.6; color: #FFF;">
-                    본 테스트는 총 <strong>4가지 스테이지</strong>로 구성되어 있으며, 각 문항당 <strong>최대 40초</strong>의 시간이 주어집니다.
-                </p>
-            </div>
-
-            <div class="input-group">
-                <label class="label">주변 환경 확인</label>
-                <p class="description">TV 소리나 대화 소리가 들리지 않는 조용한 독립된 공간에서 진행해 주셔야 분석 데이터의 오차가 줄어듭니다.</p>
-
-                <label class="label">마이크 거리 및 위치</label>
-                <p class="description">스마트폰을 추천하며 15~20cm 거리를 유지하고, 숨소리가 직접 들어가지 않도록 정면보다는 살짝 옆에서 말씀해 주세요.</p>
-
-                <label class="label">발성 및 태도</label>
-                <p class="description">일부러 목소리를 꾸미지 말고, 평소 지인과 대화하듯 가장 편안하고 자연스러운 목소리로 읽어주시는 것이 가장 좋습니다.</p>
-            
-            <label class="label">소음 감지 후 시작 </label>
-                <p class="description">버튼을 누르시고 2초 후에 시작해 주세요.</p>
-
-                  <label class="label">40초간 녹음</label>
-                <p class="description">40초 이후 다음 화면으로 넘어갑니다.</p>
-            
-            </div>
-
-        <div class="pi-info" style="border-top: 1px solid #333; padding-top: 20px; margin-top: 24px;">
-    <div style="background: rgba(187, 134, 252, 0.1); border-radius: 8px; padding: 16px; border: 1px dashed #BB86FC;">
-        <p style="color: #BB86FC; font-size: 14px; font-weight: 700; margin: 0; line-height: 1.6; word-break: keep-all;">
-            ⚠️ 녹음 시작 버튼 클릭 시 '마이크 사용 권한' 허용 창이 뜨면 반드시 [허용]을 눌러주셔야 테스트가 가능합니다.
-        </p>
-    </div>
-</div>
-        </main>
-
-        <button id="goStage" class="next-btn" style="margin-top: 40px;">확인했습니다</button>
-
-        <footer>
-            © 2026 SoulSpectrum.Inc. All rights reserved.
-            개인정보책임자 : 맹난영   maengnanyoung@gmail.com
-        </footer>
-    </div>
-
-    <script>
-     
-  function getSid() {
-    const urlSid = new URLSearchParams(location.search).get("sid");
-    const storeSid = localStorage.getItem("SESSION_ID");
-    const winSid = window.SESSION_ID;
-    const sid = urlSid || storeSid || winSid;
-
-    if (!sid) {
-      if (typeof window.showModal === "function") {
-        window.showModal("세션이 없습니다. 처음부터 다시 진행해주세요.");
-        setTimeout(() => location.href = "./index.html", 300);
-      } else {
-        alert("세션이 없습니다. 처음부터 다시 진행해주세요.");
-        location.href = "./index.html";
-      }
-      return null;
+    .info-section{ margin-top: 14px; }
+    .info-section h2{ font-size: 16px; margin: 0 0 10px; color: var(--primary); }
+    .chips{ display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }
+    .chip{
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(0,0,0,0.18);
     }
 
-    window.SESSION_ID = sid;
-    localStorage.setItem("SESSION_ID", sid);
-    return sid;
-  }
+    .qeeg-card{
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px;
+      padding: 12px;
+      margin: 10px 0;
+      background: rgba(0,0,0,0.16);
+    }
+    .qeeg-title{ font-weight: 900; margin-bottom: 6px; font-size: 14px; }
+    .mini{ font-size: 12px; opacity: 0.75; line-height: 1.6; }
 
-  // ✅ 버튼 클릭 시 sid를 URL로 물고 간다
-  document.getElementById('goStage').onclick = () => {
-    const sid = getSid();
-    if (!sid) return;
-    location.href = `voice_test.html?sid=${encodeURIComponent(sid)}`;
-  };
-</script>
-<script src="./session-guard.js"></script>
+    .hint{
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 12px;
+      background: rgba(187,134,252,0.10);
+      border: 1px solid rgba(187,134,252,0.25);
+      font-size: 13px;
+      color: rgba(187,134,252,0.95);
+    }
+
+    /* 다음 버튼 */
+    .next-btn{
+      width: 100%;
+      height: 56px;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 900;
+      border: none;
+      transition: all 0.2s ease;
+      margin-top: 14px;
+    }
+    .btn-disabled { background:#333 !important; color:#666 !important; cursor:not-allowed; }
+    .btn-active   { background:#FFF !important; color:#000 !important; cursor:pointer; }
+
+    footer{
+      margin-top: 26px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(255,255,255,0.10);
+      font-size: 12px;
+      opacity: 0.7;
+      line-height: 1.7;
+    }
+
+    ul { padding-left: 18px; }
+    li { margin-bottom: 6px; }
+  </style>
+</head>
+
+<body>
+  <div class="container" id="pageRoot">
+    <div class="reward-hero">
+      <div class="reward-badge">🎁 완료 리워드</div>
+      <div class="reward-title">개인 리포트(요약) 제공</div>
+      <div class="reward-sub">
+        음성의 내용은 저장하지 않고, <b>음성 특징(리듬/속도/휴지/억양)</b>만 분석해 리포트로 제공합니다.
+      </div>
+
+      <ul class="reward-list">
+        <li>설문(SQ) 요약 + 당신의 응답 패턴</li>
+        <li>4개 스테이지 음성 지표 변화(리듬/휴지/억양 등)</li>
+        <li><b>자기보고(설문) ↔ 음성 지표</b> 일치도 기반 “신뢰도(Confidence)”</li>
+        <li>qEEG 업로드 시: 뇌파 특징과 음성 특징의 <b>관계(힌트)</b> 추가</li>
+      </ul>
+
+      <div class="reward-note">※ 본 리포트는 <b>의료 진단</b>이 아니라 연구/분석용 요약입니다.</div>
+    </div>
+
+    <div class="info-section">
+      <h2>🎙️ 마이크 거리 안내 (진짜 중요)</h2>
+      <div class="chips">
+        <span class="chip">권장 거리: <b>15~25cm</b></span>
+        <span class="chip">한 손 뻗은 정도</span>
+        <span class="chip">입 정면 X, <b>살짝 옆(30°)</b></span>
+      </div>
+      <p style="opacity:.9; line-height:1.7;">
+        마이크가 너무 가까우면 ‘ㅍ/ㅂ’ 같은 파열음이 터지고(클리핑),
+        너무 멀면 주변 소음이 커져서 정확도가 떨어져요.
+      </p>
+      <ul style="opacity:.9; line-height:1.7;">
+        <li>휴대폰/마이크를 <b>입에서 15~25cm</b> 떨어뜨리고</li>
+        <li>입 정면이 아니라 <b>살짝 옆 방향</b>으로 두고</li>
+        <li><b>평소 말하듯</b> 말해 주세요 (속삭임/과한 톤 금지)</li>
+        <li>가능하면 <b>블루투스 이어폰 OFF</b> (장치 바뀌면 품질 흔들림)</li>
+      </ul>
+    </div>
+
+    <div class="info-section">
+      <h2>🔒 개인정보/내용 저장 정책</h2>
+      <p style="opacity:.9; line-height:1.7;">
+        민감한 개인사는 말하지 않으셔도 됩니다.
+        이 테스트는 <b>말의 내용(텍스트)을 저장하지 않고</b>,
+        <b>음성 특징(숫자 지표)</b>만 저장합니다.
+      </p>
+    </div>
+
+    <div class="info-section">
+      <h2>📌 qEEG는 어떻게 사용되나요? (선택)</h2>
+      <p style="opacity:.9; line-height:1.7;">
+        qEEG는 음성/설문만으로는 놓칠 수 있는 신경생리적 힌트를 보완하기 위한 <b>선택 데이터</b>입니다.
+        업로드하지 않아도 진행됩니다.
+      </p>
+
+      <div class="qeeg-card">
+        <div class="qeeg-title">우리가 qEEG에서 뽑는 것(예시)</div>
+        <ul style="opacity:.9; line-height:1.7; margin:0;">
+          <li><b>대역 파워</b>: Delta/Theta/Alpha/Beta 등 밴드별 세기(눈뜸/눈감음 비교 포함)</li>
+          <li><b>비율/균형</b>: 상대파워, 좌우 비대칭 같은 “패턴” 지표</li>
+          <li><b>연결/동조(가능 시)</b>: 채널 간 동조/네트워크 특징(연구용)</li>
+        </ul>
+      </div>
+
+      <div class="qeeg-card">
+        <div class="qeeg-title">qEEG를 ‘어떻게’ 결합해서 쓰나</div>
+        <ul style="opacity:.9; line-height:1.7; margin:0;">
+          <li><b>음성-뇌파 관계</b>: 음성 리듬/휴지/억양 변동과 qEEG 패턴의 상관/동반 변화 탐색</li>
+          <li><b>신뢰도 보정</b>: 설문↔음성 간 차이가 큰 경우, qEEG가 함께 있을 때 “상황 요인” vs “안정 특징” 구분 힌트</li>
+          <li><b>그룹 비교</b>: 연령대/집단별 평균 패턴 대비 개인이 어느 쪽에 가까운지(연구 분석)</li>
+        </ul>
+      </div>
+
+      <p class="mini">
+        ※ qEEG는 의료 진단이 아니라 연구/분석 목적이며,
+        개인을 특정할 수 있는 정보(이름/연락처 등)는 저장하지 않고 <b>세션 ID</b> 기준으로만 연결합니다.
+      </p>
+    </div>
+
+    <div class="info-section">
+      <h2>✅ 진행 팁</h2>
+      <p style="opacity:.9; line-height:1.7;">
+        각 스테이지는 약 40초입니다. 완벽하게 말하려 하지 않아도 괜찮아요.
+        <b>자연스러운 말투</b>가 가장 좋습니다.
+      </p>
+      <div class="hint">끝까지 스크롤한 다음, 아래 체크를 하면 버튼이 활성화됩니다.</div>
+    </div>
+
+    <div style="margin-top:14px; display:flex; gap:10px; align-items:center;">
+      <input id="ackRead" type="checkbox" />
+      <label for="ackRead" style="font-size:14px; opacity:.9;">안내를 확인했습니다</label>
+    </div>
+
+    <div class="pi-info" style="border-top: 1px solid #333; padding-top: 18px; margin-top: 18px;">
+      <div style="background: rgba(187, 134, 252, 0.1); border-radius: 8px; padding: 14px; border: 1px dashed #BB86FC;">
+        <p style="color: #BB86FC; font-size: 14px; font-weight: 900; margin: 0; line-height: 1.6; word-break: keep-all;">
+          ⚠️ 녹음 시작 버튼 클릭 시 '마이크 사용 권한' 허용 창이 뜨면 반드시 [허용]을 눌러주셔야 테스트가 가능합니다.
+        </p>
+      </div>
+    </div>
+
+    <button id="goStage" class="next-btn btn-disabled" disabled>확인했습니다</button>
+
+    <footer>
+      © 2026 SoulSpectrum.Inc. All rights reserved.<br/>
+      개인정보책임자 : 맹난영 &nbsp; soulspectrum@gmail.com
+    </footer>
+  </div>
+
+  <script src="./session-guard.js"></script>
+
+  <script>
+    const NEXT_PAGE = "./voice_test.html";
+
+    function getSid() {
+      const urlSid = new URLSearchParams(location.search).get("sid");
+      const storeSid = localStorage.getItem("SESSION_ID");
+      const winSid = window.SESSION_ID;
+      const sid = urlSid || storeSid || winSid;
+
+      if (!sid) {
+        alert("세션이 없습니다. 처음부터 다시 진행해주세요.");
+        location.href = "./index.html";
+        return null;
+      }
+
+      window.SESSION_ID = sid;
+      localStorage.setItem("SESSION_ID", sid);
+      return sid;
+    }
+
+    const btn = document.getElementById("goStage");
+    const ack = document.getElementById("ackRead");
+
+    let scrolledToBottom = false;
+
+    function updateBtn() {
+      const ok = scrolledToBottom && ack.checked;
+      btn.disabled = !ok;
+      btn.classList.toggle("btn-disabled", !ok);
+      btn.classList.toggle("btn-active", ok);
+    }
+
+    function checkScrollBottom() {
+      const nearBottom = (window.innerHeight + window.scrollY) >= (document.body.offsetHeight - 8);
+      if (nearBottom) scrolledToBottom = true;
+      updateBtn();
+    }
+
+    window.addEventListener("scroll", checkScrollBottom, { passive: true });
+    ack.addEventListener("change", updateBtn);
+
+    btn.addEventListener("click", () => {
+      if (btn.disabled) return;
+      const sid = getSid();
+      const url = sid ? `${NEXT_PAGE}?sid=${encodeURIComponent(sid)}` : NEXT_PAGE;
+      location.href = url;
+    });
+
+    // 초기 상태 반영
+    checkScrollBottom();
+    updateBtn();
+  </script>
 </body>
 </html>
