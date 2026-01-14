@@ -285,19 +285,53 @@
     $("chartLegend").textContent = `그래프는 상대 스케일(0~1)로 표시됩니다: ${labels.join(" / ")}`;
   }
 
-  async function fetchReportData(sid) {
-    // 서버에 이 엔드포인트만 만들면 됨
-    const res = await fetch(apiUrl(`/report-data?sid=${encodeURIComponent(sid)}`), {
-      method: "GET",
-      headers: { "Accept": "application/json" },
-    });
+  // report.js
 
-    if (!res.ok) {
-      const t = await res.text().catch(() => "");
-      throw new Error(`report-data failed ${res.status}: ${t.slice(0,200)}`);
-    }
-    return res.json();
+async function fetchReportData(sid) {
+  const url = API("/report-data") + "?sid=" + encodeURIComponent(sid);
+
+  const res = await fetch(url, {
+    method: "GET",
+    cache: "no-store",
+    headers: { "Accept": "application/json" },
+  });
+
+  if (!res.ok) {
+    const t = await res.text();
+    // ✅ 나중에 로그만 봐도 즉시 원인 찾게 url 포함
+    throw new Error(`report-data failed ${res.status}: ${t} (url=${url})`);
   }
+
+  return res.json();
+}
+
+
+// report.js
+
+function showToast(msg) {
+  const el = document.getElementById("toast");
+  if (!el) { alert(msg); return; }
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => el.classList.remove("show"), 1200);
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (e) {
+    // 폴백 (보안 컨텍스트 이슈 등)
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+  }
+  showToast("세션 ID가 복사됐어요");
+}
+
 
   async function init() {
     const sid = getSidSafe();
