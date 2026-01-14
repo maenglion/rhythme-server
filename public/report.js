@@ -356,8 +356,12 @@ async function copyText(text) {
 
     $("sidText").textContent = sid;
 
-    $("copySidBtn").onclick = () => copyText(sid);
-    $("copyLinkBtn").onclick = () => copyText(location.href);
+const copySidBtn = $("copySidBtn");
+if (copySidBtn) copySidBtn.onclick = () => copyText(sid);
+
+// 링크 복사 버튼은 HTML에서 제거했으면 JS도 스킵
+const copyLinkBtn = $("copyLinkBtn");
+if (copyLinkBtn) copyLinkBtn.onclick = () => copyText(location.href);
 
     try {
       const data = await fetchReportData(sid);
