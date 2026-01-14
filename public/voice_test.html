@@ -115,48 +115,67 @@ function getSid() {
     localStorage.removeItem(idleKey(sid));
   }
 
-  function startNewRun() {
-    const oldSid = localStorage.getItem("SESSION_ID");
-    if (oldSid) clearProgress(oldSid);
-
-    const sid = (crypto?.randomUUID)
-      ? crypto.randomUUID()
-      : `sid_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-
-    localStorage.setItem("SESSION_ID", sid);
-    window.SESSION_ID = sid;
-
-    stageIdx = 0;
-    saveProgress(sid, { stageIdx: 0, startedAt: Date.now() });
-    return sid;
-  }
-
+  // ✅ 새 sid 만들지 말고 "현재 sid로 초기화"만
+function resetRun(sid) {
+  clearProgress(sid);
+  stageIdx = 0;
+  saveProgress(sid, { stageIdx: 0, startedAt: Date.now() });
+  return sid;
+}
+  
   function bootstrapRun() {
-    const sid = getSid();
-    const last = Number(localStorage.getItem(idleKey(sid)) || "0");
-    const idle = Date.now() - last;
-    const p = loadProgress(sid);
+  const sid = getSid();
+  if (!sid) return null;
 
-    if (!ALLOW_RESUME) {
-      return startNewRun();
-    }
-
-    if (!p || idle > MAX_IDLE_MS) {
-      return startNewRun();
-    }
-
-    stageIdx = p.stageIdx ?? 0;
-    localStorage.setItem(idleKey(sid), String(Date.now()));
-    return sid;
+  if (!ALLOW_RESUME) {
+    return resetRun(sid);
   }
+
+  const last = Number(localStorage.getItem(idleKey(sid)) || "0");
+  const idle = Date.now() - last;
+  const p = loadProgress(sid);
+
+  if (!p || idle > MAX_IDLE_MS) {
+    return resetRun(sid);
+  }
+
+  stageIdx = p.stageIdx ?? 0;
+  localStorage.setItem(idleKey(sid), String(Date.now()));
+  return sid;
+}
+
+function hash32(str) {
+  // 가벼운 32bit 해시 (deterministic)
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function getVoiceVersion() {
+  // 1) 이미 배정된 버전이 있으면 그걸 고정 사용
+  const saved = localStorage.getItem("rhythmi_voice_version");
+  if (saved === "v1.1" || saved === "v1.2") return saved;
+
+  // 2) 없으면 SESSION_ID로 50:50 고정 배정
+  const sid = localStorage.getItem("SESSION_ID");
+  if (!sid) return "v1.1"; // sid 없으면 안전하게 기본값
+
+  const v = (hash32(sid) % 2 === 0) ? "v1.1" : "v1.2";
+  localStorage.setItem("rhythmi_voice_version", v);
+  return v;
+}
+
 
   // ---------------------------
   // Stage 설계
   // ---------------------------
-  function getStagesByAge(age) {
-    const isUnder14 = age < 14;
+function getStagesByAge(age, version = getVoiceVersion()) {
+  const isUnder14 = age < 14;
 
-    const STAGE1_TEXT = `지금 나는 내 음성에 귀를 기울인다. 글을 소리 내어 읽을 때는 세 가지를 지킨다.
+  const STAGE1_TEXT = `지금 나는 내 음성에 귀를 기울인다. 글을 소리 내어 읽을 때는 세 가지를 지킨다.
 첫째, 쉼표에서는 잠깐 쉰다. 
 둘째, 마침표에서는 숨을 고른다. 
 셋째, 눈은 글을 따라 천천히 내려간다.
@@ -173,29 +192,59 @@ function getSid() {
 틀린 곳 부터 다시 이어서 읽는다. 
 끝까지 읽고 시간이 남으면 처음부터 다시 읽는다.`;
 
-    const STAGE4_Q = "노력을 해도 해결이 되지 않는다면 보통 어떻게 하나요?";
+  const baseStage1 = {
+    id: 1,
+    q: "Stage 1",
+    d: "위 지문을 편안하게 소리 내어 읽어주세요. 끝까지 읽지 않아도 됩니다. (Baseline 측정)",
+    text: STAGE1_TEXT,
+  };
 
-    const baseStages = [
-      { id: 1, q: "Stage 1", d: "위 지문을 편안하게 소리 내어 읽어주세요. 끝까지 읽지 않아도 됩니다. (Baseline 측정)", text: STAGE1_TEXT },
-      { id: 4, q: "Stage 4", d: "", text: STAGE4_Q }
-    ];
+  // =========================
+  // v1.2
+  // =========================
+  if (version === "v1.2") {
+    const s2 = isUnder14
+      ? { id: 2, q: "Stage 2", d: "오늘 해야 하는 일을 3개 이상 순서대로 말해 주세요.", text: "오늘 제일 중요한 일부터 순서대로 말해 주세요." }
+      : { id: 2, q: "Stage 2", d: "가능하면 3개 이상. 1-2-3처럼 번호를 붙여도 좋아요.", text: "오늘 처리해야 할 가장 중요한 일을 중요도 순서대로 말해 주세요." };
 
-    if (isUnder14) {
-      return [
-        baseStages[0],
-        { id: 2, q: "Stage 2", d: "게임/취미/코딩/학교 등 무엇을 파고 있고 왜 궁금한지 말해 주세요.", text: "최근 2년 안에 내가 계속 파고 있는 주제가 있다면 말해 주세요." },
-        { id: 3, q: "Stage 3", d: "아직 진행 중이어도 괜찮아요.", text: "내 관심주제를 더 많이 알거나 고민을 해결하려고 내가 해본 게 있나요?" },
-        baseStages[1]
-      ];
-    }
+    const s3 = isUnder14
+      ? { id: 3, q: "Stage 3", d: "왜 그 순서인지 기준을 말해 주세요. (마감/중요/어려움 등)", text: "그 순서를 정한 기준이 있나요?" }
+      : { id: 3, q: "Stage 3", d: "기준 → 예시 순서로 말해 주세요. (마감/영향도/리스크 등)", text: "그 순서를 정할 때 쓰는 원칙/기준이 있나요?" };
 
+    const s4 = isUnder14
+      ? { id: 4, q: "Stage 4", d: "그 순서대로 못 할 때 가장 큰 방해가 뭔지, 다음엔 어떻게 할지 말해 주세요.", text: "계획대로 못 될 때 가장 잦은 이유는 무엇인가요?" }
+      : { id: 4, q: "Stage 4", d: "상황 → 원인 → 다음번 대안 순서로 말해 주세요.", text: "중요도대로 수행하지 못할 때 가장 잦은 원인은 무엇인가요?" };
+
+    return [baseStage1, s2, s3, s4];
+  }
+
+  // =========================
+  // v1.1 (기본)
+  // =========================
+  const baseStage4 = {
+    id: 4,
+    q: "Stage 4",
+    d: "",
+    text: "노력을 해도 해결이 되지 않는다면 보통 어떻게 하나요?",
+  };
+
+  if (isUnder14) {
     return [
-      baseStages[0],
-      { id: 2, q: "Stage 2", d: "원인 → 해결방법 → 결과 순서로 짧게 설명해 주세요.", text: "내가 발견한 문제 중 해결을 위해 노력한 것이 있다면 설명해 주세요." },
-      { id: 3, q: "Stage 3", d: "", text: "진행 중이라면 막히는 지점을, 완료했다면 어려웠던 지점을 설명해주세요." },
-      baseStages[1]
+      baseStage1,
+      { id: 2, q: "Stage 2", d: "게임/취미/코딩/학교 등 무엇을 파고 있고 왜 궁금한지 말해 주세요.", text: "최근 2년 안에 내가 계속 파고 있는 주제가 있다면 말해 주세요." },
+      { id: 3, q: "Stage 3", d: "아직 진행 중이어도 괜찮아요.", text: "내 관심주제를 더 많이 알거나 고민을 해결하려고 내가 해본 게 있나요?" },
+      baseStage4,
     ];
   }
+
+  return [
+    baseStage1,
+    { id: 2, q: "Stage 2", d: "원인 → 해결방법 → 결과 순서로 짧게 설명해 주세요.", text: "내가 발견한 문제 중 해결을 위해 노력한 것이 있다면 설명해 주세요." },
+    { id: 3, q: "Stage 3", d: "", text: "진행 중이라면 막히는 지점을, 완료했다면 어려웠던 지점을 설명해주세요." },
+    baseStage4,
+  ];
+}
+
 
   // ---------------------------
   // 상태
@@ -388,20 +437,27 @@ function getSid() {
   // ---------------------------
   // 초기화
   // ---------------------------
-  document.addEventListener("DOMContentLoaded", () => {
-    const age = parseInt(localStorage.getItem("rhythmi_age") || "20", 10);
-    STAGES = getStagesByAge(age);
+// 3) ✅ 맨 아래에서 초기화 1번만
+document.addEventListener("DOMContentLoaded", () => {
+  const sid = getSid();
+  const age = parseInt(localStorage.getItem("rhythmi_age") || "20", 10);
 
-    bootstrapRun(); // stageIdx/SESSION_ID 정리
-    renderStage();
+  bootstrapRun(); // ✅ stageIdx 확정(리셋/이어하기)
 
-    const recBtn = document.querySelector("#recordBtn");
-    if (recBtn) {
-      recBtn.addEventListener("click", () => {
-        if (recBtn.dataset.recording !== "1") runVoiceStage();
-      });
-    }
-  });
+  const v = getVoiceVersion();
+  console.log("[VOICE_VERSION]", v, sid);
+
+  STAGES = getStagesByAge(age, v);
+  renderStage();
+
+  const recBtn = document.querySelector("#recordBtn");
+  if (recBtn) {
+    recBtn.addEventListener("click", () => {
+      if (recBtn.dataset.recording !== "1") runVoiceStage();
+    });
+  }
+});
+
 </script>
 
 <body>
