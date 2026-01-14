@@ -375,7 +375,10 @@ if (copyLinkBtn) copyLinkBtn.onclick = () => copyText(location.href);
       //   voice: { stages: [ {stage_id,...} ], summary: {all_ok, not_ok_cnt, ...} }
       // }
 
-      $("generatedAt").textContent = `리포트 생성일: ${data.generated_at || "-"}`;
+      const stamp = data.submitted_at ?? data.generated_at ?? "-";
+$("generatedAt").textContent =
+  stamp === "-" ? "리포트 생성일: -" : `리포트 생성일: ${new Date(stamp).toLocaleString("ko-KR")}`;
+
 
       const age = Number(data.age || 0);
       if (age > 0 && age < 14) $("under14Note").style.display = "block";
