@@ -2,120 +2,133 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>리포트</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="./styles.css" />
   <style>
-    :root { --primary:#BB86FC; --card:#1E1E1E; --muted:#AAA; --bg:#121212; --line:#2c2c2c; }
-    body{ background:var(--bg); color:#fff; margin:0; font-family: Pretendard, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
-    .wrap{ max-width:520px; margin:0 auto; padding:20px; }
-    .card{ background:var(--card); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:16px; margin:14px 0; }
-    .badge{ display:inline-block; padding:6px 10px; border-radius:999px; background:rgba(187,134,252,.18); border:1px solid rgba(187,134,252,.35); font-weight:900; font-size:12px; }
-    h1{ font-size:24px; margin:8px 0 2px; }
-    .sub{ color:#9a9a9a; font-size:13px; line-height:1.6; }
-    .title{ color:var(--primary); font-weight:900; margin:0 0 10px; font-size:16px; }
-    .kpi{ display:flex; gap:10px; flex-wrap:wrap; }
-    .kpi .item{ flex:1; min-width:140px; background:rgba(0,0,0,.18); border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:12px; }
-    .kpi .label{ font-size:12px; color:var(--muted); }
-    .kpi .value{ font-size:20px; font-weight:900; margin-top:4px; color:#fff; }
-    .matrix{ width:100%; border-collapse:collapse; font-size:13px; }
-    .matrix th,.matrix td{ border-top:1px solid var(--line); padding:10px 8px; vertical-align:top; }
-    .matrix th{ color:#cfcfcf; text-align:left; font-size:12px; }
-    .hr{ height:1px; background:var(--line); margin:12px 0; }
-    .note{ font-size:12px; color:#888; line-height:1.6; }
-    .warn{ color:#ffcf6e; font-size:12px; }
-    svg{ width:100%; height:auto; display:block; }
+    :root { --primary:#BB86FC; --card:#1E1E1E; --muted:#9aa0a6; --bg:#121212; }
+    body { margin:0; background:var(--bg); color:#fff; font-family: Pretendard, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+    .container { max-width: 720px; margin:0 auto; padding: 20px; }
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .card { background: rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:16px; padding:16px; }
+    .title { font-size:22px; font-weight:900; margin:0 0 6px; }
+    .sub { color:var(--muted); font-size:13px; line-height:1.5; }
+    .badge { display:inline-block; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:900; border:1px solid rgba(255,255,255,0.14); background: rgba(0,0,0,0.18); }
+    .badge.primary { border-color: rgba(187,134,252,0.55); background: rgba(187,134,252,0.12); }
+    .badge.good { border-color: rgba(46,204,113,0.55); background: rgba(46,204,113,0.12); }
+    .badge.warn { border-color: rgba(241,196,15,0.55); background: rgba(241,196,15,0.12); }
+    .badge.bad  { border-color: rgba(231,76,60,0.55); background: rgba(231,76,60,0.12); }
+    .hr { height:1px; background: rgba(255,255,255,0.10); margin:14px 0; }
+    .btn { border:none; border-radius:12px; padding:10px 12px; font-weight:800; cursor:pointer; }
+    .btn.light { background:#fff; color:#111; }
+    .btn.ghost { background:transparent; color:#fff; border:1px solid rgba(255,255,255,0.14); }
+    .grid2 { display:grid; grid-template-columns: 1fr; gap:12px; }
+    @media(min-width: 760px){ .grid2 { grid-template-columns: 1fr 1fr; } }
+
+    table { width:100%; border-collapse: collapse; font-size:13px; }
+    th, td { padding:10px 8px; border-bottom:1px solid rgba(255,255,255,0.10); text-align:left; }
+    th { color:#ddd; font-weight:900; }
+    td { color:#eee; }
+    .muted { color: var(--muted); }
+    canvas { width:100%; height:160px; display:block; background: rgba(0,0,0,0.10); border:1px solid rgba(255,255,255,0.10); border-radius:12px; }
   </style>
 </head>
 
 <body>
-  <div class="wrap">
-
+  <div class="container">
+    <!-- Top Title -->
     <div class="card">
-      <span class="badge">INSIGHT</span>
-      <h1 id="insightTitle">리포트 생성 중...</h1>
-      <div class="sub" id="insightDesc">잠시만요. 데이터를 불러오는 중입니다.</div>
+      <div class="row" style="justify-content:space-between;">
+        <div>
+          <div class="title">인사이트</div>
+          <div id="generatedAt" class="sub">리포트 생성일: -</div>
+        </div>
+        <div class="row">
+          <span id="qualityBadge" class="badge">품질: -</span>
+          <span id="baselineBadge" class="badge">Baseline: -</span>
+        </div>
+      </div>
+
       <div class="hr"></div>
-      <div class="sub">리포트 생성일: <b id="createdAt">-</b></div>
-      <div class="sub">세션: <span id="sidText">-</span></div>
-      <div class="warn" id="under14Warn" style="display:none; margin-top:10px;">
-        14세 미만은 현재 최적화가 덜 되어 참고용으로만 해석해주세요.
+
+      <div id="personaTitle" style="font-size:18px; font-weight:900; margin-bottom:6px;">
+        로딩 중...
+      </div>
+      <div id="personaSummary" class="sub">
+        -
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="row">
+        <span class="badge primary">SESSION</span>
+        <span id="sidText" class="sub" style="word-break:break-all;">-</span>
+        <button id="copySidBtn" class="btn ghost" type="button">세션 복사</button>
+        <button id="copyLinkBtn" class="btn ghost" type="button">링크 복사</button>
+      </div>
+
+      <div id="under14Note" class="sub" style="margin-top:10px; display:none;">
+        ※ 14세 미만 리포트는 최적화 전 단계라 참고용으로만 제공됩니다.
       </div>
     </div>
 
-    <div class="card">
-      <div class="title">요약 지표</div>
-      <div class="kpi">
-        <div class="item">
-          <div class="label">SQ(설문)</div>
-          <div class="value" id="sqScore">-</div>
-        </div>
-        <div class="item">
-          <div class="label">Confidence</div>
-          <div class="value" id="confidence">-</div>
-        </div>
-        <div class="item">
-          <div class="label">음성 품질</div>
-          <div class="value" id="voiceQuality">-</div>
-        </div>
+    <!-- Matrix + Charts -->
+    <div class="grid2" style="margin-top:12px;">
+      <div class="card">
+        <div style="font-weight:900; margin-bottom:8px;">3D 교차 분석 매트릭스(초안)</div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:34%;">축</th>
+              <th style="width:33%;">근거(설문/음성/qEEG)</th>
+              <th>해석(인사이트)</th>
+            </tr>
+          </thead>
+          <tbody id="matrixBody">
+            <tr><td colspan="3" class="muted">데이터 로딩 중...</td></tr>
+          </tbody>
+        </table>
       </div>
-      <div class="note" style="margin-top:10px;">
-        ※ 본 리포트는 의료 진단이 아닌 연구/베타 분석용 요약입니다.
+
+      <div class="card">
+        <div style="font-weight:900; margin-bottom:8px;">스테이지 변화 그래프</div>
+        <div class="sub" style="margin-bottom:10px;">Stage 1~4의 변화(발화 속도/휴지/억양 변동)를 시각화합니다.</div>
+        <canvas id="chart"></canvas>
+        <div id="chartLegend" class="sub" style="margin-top:10px;">-</div>
       </div>
     </div>
 
-    <div class="card">
-      <div class="title">3D 교차 분석 매트릭스</div>
-      <table class="matrix">
+    <!-- Detailed Metrics -->
+    <div class="card" style="margin-top:12px;">
+      <div style="font-weight:900; margin-bottom:8px;">스테이지별 지표</div>
+      <table>
         <thead>
           <tr>
-            <th style="width:28%;">축</th>
-            <th style="width:32%;">근거(설문↔음성)</th>
-            <th>해석(요약)</th>
+            <th>Stage</th>
+            <th>상태</th>
+            <th>Speech Rate</th>
+            <th>Pause Ratio</th>
+            <th>Pitch SD</th>
+            <th>SNR</th>
+            <th>Clip</th>
           </tr>
         </thead>
-        <tbody id="matrixBody">
-          <tr><td colspan="3" class="sub">로딩 중...</td></tr>
+        <tbody id="stageTableBody">
+          <tr><td colspan="7" class="muted">로딩 중...</td></tr>
         </tbody>
       </table>
+      <div id="qeegBox" class="sub" style="margin-top:10px;">qEEG: -</div>
     </div>
 
-    <div class="card">
-      <div class="title">스테이지별 변화 그래프</div>
-      <div class="sub">Stage 1~4에서 지표가 어떻게 변하는지(취미/참고용) 보여줍니다.</div>
-      <div style="margin-top:12px;">
-        <div class="sub" style="margin-bottom:6px;">Pause Ratio</div>
-        <div id="chartPause"></div>
-      </div>
-      <div style="margin-top:14px;">
-        <div class="sub" style="margin-bottom:6px;">Pitch SD</div>
-        <div id="chartPitch"></div>
-      </div>
-      <div style="margin-top:14px;">
-        <div class="sub" style="margin-bottom:6px;">Speech Rate</div>
-        <div id="chartRate"></div>
+    <div class="card" style="margin-top:12px;">
+      <div style="font-weight:900; margin-bottom:8px;">안내</div>
+      <div class="sub">
+        본 리포트는 의료 진단이 아니며 연구/분석용 요약입니다. 음성 내용(텍스트)은 저장하지 않고 수치 지표만 저장합니다.
       </div>
     </div>
-
-    <div class="card" id="qeegCard" style="display:none;">
-      <div class="title">qEEG-음성 연결 가설 (연구용)</div>
-      <div class="sub" id="qeegSummary">-</div>
-      <div class="note" style="margin-top:10px;">
-        ※ qEEG는 연구적 힌트(가설) 구간이며, 진단이 아닙니다.
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="title">참여 감사</div>
-      <div class="note">
-        “음성 내용(텍스트)”은 저장하지 않고, 리듬/속도/휴지/억양 등 수치 지표만 저장합니다.
-        당신의 데이터는 신경다양성 연구를 위한 기초 자료로 활용됩니다.
-      </div>
-    </div>
-
   </div>
 
   <script src="./session-guard.js"></script>
-  <script type="module" src="./report.js"></script>
+  <script src="./report.js"></script>
 </body>
 </html>

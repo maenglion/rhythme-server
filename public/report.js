@@ -1,227 +1,360 @@
-// report.js
-const API_BASE = "https://rhythme-server-357918245340.asia-northeast3.run.app";
-const apiUrl = (path) => {
-  const base = API_BASE.endsWith("/") ? API_BASE : API_BASE + "/";
-  const clean = String(path || "").replace(/^\//, "");
-  return new URL(clean, base).toString();
-};
+// report.js (no module)
+(function () {
+  const CLOUD_RUN_URL = "https://rhythme-server-357918245340.asia-northeast3.run.app";
+  const apiUrl = (path) => `${CLOUD_RUN_URL.replace(/\/$/, "")}${path}`;
 
-function getSidSoft() {
-  return new URLSearchParams(location.search).get("sid")
-    || localStorage.getItem("SESSION_ID")
-    || window.SESSION_ID
-    || null;
-}
+  const $ = (id) => document.getElementById(id);
 
-async function fetchFirstOk(candidates) {
-  for (const url of candidates) {
+  function getSidSafe() {
+    // session-guard.js가 있으면 그걸 우선
+    const sid = window.getSid?.() ||
+      new URLSearchParams(location.search).get("sid") ||
+      localStorage.getItem("SESSION_ID") ||
+      window.SESSION_ID ||
+      null;
+
+    if (!sid) {
+      alert("세션이 없습니다. 처음부터 다시 진행해주세요.");
+      location.href = "./index.html";
+      return null;
+    }
+    return sid;
+  }
+
+  async function copyText(text) {
     try {
-      const res = await fetch(url, { method: "GET" });
-      if (!res.ok) continue;
-      return await res.json();
-    } catch (_) {}
+      await navigator.clipboard.writeText(text);
+      alert("복사했습니다.");
+    } catch {
+      prompt("복사해서 사용하세요:", text);
+    }
   }
-  return null;
-}
 
-function fmtDate(ts) {
-  if (!ts) return "-";
-  const d = new Date(ts);
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")} `
-    + `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
-}
+  function fmt(n, digits = 2) {
+    if (n === null || n === undefined || Number.isNaN(n)) return "-";
+    return Number(n).toFixed(digits);
+  }
 
-function clamp01(x){ return Math.max(0, Math.min(1, x)); }
+  function setBadge(el, text, kind) {
+    el.textContent = text;
+    el.classList.remove("good", "warn", "bad", "primary");
+    if (kind) el.classList.add(kind);
+  }
 
-// 아주 가벼운 “취미용” confidence (나중에 너가 교체)
-function computeConfidenceToy(sq100, stages) {
-  // 시스템화 질문에서 pause_ratio가 안정적이고, 붕괴에서 변동이 있으면 “일치” 쪽으로 가산하는 식의 장난감
-  if (!Array.isArray(stages) || stages.length === 0) return 50;
+  function qualityFrom(stages) {
+    // 간단 룰: 평균 SNR, max clip, 완료율
+    const okStages = stages.filter(s => s.status === "completed");
+    const completeRatio = okStages.length / Math.max(1, stages.length);
 
-  const s1 = stages.find(x => x.stage_id == 1) || stages[0];
-  const s2 = stages.find(x => x.stage_id == 2) || stages[1] || s1;
-  const s3 = stages.find(x => x.stage_id == 3) || stages[2] || s2;
-  const s4 = stages.find(x => x.stage_id == 4) || stages[3] || s3;
+    const snrs = stages.map(s => s.snr_est_db).filter(v => typeof v === "number");
+    const avgSnr = snrs.length ? snrs.reduce((a,b)=>a+b,0)/snrs.length : null;
 
-  const stable = 1 - clamp01(Math.abs((s2.pause_ratio ?? 0) - (s1.pause_ratio ?? 0)) / 0.4);
-  const shift = clamp01(Math.abs((s3.pause_ratio ?? 0) - (s2.pause_ratio ?? 0)) / 0.5); // 붕괴에서 변화가 있으면 “반응성” 점수
-  const sqNorm = clamp01((sq100 ?? 50) / 100);
+    const clips = stages.map(s => s.clipping_ratio).filter(v => typeof v === "number");
+    const maxClip = clips.length ? Math.max(...clips) : null;
 
-  // 그냥 보기좋게 섞음(나중에 교체)
-  const raw = 0.45*sqNorm + 0.35*stable + 0.20*shift;
-  return Math.round(raw * 100);
-}
+    const hasBad = stages.some(s => s.quality_flag && s.quality_flag !== "ok");
 
-function voiceQualityToy(stages) {
-  // snr_est_db 평균과 clipping_ratio로 대충 점수
-  if (!Array.isArray(stages) || stages.length === 0) return { label: "-", score: 0 };
+    // 등급
+    if (completeRatio < 1) return { label: "낮음(미완료)", kind: "bad", avgSnr, maxClip };
+    if (hasBad) return { label: "주의(품질 경고)", kind: "warn", avgSnr, maxClip };
+    if (avgSnr !== null && avgSnr < 15) return { label: "낮음(소음)", kind: "bad", avgSnr, maxClip };
+    if (maxClip !== null && maxClip > 0.02) return { label: "주의(클리핑)", kind: "warn", avgSnr, maxClip };
+    return { label: "좋음", kind: "good", avgSnr, maxClip };
+  }
 
-  const snr = stages.map(s => Number(s.snr_est_db ?? 0)).filter(n => !Number.isNaN(n));
-  const clip = stages.map(s => Number(s.clipping_ratio ?? 0)).filter(n => !Number.isNaN(n));
+  function hasBaseline(stages) {
+    return stages.some(s => s.stage_id === 1 && s.status === "completed" && (s.recorded_ms ?? 0) >= 36000);
+  }
 
-  const snrAvg = snr.length ? snr.reduce((a,b)=>a+b,0)/snr.length : 0;
-  const clipAvg = clip.length ? clip.reduce((a,b)=>a+b,0)/clip.length : 0;
+  function buildPersona(stages, survey, qeeg) {
+    // 초간단 휴먼 요약 (MVP)
+    const b = stages.find(s => s.stage_id === 1) || stages[0];
+    const s2 = stages.find(s => s.stage_id === 2);
+    const s3 = stages.find(s => s.stage_id === 3);
+    const s4 = stages.find(s => s.stage_id === 4);
 
-  // 대충 스케일링
-  const snrScore = clamp01((snrAvg + 5) / 20);        // -5~15db 정도 가정
-  const clipPenalty = clamp01(clipAvg / 0.05);        // 5% 이상이면 페널티
-  const score = Math.round(100 * (0.75*snrScore + 0.25*(1-clipPenalty)));
+    const sr = b?.speech_rate;
+    const pr = b?.pause_ratio;
+    const psd = b?.pitch_sd;
 
-  const label = score >= 75 ? "좋음" : score >= 55 ? "보통" : "주의";
-  return { label, score };
-}
+    let title = "데이터 기반 요약(초안)";
+    let summaryParts = [];
 
-function buildInsightTitle({ sq100, confidence }) {
-  // 너가 원하는 “인간 리터러시 번역” 톤(베타용)
-  if (sq100 >= 70 && confidence >= 70) return "당신은 ‘구조를 세우며 몰입하는 탐구자’ 타입입니다.";
-  if (sq100 >= 70 && confidence < 70)  return "설문은 높지만, 상황에 따라 음성 반응이 달라지는 타입입니다.";
-  if (sq100 < 45 && confidence >= 70)  return "즉흥·유연성이 강하게 드러나는 타입입니다.";
-  return "당신의 패턴은 한쪽으로 고정되지 않고 ‘상황 적응형’에 가깝습니다.";
-}
+    if (typeof sr === "number") {
+      if (sr >= 7.5) summaryParts.push("발화 속도가 빠른 편입니다.");
+      else if (sr <= 5.5) summaryParts.push("발화 속도가 느린 편입니다.");
+      else summaryParts.push("발화 속도가 안정적인 편입니다.");
+    }
 
-function buildMatrixRows({ sq100, stages }) {
-  // stages 기반으로 근거 문구 만들기(간단 버전)
-  const s2 = stages?.find(x => x.stage_id == 2) || stages?.[1] || {};
-  const s3 = stages?.find(x => x.stage_id == 3) || stages?.[2] || {};
-  const pause = (v)=> (typeof v === "number" ? v.toFixed(2) : "-");
-  const rate = (v)=> (typeof v === "number" ? v.toFixed(2) : "-");
-  const pitch = (v)=> (typeof v === "number" ? v.toFixed(2) : "-");
+    if (typeof pr === "number") {
+      if (pr >= 0.35) summaryParts.push("휴지가 비교적 많아 ‘정리하며 말하기’ 경향이 보입니다.");
+      else if (pr <= 0.20) summaryParts.push("휴지가 적어 ‘연결해서 말하기’ 경향이 보입니다.");
+      else summaryParts.push("휴지 비율이 균형적입니다.");
+    }
 
-  return [
-    {
+    if (s3 && b && typeof s3.pause_ratio === "number" && typeof b.pause_ratio === "number") {
+      const d = s3.pause_ratio - b.pause_ratio;
+      if (d > 0.06) summaryParts.push("혼란/변수 상황에서 휴지가 늘어나는 패턴이 관찰됩니다.");
+    }
+
+    if (survey?.total_score != null) {
+      summaryParts.push(`설문(SQ) 점수: ${Math.round(survey.total_score)}점(${survey.s_tag || "SQ"}).`);
+    } else {
+      summaryParts.push("설문 데이터가 없거나 연결되지 않았습니다.");
+    }
+
+    if ((qeeg?.upload_cnt || 0) > 0) summaryParts.push("qEEG 업로드가 있어 ‘뇌파-음성’ 가설 섹션이 추가됩니다.");
+    else summaryParts.push("qEEG 미업로드로 뇌파 기반 섹션은 생략됩니다.");
+
+    return {
+      title,
+      summary: summaryParts.join(" ")
+    };
+  }
+
+  function buildMatrix(stages, survey, qeeg) {
+    const baselineOk = hasBaseline(stages);
+    const rows = [];
+
+    // 축 1) 인지적 정밀도
+    rows.push({
       axis: "인지적 정밀도",
-      evidence: `SQ ${sq100}/100 ↔ pause ${pause(s2.pause_ratio)} / rate ${rate(s2.speech_rate)}`,
-      meaning: "논리 질문(Stage 2)에서 말의 리듬/휴지 패턴이 얼마나 일정하게 유지되는지로 ‘정밀도’를 추정합니다."
-    },
-    {
-      axis: "에너지·몰입도",
-      evidence: `pitch SD ${pitch(s2.pitch_sd)} (Stage2) vs ${pitch(s4?.pitch_sd)} (Stage4)`,
-      meaning: "특정 주제에서 억양 변동이 커지면(또는 작아지면) 몰입 방식의 힌트가 됩니다."
-    },
-    {
-      axis: "붕괴 대응",
-      evidence: `Stage2→3 변화: pause ${pause(s2.pause_ratio)} → ${pause(s3.pause_ratio)}`,
-      meaning: "루틴/계획이 깨지는 상황(Stage 3)에서 리듬이 얼마나 흔들리는지로 회복 방식의 힌트를 봅니다."
-    }
-  ];
-}
+      evidence: baselineOk ? "Baseline 대비 휴지/속도 변화(Δ)" : "절대 지표(참고)",
+      meaning: baselineOk
+        ? "기준(읽기) 대비 말하기 단계에서 리듬/휴지 변화가 얼마나 안정적인지로 ‘정밀도’를 추정합니다."
+        : "Baseline이 없어 변화량 기반 해석은 제한됩니다. (참고용)"
+    });
 
-function makeSparklineSVG(values, labels) {
-  // values: number[] (0~1 권장)
-  const w = 520, h = 120, pad = 14;
-  const pts = values.map((v, i) => {
-    const x = pad + (i * ((w - pad*2) / Math.max(1, values.length - 1)));
-    const y = (h - pad) - (v * (h - pad*2));
-    return [x, y];
-  });
+    // 축 2) 에너지 몰입도
+    rows.push({
+      axis: "에너지 몰입도",
+      evidence: "Pitch SD / Speech Rate",
+      meaning: "특정 스테이지에서 억양 변동(Pitch SD)이나 속도가 상승하면 몰입/흥분 반응 가능성을 시사합니다."
+    });
 
-  const poly = pts.map(p => p.join(",")).join(" ");
-  const dots = pts.map(([x,y]) => `<circle cx="${x}" cy="${y}" r="4" fill="rgba(187,134,252,0.95)"></circle>`).join("");
+    // 축 3) 회복 탄력성
+    rows.push({
+      axis: "회복 탄력성",
+      evidence: "Stage3→Stage4 리듬 복구",
+      meaning: "변수/스트레스(3) 이후 공감/정리(4)에서 리듬이 얼마나 회복되는지 관찰합니다."
+    });
 
-  const xlabels = labels.map((t,i) => {
-    const x = pad + (i * ((w - pad*2) / Math.max(1, labels.length - 1)));
-    return `<text x="${x}" y="${h-2}" font-size="11" text-anchor="middle" fill="rgba(255,255,255,0.55)">${t}</text>`;
-  }).join("");
+    // qEEG
+    rows.push({
+      axis: "qEEG-음성(가설)",
+      evidence: (qeeg?.upload_cnt || 0) > 0 ? "대역파워/비대칭/EC-EO" : "미제공",
+      meaning: (qeeg?.upload_cnt || 0) > 0
+        ? "음성 지표와 뇌파 패턴의 동반 변화를 연구적으로 탐색합니다(베타)."
+        : "qEEG가 없어서 해당 분석은 생략됩니다."
+    });
 
-  return `
-  <svg viewBox="0 0 ${w} ${h}" role="img" aria-label="sparkline">
-    <polyline points="${poly}" fill="none" stroke="rgba(187,134,252,0.85)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>
-    ${dots}
-    ${xlabels}
-  </svg>`;
-}
+    // survey
+    rows.push({
+      axis: "설문↔음성 일치도",
+      evidence: survey?.total_score != null ? "SQ 점수 + 음성 패턴" : "설문 없음",
+      meaning: "자기보고와 음성 패턴이 얼마나 같은 방향인지로 Confidence를 산출합니다(초안)."
+    });
 
-function normRange(values) {
-  const nums = values.map(v => (typeof v === "number" ? v : null)).filter(v => v !== null);
-  if (!nums.length) return { norm: values.map(_=>0), min:0, max:1 };
-  const min = Math.min(...nums), max = Math.max(...nums);
-  const norm = values.map(v => {
-    if (typeof v !== "number") return 0;
-    if (max === min) return 0.5;
-    return (v - min) / (max - min);
-  });
-  return { norm, min, max };
-}
-
-document.addEventListener("DOMContentLoaded", async () => {
-  const sid = getSidSoft();
-  document.getElementById("sidText").textContent = sid || "-";
-  document.getElementById("createdAt").textContent = fmtDate(Date.now());
-
-  const age = parseInt(localStorage.getItem("rhythmi_age") || "0", 10);
-  if (age > 0 && age < 14) document.getElementById("under14Warn").style.display = "block";
-
-  if (!sid) {
-    document.getElementById("insightTitle").textContent = "세션이 없습니다.";
-    document.getElementById("insightDesc").textContent = "처음부터 다시 진행해주세요.";
-    return;
+    return rows;
   }
 
-  // ✅ 서버 엔드포인트는 네 프로젝트에 맞춰서 여기 후보만 조정하면 됨
-  const survey = await fetchFirstOk([
-    apiUrl(`/survey?session_id=${encodeURIComponent(sid)}`),
-    apiUrl(`/get-survey?session_id=${encodeURIComponent(sid)}`),
-    apiUrl(`/result-survey?session_id=${encodeURIComponent(sid)}`),
-  ]);
+  function renderStageTable(stages) {
+    const body = $("stageTableBody");
+    body.innerHTML = "";
 
-  const voice = await fetchFirstOk([
-    apiUrl(`/voice?session_id=${encodeURIComponent(sid)}`),
-    apiUrl(`/get-voice?session_id=${encodeURIComponent(sid)}`),
-    apiUrl(`/voice-stages?session_id=${encodeURIComponent(sid)}`),
-  ]);
+    stages.sort((a,b)=>a.stage_id-b.stage_id).forEach(s => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${s.stage_id}</td>
+        <td>${s.status || "-"}</td>
+        <td>${fmt(s.speech_rate, 2)}</td>
+        <td>${fmt(s.pause_ratio, 3)}</td>
+        <td>${fmt(s.pitch_sd, 2)}</td>
+        <td>${fmt(s.snr_est_db, 1)}</td>
+        <td>${fmt(s.clipping_ratio, 4)}</td>
+      `;
+      body.appendChild(tr);
+    });
 
-  const stages = Array.isArray(voice?.stages) ? voice.stages : (Array.isArray(voice) ? voice : []);
-  const sq100 = Number(survey?.total_score ?? localStorage.getItem("rhythmi_sq_score_100") ?? 0) || 0;
-
-  const confidence = computeConfidenceToy(sq100, stages);
-  const vq = voiceQualityToy(stages);
-
-  document.getElementById("sqScore").textContent = `${sq100}`;
-  document.getElementById("confidence").textContent = `${confidence}`;
-  document.getElementById("voiceQuality").textContent = `${vq.label} (${vq.score})`;
-
-  // 인사이트
-  const insightTitle = buildInsightTitle({ sq100, confidence });
-  document.getElementById("insightTitle").textContent = insightTitle;
-  document.getElementById("insightDesc").textContent =
-    "설문(SQ), 스테이지별 음성 지표, (선택) qEEG를 통합해 ‘취미/베타’ 수준으로 요약한 인사이트입니다.";
-
-  // 매트릭스
-  const rows = buildMatrixRows({ sq100, stages });
-  const tb = document.getElementById("matrixBody");
-  tb.innerHTML = rows.map(r => `
-    <tr>
-      <td><b>${r.axis}</b></td>
-      <td>${r.evidence}</td>
-      <td>${r.meaning}</td>
-    </tr>
-  `).join("");
-
-  // 그래프: stage1~4 values 추출
-  const byStage = [1,2,3,4].map(id => stages.find(s => s.stage_id == id) || null);
-  const labels = ["S1","S2","S3","S4"];
-
-  const pauseVals = byStage.map(s => s?.pause_ratio);
-  const pitchVals = byStage.map(s => s?.pitch_sd);
-  const rateVals  = byStage.map(s => s?.speech_rate);
-
-  const pN = normRange(pauseVals);
-  const piN = normRange(pitchVals);
-  const rN = normRange(rateVals);
-
-  document.getElementById("chartPause").innerHTML = makeSparklineSVG(pN.norm, labels);
-  document.getElementById("chartPitch").innerHTML = makeSparklineSVG(piN.norm, labels);
-  document.getElementById("chartRate").innerHTML  = makeSparklineSVG(rN.norm, labels);
-
-  // qEEG 섹션: survey.qeeg_info 안에 files/answers가 들어있으니 “업로드 여부”만 가볍게 감지
-  try {
-    const qi = survey?.qeeg_info ? JSON.parse(survey.qeeg_info) : null;
-    const hasQeeg = !!(qi?.files?.EC || qi?.files?.EO);
-    if (hasQeeg) {
-      const card = document.getElementById("qeegCard");
-      card.style.display = "block";
-      document.getElementById("qeegSummary").textContent =
-        "qEEG가 업로드되어, 대역파워/비대칭/눈뜸·눈감음 차이 같은 패턴과 음성 지표의 ‘동반 변화(힌트)’를 연구적으로 탐색할 수 있습니다.";
+    if (!stages.length) {
+      body.innerHTML = `<tr><td colspan="7" class="muted">데이터가 없습니다.</td></tr>`;
     }
-  } catch (_) {}
-});
+  }
+
+  function renderMatrix(rows) {
+    const body = $("matrixBody");
+    body.innerHTML = "";
+    rows.forEach(r => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><b>${r.axis}</b></td>
+        <td class="muted">${r.evidence}</td>
+        <td>${r.meaning}</td>
+      `;
+      body.appendChild(tr);
+    });
+  }
+
+  function drawChart(stages) {
+    const canvas = $("chart");
+    const ctx = canvas.getContext("2d");
+
+    // devicePixelRatio 대응
+    const dpr = window.devicePixelRatio || 1;
+    const cssW = canvas.clientWidth;
+    const cssH = canvas.clientHeight;
+    canvas.width = Math.floor(cssW * dpr);
+    canvas.height = Math.floor(cssH * dpr);
+    ctx.scale(dpr, dpr);
+
+    ctx.clearRect(0, 0, cssW, cssH);
+
+    const data = stages.slice().sort((a,b)=>a.stage_id-b.stage_id);
+    const xs = data.map(d => d.stage_id);
+
+    const series = [
+      { key: "speech_rate", label: "Speech Rate" },
+      { key: "pause_ratio", label: "Pause Ratio" },
+      { key: "pitch_sd",    label: "Pitch SD" },
+    ];
+
+    // normalize 각각 그려도 되지만 MVP로는 한 그래프에 “상대 스케일(0~1)”로 합쳐서 보여줌
+    function norm(arr) {
+      const vals = arr.filter(v => typeof v === "number");
+      const min = Math.min(...vals);
+      const max = Math.max(...vals);
+      return arr.map(v => (typeof v === "number" && max > min) ? (v - min) / (max - min) : 0.5);
+    }
+
+    const sr = norm(data.map(d=>d.speech_rate));
+    const pr = norm(data.map(d=>d.pause_ratio));
+    const ps = norm(data.map(d=>d.pitch_sd));
+
+    const norms = [sr, pr, ps];
+    const labels = series.map(s=>s.label);
+
+    // axes
+    ctx.globalAlpha = 0.8;
+    ctx.strokeStyle = "rgba(255,255,255,0.14)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(30, 10);
+    ctx.lineTo(30, cssH-20);
+    ctx.lineTo(cssW-10, cssH-20);
+    ctx.stroke();
+
+    // x points
+    const left = 40, right = cssW - 12;
+    const top = 12, bottom = cssH - 28;
+    const n = data.length;
+    const xAt = (i) => (n === 1) ? (left + right) / 2 : left + (right-left) * (i/(n-1));
+    const yAt = (t) => bottom - (bottom-top) * t;
+
+    // draw 3 lines (색 지정 안 하려 했는데 구분은 필요해서 alpha/대시로 구분)
+    const styles = [
+      { dash: [], alpha: 0.95 },
+      { dash: [6,4], alpha: 0.85 },
+      { dash: [2,4], alpha: 0.85 },
+    ];
+
+    norms.forEach((arr, si) => {
+      ctx.setLineDash(styles[si].dash);
+      ctx.globalAlpha = styles[si].alpha;
+      ctx.strokeStyle = "rgba(187,134,252,0.9)";
+      ctx.lineWidth = 2;
+
+      ctx.beginPath();
+      arr.forEach((v, i) => {
+        const x = xAt(i);
+        const y = yAt(v);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    });
+
+    // x labels
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = "rgba(255,255,255,0.75)";
+    ctx.font = "12px system-ui";
+    data.forEach((d, i) => {
+      ctx.fillText(`S${d.stage_id}`, xAt(i)-10, cssH-8);
+    });
+
+    $("chartLegend").textContent = `그래프는 상대 스케일(0~1)로 표시됩니다: ${labels.join(" / ")}`;
+  }
+
+  async function fetchReportData(sid) {
+    // 서버에 이 엔드포인트만 만들면 됨
+    const res = await fetch(apiUrl(`/report-data?sid=${encodeURIComponent(sid)}`), {
+      method: "GET",
+      headers: { "Accept": "application/json" },
+    });
+
+    if (!res.ok) {
+      const t = await res.text().catch(() => "");
+      throw new Error(`report-data failed ${res.status}: ${t.slice(0,200)}`);
+    }
+    return res.json();
+  }
+
+  async function init() {
+    const sid = getSidSafe();
+    if (!sid) return;
+
+    $("sidText").textContent = sid;
+
+    $("copySidBtn").onclick = () => copyText(sid);
+    $("copyLinkBtn").onclick = () => copyText(location.href);
+
+    try {
+      const data = await fetchReportData(sid);
+      // 기대 JSON 형태:
+      // {
+      //   generated_at: "...",
+      //   age: 20,
+      //   survey: {...} | null,
+      //   qeeg: { upload_cnt: 0|2, ... },
+      //   voice: { stages: [ {stage_id,...} ], summary: {all_ok, not_ok_cnt, ...} }
+      // }
+
+      $("generatedAt").textContent = `리포트 생성일: ${data.generated_at || "-"}`;
+
+      const age = Number(data.age || 0);
+      if (age > 0 && age < 14) $("under14Note").style.display = "block";
+
+      const stages = data?.voice?.stages || [];
+      renderStageTable(stages);
+
+      const q = qualityFrom(stages);
+      setBadge($("qualityBadge"), `품질: ${q.label}`, q.kind);
+
+      const baselineOk = hasBaseline(stages);
+      setBadge($("baselineBadge"), baselineOk ? "Baseline: 있음" : "Baseline: 없음", baselineOk ? "good" : "warn");
+
+      const persona = buildPersona(stages, data.survey, data.qeeg);
+      $("personaTitle").textContent = persona.title;
+      $("personaSummary").textContent = persona.summary;
+
+      const matrix = buildMatrix(stages, data.survey, data.qeeg);
+      renderMatrix(matrix);
+
+      const qeegCnt = data?.qeeg?.upload_cnt || 0;
+      $("qeegBox").textContent = qeegCnt > 0
+        ? `qEEG: 업로드 ${qeegCnt}개(가설 섹션 포함)`
+        : "qEEG: 미업로드(해당 섹션 생략)";
+
+      if (stages.length) drawChart(stages);
+
+    } catch (err) {
+      console.error(err);
+      $("personaTitle").textContent = "리포트를 불러오지 못했습니다.";
+      $("personaSummary").textContent = "서버 report-data 엔드포인트 또는 sid 연결을 확인해주세요.";
+      setBadge($("qualityBadge"), "품질: -", "warn");
+      setBadge($("baselineBadge"), "Baseline: -", "warn");
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+})();
