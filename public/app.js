@@ -690,20 +690,40 @@ window.submitAll = async function (evt) {
     currentBtn.innerText = "데이터 분석중...";
   }
 
-  try {
-    // 1) qEEG 파일 없을 때 confirm
-    if (!ecFile || !eoFile) {
-      const confirmGo = await window.showConfirmModal?.(
-        "⚠️ qEEG 파일이 선택되지 않았습니다.\n\n파일 없이 진행할까요?"
-      );
-      if (!confirmGo) {
-        if (currentBtn) {
-          currentBtn.disabled = false;
-          currentBtn.innerText = "음성분석 시작";
-        }
-        return;
+ 
+const showQeegInfoToast = () => {
+  const msg =
+    "🔎 데이터 분석중...\n\n" +
+    "• 설문(SQ) + 음성(리듬/속도/휴지/억양) 지표를 먼저 분석합니다.\n" +
+    "• qEEG를 올린 경우, 대역파워/좌우비대칭/눈뜸·눈감음 차이 같은 패턴을 추가로 추출해\n" +
+    "  음성 지표와의 ‘관계(힌트)’를 연구적으로 탐색합니다.\n" +
+    "• 음성 내용(텍스트)은 저장하지 않고, 수치 지표만 저장됩니다.";
+
+  if (typeof window.showModal === "function") window.showModal(msg);
+  else alert(msg);
+
+  setTimeout(() => {
+    if (typeof window.closeModal === "function") window.closeModal();
+  }, 5000);
+};
+
+try {
+  // ✅ qEEG 올린 경우에만 안내 모달
+  if (ecFile && eoFile) showQeegInfoToast();
+
+  // 1) qEEG 파일 없을 때 confirm
+  if (!ecFile || !eoFile) {
+    const confirmGo = await window.showConfirmModal?.(
+      "⚠️ qEEG 파일이 선택되지 않았습니다.\n\n파일 없이 진행할까요?"
+    );
+    if (!confirmGo) {
+      if (currentBtn) {
+        currentBtn.disabled = false;
+        currentBtn.innerText = "음성분석 시작";
       }
+      return;
     }
+  }
 
     // 2) 설문 완료 체크 (answersById 기준)
     const items = getSQQuestions(); // adultItems / childItems
