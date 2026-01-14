@@ -7,11 +7,19 @@ import {
     setRecordButtonState 
 } from "./voice-ui.js";
 
-const vp = new VoiceProcessor();
-const CLOUD_RUN_URL = "https://rhythme-server-357918245340.asia-northeast3.run.app";
-const API = (path) => `${CLOUD_RUN_URL.replace(/\/$/, '')}${path}`;
+// 0) SID 먼저 확정 (가장 위)
+const SID = window.initSid?.({ redirectTo: "./index.html" }) || window.getSid?.();
+if (!SID) throw new Error("NO_SID");
 
-const CONSENT_CACHE = {};
+// 1) 전역 상수/캐시들
+const CONSENT_CACHE = {};  // ✅ 이거 다시 추가
+const CLOUD_RUN_URL = "https://rhythme-server-357918245340.asia-northeast3.run.app";
+const API = (path) => `${CLOUD_RUN_URL.replace(/\/$/, "")}${path}`;
+
+// 2) 인스턴스 생성은 맨 마지막
+const vp = new VoiceProcessor();
+
+
 
 /* --- [전역 상태 관리] --- */
 let currentStep = 1;
