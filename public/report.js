@@ -365,6 +365,7 @@ if (copyLinkBtn) copyLinkBtn.onclick = () => copyText(location.href);
 
     try {
       const data = await fetchReportData(sid);
+      window.__reportData = data; 
       // 기대 JSON 형태:
       // {
       //   generated_at: "...",
