@@ -23,11 +23,9 @@ function apiUrl(path) {
 
 // ✅ 자동 로그 수집(사용자 액션 0)
 async function logClientError(err, context = {}) {
-const SID = window.initSid?.();
-if (!SID) {
-  alert("세션이 없습니다. 처음부터 다시 진행해주세요.");
-  location.href = "./index.html";
-}
+  const sid =
+    new URLSearchParams(location.search).get("sid") ||
+    localStorage.getItem("SESSION_ID");
 
   const payload = {
     session_id: sid,
@@ -206,16 +204,40 @@ function getStagesByAge(age, version = getVoiceVersion()) {
   // =========================
   if (version === "v1.2") {
     const s2 = isUnder14
-      ? { id: 2, q: "Stage 2", d: "오늘 해야 하는 일을 3개 이상 순서대로 말해 주세요.", text: "오늘 제일 중요한 일부터 순서대로 말해 주세요." }
-      : { id: 2, q: "Stage 2", d: "가능하면 3개 이상. 1-2-3처럼 번호를 붙여도 좋아요.", text: "오늘 처리해야 할 가장 중요한 일을 중요도 순서대로 말해 주세요." };
+  ? {
+      id: 2, q: "Stage 2",
+      text: "오늘 제일 중요한 일부터 순서대로 말해 주세요.",
+      d: "최소 3개 이상. 1번-2번-3번처럼 번호를 붙여 말해 주세요. (각 항목은 1~2문장 정도)"
+    }
+  : {
+      id: 2, q: "Stage 2",
+      text: "오늘 처리해야 할 가장 중요한 일을 중요도 순서대로 말해 주세요.",
+      d: "최소 3개 이상. 1-2-3 번호로 말해도 좋아요. (각 항목: 왜 중요한지 1문장 포함)"
+    };
 
-    const s3 = isUnder14
-      ? { id: 3, q: "Stage 3", d: "왜 그 순서인지 기준을 말해 주세요. (마감/중요/어려움 등)", text: "그 순서를 정한 기준이 있나요?" }
-      : { id: 3, q: "Stage 3", d: "기준 → 예시 순서로 말해 주세요. (마감/영향도/리스크 등)", text: "그 순서를 정할 때 쓰는 원칙/기준이 있나요?" };
+const s3 = isUnder14
+  ? {
+      id: 3, q: "Stage 3",
+      text: "그 순서를 정한 기준이 있나요?",
+      d: "기준을 2개 이상 말해 주세요. (예: 마감, 점수, 어려움, 기분 등) → 마지막에 한 줄로 정리"
+    }
+  : {
+      id: 3, q: "Stage 3",
+      text: "그 순서를 정할 때 쓰는 원칙/기준이 있나요?",
+      d: "기준 2개 이상. (예: 마감/영향도/리스크/노력 대비 효과) → 기준마다 예시 1개씩"
+    };
 
-    const s4 = isUnder14
-      ? { id: 4, q: "Stage 4", d: "그 순서대로 못 할 때 가장 큰 방해가 뭔지, 다음엔 어떻게 할지 말해 주세요.", text: "계획대로 못 될 때 가장 잦은 이유는 무엇인가요?" }
-      : { id: 4, q: "Stage 4", d: "상황 → 원인 → 다음번 대안 순서로 말해 주세요.", text: "중요도대로 수행하지 못할 때 가장 잦은 원인은 무엇인가요?" };
+const s4 = isUnder14
+  ? {
+      id: 4, q: "Stage 4",
+      text: "계획대로 못 될 때 가장 잦은 이유는 무엇인가요?",
+      d: "가장 자주 생기는 방해 2가지만 말해 주세요. 그리고 다음번엔 뭘 바꿀지 1가지만 말해요."
+    }
+  : {
+      id: 4, q: "Stage 4",
+      text: "중요도대로 수행하지 못할 때 가장 잦은 원인은 무엇인가요?",
+      d: "원인 2개만. (상황 → 내 반응 → 결과) 순서로 말하고, 마지막에 다음번 대안 1개를 말해 주세요."
+    };
 
     return [baseStage1, s2, s3, s4];
   }
@@ -440,10 +462,24 @@ function getStagesByAge(age, version = getVoiceVersion()) {
   // 초기화
   // ---------------------------
 // 3) ✅ 맨 아래에서 초기화 1번만
-btn.addEventListener("click", () => {
-  if (btn.disabled) return;
-  const url = SID ? `${NEXT_PAGE}?sid=${encodeURIComponent(SID)}` : NEXT_PAGE;
-  location.href = url;
+document.addEventListener("DOMContentLoaded", () => {
+  const sid = getSid();
+  const age = parseInt(localStorage.getItem("rhythmi_age") || "20", 10);
+
+  bootstrapRun(); // ✅ stageIdx 확정(리셋/이어하기)
+
+  const v = getVoiceVersion();
+  console.log("[VOICE_VERSION]", v, sid);
+
+  STAGES = getStagesByAge(age, v);
+  renderStage();
+
+  const recBtn = document.querySelector("#recordBtn");
+  if (recBtn) {
+    recBtn.addEventListener("click", () => {
+      if (recBtn.dataset.recording !== "1") runVoiceStage();
+    });
+  }
 });
 
 </script>
