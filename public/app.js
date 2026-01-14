@@ -445,6 +445,26 @@ function renderQuestion() {
     }
   }
 
+  if (q.type === "ab") {
+  qText.innerHTML = `
+    <div class="q-title">둘 중 어떤 쪽에 더 가까운가요?</div>
+
+    <div class="ab-wrap">
+      <div class="ab-box">
+        <div class="ab-head"><span class="ab-badge">A</span></div>
+        <div class="ab-body">${escapeHtml(q.a)}</div>
+      </div>
+
+      <div class="ab-box">
+        <div class="ab-head"><span class="ab-badge">B</span></div>
+        <div class="ab-body">${escapeHtml(q.b)}</div>
+      </div>
+    </div>
+  `;
+} else {
+  qText.textContent = q.text || "";
+}
+
   // 버튼 라벨/클릭 바인딩 (ans-btn 5개를 척도에 맞게 바꿈)
   const scale = (q.type === "ab") ? SCALE_AB : SCALE_LIKERT;
   const btns = Array.from(document.querySelectorAll(".ans-btn"));
