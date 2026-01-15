@@ -136,38 +136,57 @@
     const copyBtn = $("copySidBtn");
     if (copyBtn) copyBtn.onclick = () => copyText(sid);
 
-    try {
-      const res = await fetch(apiUrl(`/report-data-v2?sid=${sid}`)); 
-      const data = await res.json();
-      const voice = data.voice;
+   try {
+  const res = await fetch(apiUrl(`/report-data-v2?sid=${sid}`)); 
+  const rawData = await res.json();
+  const data = rawData.report_json || rawData; 
+  
+  // 1. qEEG 상태 판정 로직 강화
+  const qeeg = data.qeeg || {};
+  // upload_cnt가 있거나, qeeg_data 자체가 존재하거나, 혹은 다른 필드(has_qeeg 등)가 있는지 체크
+  const isQeegConnected = (qeeg.upload_cnt > 0) || (qeeg.data && qeeg.data.length > 0) || (data.has_qeeg === true);
 
-      // 1. 상단 요약 (SQ, qEEG)
-      if($("sqScoreDisplay")) $("sqScoreDisplay").textContent = `${data.survey?.total_score || 0}점`;
-      if($("qeegStatusDisplay")) $("qeegStatusDisplay").textContent = data.qeeg?.upload_cnt > 0 ? `✅ ${data.qeeg.upload_cnt}건 연동` : "❌ 미업로드";
+  if($("qeegStatusDisplay")) {
+    $("qeegStatusDisplay").textContent = isQeegConnected ? "✅ 연동 완료" : "❌ 미연동";
+    if(isQeegConnected) $("qeegStatusDisplay").style.color = "var(--secondary)"; // 민트색으로 강조
+  }
+
+  // 2. SQ 점수 표시
+  if($("sqScoreDisplay")) {
+    // survey 점수 혹은 total_score 위치 확인
+    const sqScore = data.survey?.total_score || data.total_score || 0;
+    $("sqScoreDisplay").textContent = `${sqScore}점`;
+  }
 
       // 2. 품질 및 베이스라인 체크 (배지 업데이트)
-      const q = qualityFrom(voice.stages);
-      setBadge($("qualityBadge"), `품질: ${q.label}`, q.kind);
-      
-      const hasB = voice.stages.some(s => s.stage_id === 1 && s.status === "completed");
-      setBadge($("baselineBadge"), hasB ? "Baseline: 있음" : "Baseline: 없음", hasB ? "good" : "warn");
+      if (stages.length > 0) {
+        const q = qualityFrom(stages);
+        setBadge($("qualityBadge"), `품질: ${q.label}`, q.kind);
+        
+        const hasB = stages.some(s => s.stage_id === 1 && s.status === "completed");
+        setBadge($("baselineBadge"), hasB ? "Baseline: 있음" : "Baseline: 없음", hasB ? "good" : "warn");
 
-      // 3. 인덱스 및 상세 테이블
-      calculateCustomIndices(voice.stages);
-      renderStageTable(voice.stages);
-      if (voice.stages.length) drawChart(voice.stages);
+        // 3. 인덱스 및 상세 테이블
+        calculateCustomIndices(stages);
+        renderStageTable(stages);
+        drawChart(stages);
+      }
 
-      // 4. 페르소나 및 강점
-      const profile = voice.profile;
-      $("personaTitle").textContent = profile.type_name;
-      $("personaSummary").textContent = profile.summary;
-      $("watchoutText").textContent = profile.watchout;
+      // 4. 페르소나 및 강점 (DB profile 연동)
+      const profile = voice.profile || {};
+      if ($("personaTitle")) $("personaTitle").textContent = profile.type_name || "분석 불가";
+      if ($("personaSummary")) $("personaSummary").textContent = profile.summary || "데이터가 부족하여 요약을 생성할 수 없습니다.";
+      if ($("watchoutText")) $("watchoutText").textContent = profile.watchout || "";
       
       const strengths = STRENGTHS_MAP[profile.type_code] || [];
-      $("strengthList").innerHTML = strengths.map(s => `<li>${s}</li>`).join("");
+      if ($("strengthList")) {
+        $("strengthList").innerHTML = strengths.length > 0 
+          ? strengths.map(s => `<li>${s}</li>`).join("")
+          : "<li>데이터를 분석 중입니다.</li>";
+      }
 
       // 5. 핵심 지표 표 (metrics_card)
-      if($("metricsBody")) {
+      if($("metricsBody") && voice.metrics_card) {
         $("metricsBody").innerHTML = voice.metrics_card.map(m => `
           <tr>
             <td style="font-weight:600;">${m.label}</td>
@@ -177,7 +196,7 @@
         `).join("");
       }
 
-      // 6. 설문 버튼 연결
+          // 6. 설문 버튼 연결
       const surveyBtn = $("btnStartSurvey");
       if (surveyBtn) {
         surveyBtn.onclick = () => {
