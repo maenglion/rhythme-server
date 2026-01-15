@@ -392,12 +392,104 @@ $("generatedAt").textContent =
       const baselineOk = hasBaseline(stages);
       setBadge($("baselineBadge"), baselineOk ? "Baseline: 있음" : "Baseline: 없음", baselineOk ? "good" : "warn");
 
+function buildPersona(stages, survey, qeeg) {
+    if (!stages || stages.length < 2) return { title: "데이터 수집 중", summary: "분석을 위한 충분한 세션 데이터가 아직 확보되지 않았습니다." };
+
+    const sorted = [...stages].sort((a, b) => a.stage_id - b.stage_id);
+    const b = sorted.find(s => s.stage_id === 1) || sorted[0];
+    const last = sorted[sorted.length - 1];
+
+    // 복합 지표 산출
+    const dSr = last.speech_rate - b.speech_rate; 
+    const dPr = last.pause_ratio - b.pause_ratio; 
+    const energyDensity = last.pitch_sd / (last.speech_rate || 1);
+
+    let title = "안정적 데이터 흐름";
+    let summaryParts = [];
+
+    // 전문적 해석 로직
+    if (dSr > 0.05 && dPr < 0) {
+      title = "인지적 가속 및 적응형";
+      summaryParts.push("과제 후반부로 갈수록 발화의 효율성이 높아지며 인지적 부하에 능숙하게 적응하는 양상이 관찰됩니다.");
+    } else {
+      title = "신중한 정보 처리형";
+      summaryParts.push("일정한 리듬을 유지하며 정보를 신중하게 구조화하여 전달하는 패턴을 보입니다.");
+    }
+
+    if (energyDensity > 8.5) {
+      summaryParts.push(`에너지 밀도(${energyDensity.toFixed(1)})가 높아 단순 전달을 넘어 메시지에 강조와 생동감을 더하는 능력이 탁월합니다.`);
+    }
+
+    if (survey?.total_score > 70) {
+      summaryParts.push("자기보고식 심리 지표와 음성 데이터의 활력 지수가 높은 일치율을 보입니다.");
+    }
+
+    return { title, summary: summaryParts.join(" ") };
+  }
+
+  // 인덱스 카드 값 업데이트 함수
+  function updateIndexCards(stages) {
+    if (stages.length < 2) return;
+    const sorted = [...stages].sort((a, b) => a.stage_id - b.stage_id);
+    const b = sorted[0];
+    const last = sorted[sorted.length - 1];
+    
+    // 1. 인지 적응도 (Pause가 얼마나 줄었는가)
+    const adaptive = (b.pause_ratio - last.pause_ratio) > 0.02 ? "높음" : "보통";
+    $("index-adaptive").textContent = adaptive;
+
+    // 2. 에너지 밀도 (Pitch SD / Rate)
+    const densityVal = last.pitch_sd / (last.speech_rate || 1);
+    $("index-energy").textContent = densityVal > 9 ? "우수" : (densityVal > 7 ? "양호" : "보통");
+
+    // 3. 회복 탄력성 (S3 Stress -> S4 Recovery 추이)
+    const s3 = sorted.find(s => s.stage_id === 3);
+    const s4 = sorted.find(s => s.stage_id === 4);
+    if (s3 && s4) {
+      const resVal = s4.speech_rate - s3.speech_rate;
+      $("index-resilience").textContent = resVal >= 0 ? "안정" : "관찰";
+    }
+  }
+
+  async function init() {
+    const sid = getSidSafe();
+    if (!sid) return;
+
+    $("sidText").textContent = sid; // 실제 값은 숨겨진 span에 저장
+    $("copySidBtn").onclick = () => copyText(sid);
+
+    try {
+      const data = await fetchReportData(sid);
+      const stages = data?.voice?.stages || [];
+
+      // 1. 리포트 헤더 및 카드 업데이트
+      const stamp = data.submitted_at ?? data.generated_at ?? "-";
+      $("generatedAt").textContent = stamp === "-" ? "생성일: -" : `리포트 생성일: ${new Date(stamp).toLocaleDateString()}`;
+
+      // 2. 복합 인덱스 카드 계산 및 렌더링
+      updateIndexCards(stages);
+
+      // 3. 페르소나 및 매트릭스
       const persona = buildPersona(stages, data.survey, data.qeeg);
       $("personaTitle").textContent = persona.title;
       $("personaSummary").textContent = persona.summary;
 
-      const matrix = buildMatrix(stages, data.survey, data.qeeg);
-      renderMatrix(matrix);
+      renderStageTable(stages);
+      renderMatrix(buildMatrix(stages, data.survey, data.qeeg));
+      
+      const q = qualityFrom(stages);
+      setBadge($("qualityBadge"), `품질: ${q.label}`, q.kind);
+      
+      const bOk = hasBaseline(stages);
+      setBadge($("baselineBadge"), bOk ? "Baseline: 있음" : "Baseline: 없음", bOk ? "good" : "warn");
+
+      if (stages.length) drawChart(stages);
+
+    } catch (err) {
+      console.error(err);
+      $("personaTitle").textContent = "데이터를 불러올 수 없습니다.";
+    }
+  }
 
       const qeegCnt = data?.qeeg?.upload_cnt || 0;
       $("qeegBox").textContent = qeegCnt > 0

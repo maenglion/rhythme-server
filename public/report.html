@@ -31,14 +31,26 @@
     .header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
     .title-area h1 { font-size: 28px; font-weight: 800; margin: 0; letter-spacing: -0.5px; }
     .session-area { 
-      display: flex; 
-      align-items: center; 
-      background: rgba(255,255,255,0.05); 
-      padding: 4px 12px; 
-      border-radius: 8px; 
-      font-size: 12px; 
-      color: var(--muted);
-    }
+    background: rgba(187,134,252,0.1); 
+    padding: 6px 14px; 
+    border-radius: 20px; 
+    font-size: 11px; 
+    color: var(--primary);
+    border: 1px solid rgba(187,134,252,0.2);
+  }
+  .index-grid {
+    display: flex; 
+    justify-content: space-around; 
+    text-align: center; 
+    padding: 20px;
+    background: linear-gradient(145deg, #23232e, #1e1e26);
+    margin-bottom: 24px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+  }
+  .index-item .val { font-size: 22px; font-weight: 800; margin-top: 4px; }
+  .index-item .label { font-size: 12px; color: var(--muted); font-weight: 500; }
+  
     .copy-btn { 
       background: none; border: none; color: var(--primary); 
       cursor: pointer; font-size: 11px; margin-left: 8px; font-weight: 700;
@@ -81,74 +93,22 @@
 </head>
 <body>
 
-<div class="container">
-  <header class="header">
-    <div class="header-top">
-      <div class="title-area">
-        <h1>분석 리포트</h1>
-        <p class="sub-text" id="generatedAt">생성일: 2023.10.27</p>
-      </div>
-      <div class="session-area">
-        ID: <span id="sidText" style="margin-left:4px;">865e88b7...</span>
-        <button class="copy-btn" id="copySidBtn">복사</button>
-      </div>
-    </div>
-    <div class="badge-group">
-      <span class="badge" id="qualityBadge">품질: 우수</span>
-      <span class="badge" id="baselineBadge">Baseline: 설정됨</span>
-    </div>
-  </header>
-
-  <div class="card">
-    <div id="personaTitle" style="font-size: 20px; font-weight: 800; color: var(--primary); margin-bottom: 8px;">
-      분석 데이터 로딩 중...
-    </div>
-    <p id="personaSummary" class="sub-text">세션 분석을 통해 도출된 인사이트가 여기에 표시됩니다.</p>
+<div class="card" style="display: flex; justify-content: space-around; text-align: center; padding: 15px;">
+  <div>
+    <div class="sub-text">인지 적응도</div>
+    <div id="index-adaptive" style="font-size: 20px; font-weight: 800; color: var(--secondary);">높음</div>
   </div>
-
-  <div class="grid-container">
-    <div class="card">
-      <div class="section-title">3D 분석 매트릭스</div>
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr><th>축</th><th>근거</th><th>해석</th></tr>
-          </thead>
-          <tbody id="matrixBody">
-            <tr><td colspan="3" class="sub-text" style="text-align:center;">데이터를 불러오는 중입니다...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="section-title">스테이지 변화 추이</div>
-      <canvas id="chart"></canvas>
-      <div id="chartLegend" class="sub-text" style="margin-top:12px; font-size:12px;"></div>
-    </div>
+  <div style="width: 1px; background: var(--border);"></div>
+  <div>
+    <div class="sub-text">에너지 밀도</div>
+    <div id="index-energy" style="font-size: 20px; font-weight: 800; color: var(--primary);">우수</div>
   </div>
-
-  <div class="card">
-    <div class="section-title">스테이지별 상세 지표</div>
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Stage</th>
-            <th>상태</th>
-            <th>Rate</th>
-            <th>Pause</th>
-            <th>Pitch</th>
-            <th>SNR</th>
-          </tr>
-        </thead>
-        <tbody id="stageTableBody">
-          <tr><td colspan="6" class="sub-text" style="text-align:center;">로딩 중...</td></tr>
-        </tbody>
-      </table>
-    </div>
+  <div style="width: 1px; background: var(--border);"></div>
+  <div>
+    <div class="sub-text">회복 탄력성</div>
+    <div id="index-resilience" style="font-size: 20px; font-weight: 800; color: var(--secondary);">안정</div>
   </div>
-  <div id="insightText" data-insight></div>
+</div>
 
   <footer class="footer-note">
     본 리포트는 연구용 요약이며 의료 진단 목적으로 사용할 수 없습니다.
