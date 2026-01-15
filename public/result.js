@@ -1,98 +1,74 @@
 (function () {
+    // 1. 설정: 서버 주소
     const API_BASE = "https://rhythme-server-as3ud42lpa-du.a.run.app";
     const $ = (id) => document.getElementById(id);
 
-    // [인사이트 사전] 페르소나별 강점 매핑
+    // 2. 강점 데이터 사전
     const STRENGTHS_MAP = {
         'PRECISION_TURBO': ['압도적인 정보 처리 속도', '고부하 상황에서의 냉철한 통제력', '정교한 논리 구조화'],
-        'OVERCLOCK_BOTTLENECK': ['사고 속도가 발화를 앞지름', '역동적인 에너지', '빠른 상황 판단'],
-        'LOAD_ACCUMULATION': ['신중한 데이터 검토', '단계적 사고 구조', '높은 정밀도'],
-        'PROSODY_SENSITIVE': ['섬세한 감각 인지', '풍부한 공감 채널', '맥락 파악 능력'],
-        'STEADY_ARCHITECT': ['안정적인 일관성', '높은 신뢰도', '균형 잡힌 정보 전달']
+        'OVERCLOCK_BOTTLENECK': ['사고의 속도가 출력을 앞섬', '역동적인 에너지', '빠른 판단력'],
+        'LOAD_ACCUMULATION': ['신중한 검토 능력', '단계적 사고', '데이터 정밀도'],
+        'PROSODY_SENSITIVE': ['섬세한 감각 인지', '맥락 파악 능력', '풍부한 공감 채널'],
+        'STEADY_ARCHITECT': ['안정적인 일관성', '높은 신뢰도', '균형 잡힌 정보 처리']
     };
 
     async function init() {
-        // 1. 세션 ID 가져오기 (테스트용 고정값 포함)
+        // URL에서 sid 가져오기 (없으면 테스트용 사용자님 SID 사용)
         const params = new URLSearchParams(location.search);
         const sid = params.get("sid") || "865e88b7-db30-43f1-bee4-903a62d96341";
-        console.log("📱 Mobile Report Init - SID:", sid);
+        
+        console.log("🚀 분석 시작 - SID:", sid);
 
         try {
+            // 서버 호출
             const res = await fetch(`${API_BASE}/report-data-v2?sid=${sid}`);
+            if (!res.ok) throw new Error("서버 응답 에러");
+            
             const rawData = await res.json();
+            console.log("📦 서버 원본 데이터 확인:", rawData); // 구조 파악용
+
+            // 데이터 본체 접근 (서버 응답 구조에 따라 대응)
             const data = rawData.report_json || rawData;
             const voice = data.voice || {};
             const profile = voice.profile || {};
-            const stages = voice.stages || [];
 
-            // 2. [상단] 한 줄 페르소나 및 요약 매핑
-            if ($("personaTitle")) $("personaTitle").textContent = profile.type_name || "데이터 분석 중";
-            if ($("personaSummary")) $("personaSummary").textContent = profile.summary || "충분한 발화 데이터가 확보되면 분석 결과가 표시됩니다.";
+            // --- [화면 매핑 시작] ---
 
-            // 3. [상단] 핵심 3대 지표 카드 (캡처 기반 로직)
-            if (stages.length >= 2) {
-                const sorted = [...stages].sort((a, b) => a.stage_id - b.stage_id);
-                const first = sorted[0];
-                const last = sorted[sorted.length - 1];
-                const s3 = sorted.find(s => s.stage_id === 3);
-                const s4 = sorted.find(s => s.stage_id === 4);
-
-                // 인지 적응도
-                if ($("index-adaptive")) 
-                    $("index-adaptive").textContent = (first.pause_ratio - last.pause_ratio) > 0.02 ? "높음" : "보통";
-                
-                // 에너지 밀도 (사용자님의 강점 포인트: 9.44 반영)
-                const densityVal = last.pitch_sd / (last.speech_rate || 1);
-                if ($("index-energy")) 
-                    $("index-energy").textContent = densityVal > 8.5 ? "우수" : "보통";
-                
-                // 회복 탄력성
-                if ($("index-resilience")) 
-                    $("index-resilience").textContent = ((s4?.speech_rate || 0) - (s3?.speech_rate || 0)) >= -0.1 ? "안정" : "관찰";
+            // 1. 상단 요약
+            if ($("sqScore")) $("sqScore").textContent = `${data.survey?.total_score || 0}점`;
+            
+            const qeegCount = data.qeeg?.upload_cnt || 0;
+            if ($("qeegStatus")) {
+                $("qeegStatus").textContent = qeegCount > 0 ? `✅ 연동 완료 (${qeegCount}건)` : "❌ 미연동";
+                if(qeegCount > 0) $("qeegStatus").classList.add("active");
             }
 
-            // 4. [중간] 핵심 지표 표 (metrics_card)
-            // DB에서 생성된 metrics_card가 있다면 그대로 사용, 없으면 직접 매핑
-            if ($("metricsBody")) {
-                if (voice.metrics_card) {
-                    $("metricsBody").innerHTML = voice.metrics_card.map(m => `
-                        <tr>
-                            <td style="font-size:14px; color:var(--muted)">${m.label.replace('Last ', '')}</td>
-                            <td class="val-col">${m.value}</td>
-                            <td class="desc-col">${m.interpretation}</td>
-                        </tr>
-                    `).join("");
-                } else {
-                    // Fallback: 직접 매핑 (캡처 데이터 기준)
-                    const last = stages[stages.length - 1];
-                    const density = (last.pitch_sd / last.speech_rate).toFixed(2);
-                    $("metricsBody").innerHTML = `
-                        <tr>
-                            <td style="font-size:14px; color:var(--muted)">Speech Rate</td>
-                            <td class="val-col">${last.speech_rate.toFixed(2)}</td>
-                            <td class="desc-col">성인 평균 대비 매우 빠른 사고 처리 속도</td>
-                        </tr>
-                        <tr>
-                            <td style="font-size:14px; color:var(--muted)">Pause Ratio</td>
-                            <td class="val-col">${last.pause_ratio.toFixed(3)}</td>
-                            <td class="desc-col">고속 처리 중에도 끊김 없는 유창성 유지</td>
-                        </tr>
-                        <tr>
-                            <td style="font-size:14px; color:var(--muted)">Density</td>
-                            <td class="val-col">${density}</td>
-                            <td class="desc-col">발화 내 에너지 응집도가 매우 높음</td>
-                        </tr>
-                    `;
-                }
+            // 2. 페르소나 메인
+            if ($("personaTitle")) $("personaTitle").textContent = profile.type_name || "분석 결과 없음";
+            if ($("personaSummary")) $("personaSummary").textContent = profile.summary || "데이터 분석 중입니다.";
+            if ($("watchoutText")) $("watchoutText").textContent = profile.watchout || "특이사항 없음";
+
+            // 3. 강점 리스트
+            const strengths = STRENGTHS_MAP[profile.type_code] || [];
+            if ($("strengthList")) {
+                $("strengthList").innerHTML = strengths.map(s => `<li>${s}</li>`).join("");
             }
 
-            // 5. [하단] 그래프 그리기
-            if (stages.length > 0 && typeof drawChart === 'function') {
-                drawChart(stages);
+            // 4. 핵심 지표 표 (metrics_card)
+            if ($("metricsBody") && voice.metrics_card) {
+                $("metricsBody").innerHTML = voice.metrics_card.map(m => `
+                    <tr>
+                        <td>${m.label}</td>
+                        <td class="val-col">${m.value}</td>
+                        <td class="desc-col">${m.interpretation}</td>
+                    </tr>
+                `).join("");
             }
+
+            console.log("✅ 리포트 생성 완료!");
 
         } catch (err) {
-            console.error("❌ Mobile Report Error:", err);
+            console.error("❌ 에러 발생:", err);
             if ($("personaTitle")) $("personaTitle").textContent = "데이터 로드 실패";
         }
     }
