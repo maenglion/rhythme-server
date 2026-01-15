@@ -1,4 +1,5 @@
 // report.js (완전 통합본)
+
 (function () {
   const CLOUD_RUN_URL = "https://rhythme-server-as3ud42lpa-du.a.run.app";
   const apiUrl = (path) => `${CLOUD_RUN_URL.replace(/\/$/, "")}${path}`;
@@ -274,3 +275,4 @@ async function init() {
 
   document.addEventListener("DOMContentLoaded", init);
 })();
+

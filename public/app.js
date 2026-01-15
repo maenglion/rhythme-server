@@ -1,6 +1,8 @@
 // 1. 엔진 및 UI 제어 도구 가져오기
 // 1. 엔진 및 UI 제어 도구 가져오기
 import { VoiceProcessor } from "./voice-processor.js";
+import { stripSidOnNonReportPages } from "./session-guard.js";
+stripSidOnNonReportPages();
 import {
   setQuestionText,
   setDescriptionText,

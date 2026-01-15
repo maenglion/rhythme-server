@@ -1,36 +1,69 @@
-// session-guard.js (개선 버전)
+/**
+ * RHYTHME 프로젝트 세션 관리 스크립트
+ * 역할: 세션 고유성 보장, 링크 전파, 인앱 브라우저 경고, 보안 필터링
+ */
 (function () {
   const KEY = "SESSION_ID";
 
-  // ✅ 1. 고유한 UUID 생성 함수 (표준 방식)
+  // 1. 고유한 UUID 생성 함수
   function generateUUID() {
     if (typeof crypto.randomUUID === 'function') {
       return crypto.randomUUID();
     }
+    // Fallback for older browsers
     return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
       (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
     );
   }
 
-  // ✅ 2. 세션 아이디 가져오기 (로직 수정)
+  // 2. 리포트 페이지 여부 확인 함수
+  function isReportPage() {
+    const path = window.location.pathname;
+    // 리포트/결과 페이지 파일명 리스트
+    const reportPages = ["report.html", "result.html", "analysis-report"];
+    return reportPages.some(page => path.includes(page));
+  }
+
+  // 3. 리포트가 아닌 페이지에서 URL의 SID 제거 (세션 하이재킹 방지)
+  window.stripSidOnNonReportPages = function() {
+    const url = new URL(location.href);
+    const sidInUrl = url.searchParams.get("sid");
+
+    if (sidInUrl && !isReportPage()) {
+      console.log("[session-guard] 리포트 페이지가 아니므로 URL에서 외부 SID를 제거하고 세션을 초기화합니다.");
+      
+      // URL에서 sid 파라미터 삭제
+      url.searchParams.delete("sid");
+      window.history.replaceState(null, "", url.toString());
+      
+      // 리포트가 아닌 곳에 sid를 들고 들어왔다면, 새로운 시작을 위해 기존 저장소도 비움
+      localStorage.removeItem(KEY);
+    }
+  };
+
+  // 4. 세션 아이디 가져오기 및 초기화
   function getSid() {
     const urlParams = new URLSearchParams(location.search);
     const urlSid = urlParams.get("sid");
     const storedSid = localStorage.getItem(KEY);
 
-    // 메인 페이지(index) 진입 시 URL에 sid가 없다면 무조건 새로 생성하여 
-    // 이전 사용자의 데이터가 남지 않도록 합니다.
+    // 메인 페이지 또는 루트 진입 시
     const isMainPage = location.pathname.endsWith("index.html") || location.pathname === "/";
     
+    // 메인에서 URL에 sid가 없다면 무조건 새로 생성 (깨끗한 시작)
     if (isMainPage && !urlSid) {
       const newSid = generateUUID();
-      console.log("[session-guard] 새로운 세션 생성:", newSid);
+      localStorage.setItem(KEY, newSid);
       return newSid;
     }
 
-    return urlSid || storedSid || generateUUID();
+    // 우선순위: URL SID > 저장된 SID > 새로 생성
+    const activeSid = urlSid || storedSid || generateUUID();
+    localStorage.setItem(KEY, activeSid);
+    return activeSid;
   }
 
+  // 5. URL에 세션 아이디 동기화
   function ensureSidInUrl(sid) {
     if (!sid) return;
     const u = new URL(location.href);
@@ -38,9 +71,9 @@
       u.searchParams.set("sid", sid);
       history.replaceState(null, "", u.toString());
     }
-    localStorage.setItem(KEY, sid);
   }
 
+  // 6. 모든 내부 링크에 SID 자동 전파
   function propagateSidToLinks(sid) {
     if (!sid) return;
     document.querySelectorAll("a[href]").forEach((a) => {
@@ -49,7 +82,6 @@
         if (!href || href.startsWith("#") || /^(javascript:|mailto:|tel:)/i.test(href)) return;
 
         const u = new URL(href, location.href);
-        // 내 사이트 링크에만 sid 전파
         if (u.origin === location.origin) {
           u.searchParams.set("sid", sid);
           a.setAttribute("href", u.toString());
@@ -58,45 +90,28 @@
     });
   }
 
-// ✅ [추가] 새로운 연구 참여 시 세션을 초기화하고 생성하는 함수
+  // 7. [전역 함수] 새로운 연구 참여 시작 (세션 강제 교체)
   window.startResearch = function(isMinor) {
-    console.log("[session-guard] 새로운 연구 참여 시작. 기존 세션 초기화.");
-
-    // 1. 기존 세션 정보 완전 삭제
+    console.log("[session-guard] 새 연구 세션 생성.");
     localStorage.removeItem(KEY);
-
-    // 2. 새로운 고유 SID 생성
-    const newSid = (typeof crypto.randomUUID === 'function') 
-      ? crypto.randomUUID() 
-      : ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
-          (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-        );
-
-    // 3. 새 세션 저장
+    const newSid = generateUUID();
     localStorage.setItem(KEY, newSid);
 
-    // 4. 다음 페이지로 이동 (파일명은 실제 프로젝트에 맞게 수정하세요)
     const nextPath = "step2_consent.html"; 
     const u = new URL(nextPath, location.href);
     u.searchParams.set("sid", newSid);
-    
     if (isMinor) u.searchParams.set("minor", "true");
 
-    console.log("[session-guard] 새 세션으로 이동:", u.toString());
     location.href = u.toString();
   };
 
-
-  
-  // ✅ 버튼/링크에 data-nav 달면 sid 붙여서 이동
-// ✅ 3. 네비게이션 로직 개선 (새 세션 시작 기능 추가)
+  // 8. 데이터 속성 네비게이션 바인딩
   function bindNavWithSid(sid) {
     document.querySelectorAll("[data-nav]").forEach((el) => {
       el.addEventListener("click", (e) => {
         e.preventDefault();
         let targetSid = sid;
         
-        // 만약 버튼에 data-new-session="true"가 있다면 세션 새로 생성
         if (el.getAttribute("data-new-session") === "true") {
           targetSid = generateUUID();
           localStorage.setItem(KEY, targetSid);
@@ -109,119 +124,40 @@
       });
     });
   }
-  // FB / Messenger 인앱 감지
+
+  // 9. 인앱 브라우저(FB/Messenger) 대응
   function isFacebookOrMessengerInApp() {
     const ua = navigator.userAgent || "";
     return /FBAN|FBAV|FB_IAB|FB4A|FBMD|FBSN|FBSS|Facebook|Messenger/i.test(ua);
   }
 
-  function isAndroid() {
-    return /Android/i.test(navigator.userAgent || "");
-  }
-
-  function chromeIntentUrl(currentUrl) {
-    const u = new URL(currentUrl);
-    const scheme = u.protocol.replace(":", "");
-    return `intent://${u.host}${u.pathname}${u.search}#Intent;scheme=${scheme};package=com.android.chrome;end`;
-  }
-
   function showInAppWarningBar() {
     const bar = document.createElement("div");
     bar.id = "inapp-warning-bar";
-    bar.style.cssText = [
-      "position:fixed",
-      "left:0",
-      "right:0",
-      "bottom:0",
-      "z-index:99999",
-      "padding:12px 12px",
-      "background:#111",
-      "color:#fff",
-      "font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial",
-      "font-size:13px",
-      "line-height:1.4",
-      "box-shadow:0 -6px 24px rgba(0,0,0,.25)",
-      "display:flex",
-      "gap:10px",
-      "align-items:center",
-      "justify-content:space-between",
-      "flex-wrap:wrap",
-    ].join(";");
-
+    bar.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:99999;padding:12px;background:#111;color:#fff;display:flex;gap:10px;align-items:center;justify-content:space-between;font-size:13px;";
     bar.innerHTML = `
-      <div style="max-width:70ch;">
-        <b>Facebook/메신저 내장 브라우저</b>에서는 <b>입력/권한</b>이 막힐 수 있어요.<br/>
-        가능하면 <b>카톡</b>에서 진행하거나, 아래 버튼으로 <b>외부 브라우저</b>로 열어주세요.
-      </div>
-      <div style="display:flex; gap:8px; align-items:center;">
-        <button id="openExternal" type="button"
-          style="padding:10px 12px;border-radius:10px;border:1px solid #555;background:#fff;color:#111;cursor:pointer;">
-          외부 브라우저로 열기
-        </button>
-        <button id="copyLink" type="button"
-          style="padding:10px 12px;border-radius:10px;border:1px solid #555;background:transparent;color:#fff;cursor:pointer;">
-          링크 복사
-        </button>
-        <button id="closeBar" type="button"
-          style="padding:10px 10px;border-radius:10px;border:1px solid #333;background:transparent;color:#aaa;cursor:pointer;">
-          닫기
-        </button>
-      </div>
+      <div><b>내장 브라우저</b>에서는 마이크 권한이 제한될 수 있습니다. <b>외부 브라우저</b> 권장.</div>
+      <button onclick="location.reload()" style="padding:8px;border-radius:5px;background:#fff;color:#000;">새로고침</button>
+      <button onclick="this.parentElement.remove()" style="background:none;color:#aaa;border:none;">닫기</button>
     `;
-
     document.body.appendChild(bar);
-    const url = location.href;
-
-    bar.querySelector("#openExternal")?.addEventListener("click", () => {
-      if (isAndroid()) {
-        location.href = chromeIntentUrl(url);
-      } else {
-        alert("iPhone: 오른쪽 메뉴(⋯)에서 ‘Safari에서 열기’로 진행해줘.");
-      }
-    });
-
-    bar.querySelector("#copyLink")?.addEventListener("click", async () => {
-      try {
-        await navigator.clipboard.writeText(url);
-        alert("링크를 복사했어요. 외부 브라우저에 붙여넣어 열어주세요.");
-      } catch {
-        prompt("아래 링크를 복사해서 브라우저에 붙여넣어 주세요:", url);
-      }
-    });
-
-    bar.querySelector("#closeBar")?.addEventListener("click", () => bar.remove());
   }
 
-  // ✅ UUID 생성 함수 추가
-function generateUUID() {
-  return crypto.randomUUID(); // 최신 브라우저 지원
-}
-
-// ✅ 기존 getSid 수정
-function getSid() {
-  const urlParams = new URLSearchParams(location.search);
-  const urlSid = urlParams.get("sid");
-
-  // 만약 현재 페이지가 '메인'이거나 '검사 시작' 페이지라면 새로운 SID 부여
-  const isStartPage = location.pathname.includes("index.html") || location.pathname === "/";
-  
-  if (isStartPage && !urlSid) {
-    const newSid = generateUUID();
-    localStorage.setItem(KEY, newSid);
-    return newSid;
-  }
-
-  return urlSid || localStorage.getItem(KEY);
-}
-
+  // 실행부
   document.addEventListener("DOMContentLoaded", () => {
+    // 1단계: 리포트가 아닌데 sid가 붙어있으면 떼어냄
+    window.stripSidOnNonReportPages();
+
+    // 2단계: 현재 유효한 sid 확정
     const sid = getSid();
+    
+    // 3단계: 환경 설정 및 전파
     ensureSidInUrl(sid);
     propagateSidToLinks(sid);
     bindNavWithSid(sid);
 
     if (isFacebookOrMessengerInApp()) showInAppWarningBar();
 
-    console.log("[session-guard] sid =", sid);
+    console.log("[session-guard] 최종 활성화된 sid =", sid);
   });
 })();

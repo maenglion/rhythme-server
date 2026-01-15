@@ -3,6 +3,7 @@
     const API_BASE = "https://rhythme-server-as3ud42lpa-du.a.run.app";
     const $ = (id) => document.getElementById(id);
 
+
     // 2. 강점 데이터 사전
     const STRENGTHS_MAP = {
         'PRECISION_TURBO': ['압도적인 정보 처리 속도', '고부하 상황에서의 냉철한 통제력', '정교한 논리 구조화'],
