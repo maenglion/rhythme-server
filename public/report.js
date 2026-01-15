@@ -73,20 +73,27 @@
   }
 
   // [분석] 페르소나 요약 생성 (데이터 리터러시)
-  function buildPersona(stages, survey, qeeg) {
-    if (!stages || stages.length < 2) return { title: "데이터 분석 중", summary: "분석을 위한 충분한 세션 데이터가 아직 확보되지 않았습니다." };
+  function buildPersona(stages, survey, qeeg, insights) {
+  // 0. 기초 데이터 준비 (JS 계산용)
+  if (!stages || stages.length < 2) {
+    return { title: "데이터 분석 중", summary: "분석을 위한 충분한 세션 데이터가 아직 확보되지 않았습니다." };
+  }
+  const sorted = [...stages].sort((a, b) => a.stage_id - b.stage_id);
+  const b = sorted.find(s => s.stage_id === 1) || sorted[0];
+  const last = sorted[sorted.length - 1];
+  
+  let title = "데이터 기반 종합 판정";
+  let summaryParts = [];
 
-    const sorted = [...stages].sort((a, b) => a.stage_id - b.stage_id);
-    const b = sorted.find(s => s.stage_id === 1) || sorted[0];
-    const last = sorted[sorted.length - 1];
-
-    const dSr = last.speech_rate - b.speech_rate; 
-    const dPr = last.pause_ratio - b.pause_ratio; 
-    const energyDensity = last.pitch_sd / (last.speech_rate || 1);
-
-    let title = "안정적 데이터 흐름";
-    let summaryParts = [];
-
+  // --- [Step 1: 음성 지표 해석 (핵심 풀백 지점)] ---
+  if (insights && insights.summary_text) {
+    // DB에 저장된 전문 해석이 있다면 그것을 먼저 넣습니다.
+    summaryParts.push(insights.summary_text);
+  } else {
+    // [Fallback A] DB 인사이트가 없을 경우 JS에서 직접 계산하여 문장을 만듭니다.
+    const dSr = last.speech_rate - b.speech_rate;
+    const dPr = last.pause_ratio - b.pause_ratio;
+    
     if (dSr > 0.05 && dPr < 0) {
       title = "인지적 가속 및 적응형";
       summaryParts.push("과제 후반부로 갈수록 발화 효율성이 높아지며 인지 부하에 능숙하게 적응하는 양상이 관찰됩니다.");
@@ -94,17 +101,28 @@
       title = "신중한 정보 처리형";
       summaryParts.push("일정한 리듬을 유지하며 정보를 신중하게 구조화하여 전달하는 패턴을 보입니다.");
     }
-
-    if (energyDensity > 8.5) {
-      summaryParts.push(`에너지 밀도(${energyDensity.toFixed(1)})가 높아 메시지에 생동감을 더하는 능력이 탁월합니다.`);
-    }
-
-    if (survey?.total_score > 70) {
-      summaryParts.push("자기보고 지표와 음성 데이터의 활력 지수가 높은 일치율을 보입니다.");
-    }
-
-    return { title, summary: summaryParts.join(" ") };
   }
+
+  // --- [Step 2: 복합 지표 추가 (DB SQL에 없는 내용)] ---
+  // 에너지 밀도는 현재 SQL에 포함되지 않았으므로 JS에서 보완해줍니다.
+  const energyDensity = last.pitch_sd / (last.speech_rate || 1);
+  if (energyDensity > 8.5) {
+    summaryParts.push(`에너지 밀도(${energyDensity.toFixed(1)})가 높아 메시지에 생동감을 더하는 능력이 탁월합니다.`);
+  }
+
+  // --- [Step 3: 외부 데이터 결합 (설문 등)] ---
+  if (survey && survey.total_score > 70) {
+    summaryParts.push("자기보고 지표와 음성 데이터의 활력 지수가 높은 일치율을 보입니다.");
+  } else if (!survey) {
+    summaryParts.push("(설문 응답 데이터가 연결되지 않아 음성 지표 위주로 분석되었습니다.)");
+  }
+
+  // 최종 결과 반환
+  return {
+    title: title,
+    summary: summaryParts.join(" ")
+  };
+}
 
   // [분석] 3D 매트릭스 행 생성
   function buildMatrix(stages, survey, qeeg) {
