@@ -6,139 +6,90 @@
     <link rel="stylesheet" href="./styles.css" />
   <title>음성 분석 안내</title>
 
-<style>
-  :root { 
-    --primary: #BB86FC; 
-    --primary-variant: rgba(187, 134, 252, 0.15);
-    --bg-main: #121212;
-    --bg-card: #1E1E1E;
-    --text-main: #FFFFFF;
-    --text-dim: rgba(255, 255, 255, 0.7);
-  }
+  <style>
+    :root { --primary: #BB86FC; --bg-card: #1E1E1E; }
 
-  body { 
-    background: var(--bg-main); 
-    color: var(--text-main); 
-    font-family: 'Pretendard', -apple-system, sans-serif; 
-    margin: 0; 
-    line-height: 1.6;
-  }
+    body { background:#121212; color:#FFF; font-family:'Pretendard', sans-serif; margin:0; }
+    .container { max-width: 480px; margin: 0 auto; padding: 20px; }
 
-  .container { max-width: 480px; margin: 0 auto; padding: 24px 20px 40px; }
+    .reward-hero{
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 14px;
+      background: rgba(187,134,252,0.10);
+    }
+    .reward-badge{
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 900;
+      background: rgba(187,134,252,0.22);
+      margin-bottom: 10px;
+    }
+    .reward-title{ font-size: 18px; font-weight: 900; margin-bottom: 6px; }
+    .reward-sub{ font-size: 14px; opacity: 0.9; line-height: 1.6; }
+    .reward-list{ margin: 10px 0 0 18px; font-size: 14px; opacity: 0.95; line-height: 1.7; }
+    .reward-note{ margin-top: 10px; font-size: 12px; opacity: 0.7; line-height: 1.6; }
 
-  /* 히어로 섹션: 보상 강조 */
-  .reward-hero {
-    background: linear-gradient(135deg, #2D1B4D 0%, #1E1E1E 100%);
-    border: 1px solid rgba(187, 134, 252, 0.3);
-    border-radius: 20px;
-    padding: 24px;
-    margin-bottom: 28px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  }
-  .reward-badge {
-    display: inline-block;
-    padding: 4px 12px;
-    border-radius: 8px;
-    font-size: 11px;
-    font-weight: 800;
-    background: var(--primary);
-    color: #000;
-    margin-bottom: 12px;
-    text-transform: uppercase;
-  }
-  .reward-title { font-size: 22px; font-weight: 900; margin-bottom: 8px; color: var(--primary); }
-  .reward-sub { font-size: 14px; color: var(--text-dim); margin-bottom: 16px; }
-  .reward-list { list-style: none; padding: 0; margin: 0; font-size: 14px; }
-  .reward-list li { position: relative; padding-left: 20px; margin-bottom: 8px; }
-  .reward-list li::before { content: "•"; position: absolute; left: 0; color: var(--primary); font-weight: bold; }
+    .info-section{ margin-top: 14px; }
+    .info-section h2{ font-size: 16px; margin: 0 0 10px; color: var(--primary); }
+    .chips{ display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }
+    .chip{
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(0,0,0,0.18);
+    }
 
-  /* 섹션 타이틀 보정 */
-  .info-section { margin-top: 32px; }
-  .info-section h2 { 
-    font-size: 18px; 
-    margin: 0 0 16px; 
-    display: flex; 
-    align-items: center; 
-    gap: 8px;
-  }
+    .qeeg-card{
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px;
+      padding: 12px;
+      margin: 10px 0;
+      background: rgba(0,0,0,0.16);
+    }
+    .qeeg-title{ font-weight: 900; margin-bottom: 6px; font-size: 14px; }
+    .mini{ font-size: 12px; opacity: 0.75; line-height: 1.6; }
 
-  /* 마이크 칩 디자인 */
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
-  .chip {
-    font-size: 13px;
-    padding: 8px 14px;
-    border-radius: 12px;
-    background: #2A2A2A;
-    border: 1px solid #3A3A3A;
-    color: var(--text-main);
-  }
-  .chip b { color: var(--primary); font-weight: 700; }
+    .hint{
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 12px;
+      background: rgba(187,134,252,0.10);
+      border: 1px solid rgba(187,134,252,0.25);
+      font-size: 13px;
+      color: rgba(187,134,252,0.95);
+    }
 
-  /* qEEG 카드 입체감 부여 */
-  .qeeg-card {
-    background: var(--bg-card);
-    border-radius: 16px;
-    padding: 18px;
-    margin: 12px 0;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-  }
-  .qeeg-title { color: var(--primary); font-weight: 800; margin-bottom: 10px; font-size: 14px; }
-  .qeeg-card ul { list-style: none; padding: 0; margin: 0; font-size: 13px; color: var(--text-dim); }
-  .qeeg-card li { margin-bottom: 6px; }
+    /* 다음 버튼 */
+    .next-btn{
+      width: 100%;
+      height: 56px;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 900;
+      border: none;
+      transition: all 0.2s ease;
+      margin-top: 14px;
+    }
+    .btn-disabled { background:#333 !important; color:#666 !important; cursor:not-allowed; }
+    .btn-active   { background:#FFF !important; color:#000 !important; cursor:pointer; }
 
-  /* 하단 체크박스 영역 */
-  .agreement-area {
-    margin-top: 24px;
-    padding: 16px;
-    background: #1A1A1A;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    cursor: pointer;
-  }
-  input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    accent-color: var(--primary);
-    cursor: pointer;
-  }
+    footer{
+      margin-top: 26px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(255,255,255,0.10);
+      font-size: 12px;
+      opacity: 0.7;
+      line-height: 1.7;
+    }
 
-  /* 팁 박스 */
-  .hint {
-    margin-top: 16px;
-    padding: 14px;
-    border-radius: 12px;
-    background: var(--primary-variant);
-    font-size: 13px;
-    text-align: center;
-    color: var(--primary);
-    font-weight: 600;
-  }
-
-  /* 버튼 디자인 업그레이드 */
-  .next-btn {
-    width: 100%;
-    height: 60px;
-    border-radius: 16px;
-    font-size: 18px;
-    font-weight: 900;
-    border: none;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    margin-top: 20px;
-  }
-  .btn-disabled { background: #333; color: #666; transform: scale(1); }
-  .btn-active { 
-    background: #FFFFFF; 
-    color: #000; 
-    box-shadow: 0 4px 20px rgba(187, 134, 252, 0.3);
-    cursor: pointer;
-  }
-  .btn-active:active { transform: scale(0.96); }
-
-  .pi-info { margin-top: 24px; }
-  footer { margin-top: 40px; font-size: 11px; opacity: 0.5; text-align: center; }
-</style>
+    ul { padding-left: 18px; }
+    li { margin-bottom: 6px; }
+  </style>
 </head>
 
 <body>
@@ -180,7 +131,7 @@
     </div>
 
     <div class="info-section">
-      <h2>🔒 개인정보/내용 저장 정책</h2>
+      <h2> 개인정보/내용 저장 정책</h2>
       <p style="opacity:.9; line-height:1.7;">
         민감한 개인사는 말하지 않으셔도 됩니다.
         이 테스트는 <b>말의 내용(텍스트)을 저장하지 않고</b>,
@@ -189,7 +140,7 @@
     </div>
 
     <div class="info-section">
-      <h2>📌 qEEG는 어떻게 사용되나요? (선택)</h2>
+      <h2>qEEG는 어떻게 사용되나요? (선택)</h2>
       <p style="opacity:.9; line-height:1.7;">
         qEEG는 음성/설문만으로는 놓칠 수 있는 신경생리적 힌트를 보완하기 위한 <b>선택 데이터</b>입니다.
         업로드하지 않아도 진행됩니다.
@@ -249,10 +200,7 @@
     </footer>
   </div>
 
-  <script src="./runtime-config.js?v=1"></script>
-<script src="./session-guard.js"></script>
-<script src="./report.js"></script>
-
+  <script src="./session-guard.js"></script>
 
   <script>
     const NEXT_PAGE = "./voice_test.html";
