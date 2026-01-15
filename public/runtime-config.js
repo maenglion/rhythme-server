@@ -1,0 +1,1 @@
+window.__RHYTHME_API_BASE__ = "https://rhythme-server-357918245340.asia-northeast3.run.app";
