@@ -210,67 +210,79 @@ function buildMatrix(stages, report, qeeg) { // survey -> report로 변경
   }
 
   
-// [실행] 초기화 함수
 async function init() {
     const sid = getSidSafe();
     if (!sid) return;
 
-    // 1. 기록지(Report) 상단에 세션 표시 및 복사 기능
-    const sidTextEl = document.getElementById("sidText");
-    if (sidTextEl) sidTextEl.textContent = sid;
-    
-    const copyBtn = document.getElementById("copySidBtn");
-    if (copyBtn) copyBtn.onclick = () => copyText(sid);
-
-    // 2. 하단 만족도 조사(Survey) 버튼 로직 - [가장 먼저/확실하게 연결]
-    const surveyBtn = document.getElementById("btnStartSurvey");
-    if (surveyBtn) {
-      // 기존 onclick 대신 addEventListener 사용 (더 안정적)
-      surveyBtn.addEventListener("click", (e) => {
-        e.preventDefault(); // 페이지 새로고침 방지
-        
-        const FORM_BASE = "https://docs.google.com/forms/d/e/1FAIpQLSdYVDquseww9O3hvJgRyYmlZxT0BhZ5e_gxmG8mgFWAbx3a4Q/viewform";
-        const u = new URL(FORM_BASE);
-        u.searchParams.set("usp", "pp_url");
-        u.searchParams.set("entry.1445339256", sid); // 기록지의 세션 ID를 만족도 조사로 전달
-        
-        u.searchParams.append("entry.293321030", "SQ(체계화)");
-        u.searchParams.append("entry.293321030", "음성 (프로소디)");
-        u.searchParams.append("entry.2110754268", "SQ 해석을 더 상세히");
-        u.searchParams.set("entry.1674818339", "없음");
-
-        // 창 이동
-        window.location.href = u.toString();
-      });
-    }
-
-    // 3. 기록지 데이터 로드 및 렌더링 (비동기 작업)
     try {
-      const data = await fetchReportData(sid);
-      const stages = data?.voice?.stages || [];
+        // 1. 데이터 가져오기 (v2)
+        const res = await fetch(apiUrl(`/report-data-v2?sid=${sid}`)); 
+        const rawData = await res.json();
+        
+        // 데이터 본체 찾기 (depth 방어 로직)
+        const data = rawData.report_json || rawData;
+        const voice = data.voice || {};
+        const v_stages = voice.stages || []; // 변수명을 v_stages로 명확히 함
 
-      updateIndexCards(stages);
-      const persona = buildPersona(stages, data.survey, data.qeeg);
-      $("personaTitle").textContent = persona.title;
-      $("personaSummary").textContent = persona.summary;
+        // 2. [강화] SQ 점수 표시
+        const sqScore = data.survey?.total_score || data.total_score || 0;
+        if($("sqScoreDisplay")) $("sqScoreDisplay").textContent = `${sqScore}점`;
 
-      renderStageTable(stages);
-      renderMatrix(buildMatrix(stages, data.survey, data.qeeg));
-      
-      const q = qualityFrom(stages);
-      setBadge($("qualityBadge"), `품질: ${q.label}`, q.kind);
-      setBadge($("baselineBadge"), hasBaseline(stages) ? "Baseline: 있음" : "Baseline: 없음", hasBaseline(stages) ? "good" : "warn");
+        // 3. [강화] qEEG 상태 표시 (여러 경로 탐색)
+        const qeegCount = data.qeeg?.upload_cnt || voice.qeeg?.upload_cnt || 0;
+        if($("qeegStatusDisplay")) {
+            $("qeegStatusDisplay").textContent = qeegCount > 0 ? `✅ ${qeegCount}건 연동됨` : "❌ 미업로드";
+            if(qeegCount > 0) $("qeegStatusDisplay").style.color = "#03DAC6"; // 민트색 강조
+        }
 
-      const qeegCnt = data?.qeeg?.upload_cnt || 0;
-      $("qeegBox").textContent = qeegCnt > 0 ? `qEEG 데이터 포함 (${qeegCnt}건)` : "qEEG 미업로드";
+        // 4. 인덱스 3대장 계산 (변수명 v_stages 전달)
+        if (v_stages.length > 0) {
+            calculateCustomIndices(v_stages);
+            if (typeof drawChart === 'function') drawChart(v_stages);
+            if (typeof renderStageTable === 'function') renderStageTable(v_stages);
+        }
 
-      if (stages.length > 0) drawChart(stages);
+        // 5. 페르소나 설명 (DB profile 연동)
+        const profile = voice.profile || {};
+        if($("personaTitle")) $("personaTitle").textContent = profile.type_name || "분석 중";
+        if($("personaSummary")) $("personaSummary").textContent = profile.summary || "";
+        if($("watchoutText")) $("watchoutText").textContent = profile.watchout || "";
+
+        // 강점 리스트
+        const strengths = STRENGTHS_MAP[profile.type_code] || [];
+        if($("strengthList")) {
+            $("strengthList").innerHTML = strengths.map(s => `<li>${s}</li>`).join("");
+        }
+
+        // 6. 핵심 지표 표 (metrics_card)
+        if($("metricsBody") && voice.metrics_card) {
+            $("metricsBody").innerHTML = voice.metrics_card.map(m => `
+                <tr>
+                    <td style="font-weight:600;">${m.label}</td>
+                    <td style="color: var(--primary); font-weight:bold;">${m.value}</td>
+                    <td style="font-size: 0.85rem; color: #E4E4E7;">${m.interpretation}</td>
+                </tr>
+            `).join("");
+        }
+
+       // 6. 설문 버튼 연결
+      const surveyBtn = $("btnStartSurvey");
+      if (surveyBtn) {
+        surveyBtn.onclick = () => {
+          const FORM_BASE = "https://docs.google.com/forms/d/e/1FAIpQLSdYVDquseww9O3hvJgRyYmlZxT0BhZ5e_gxmG8mgFWAbx3a4Q/viewform";
+          const u = new URL(FORM_BASE);
+          u.searchParams.set("usp", "pp_url");
+          u.searchParams.set("entry.1445339256", sid);
+          u.searchParams.append("entry.293321030", "SQ(체계화)");
+          u.searchParams.append("entry.293321030", "음성 (프로소디)");
+          location.href = u.toString();
+        };
+      }
 
     } catch (err) {
-      console.error("데이터 로드 중 에러:", err);
-      $("personaTitle").textContent = "데이터 로드 실패";
+        console.error("Report Load Error:", err);
     }
-  }
+}
 
   document.addEventListener("DOMContentLoaded", init);
 })();
