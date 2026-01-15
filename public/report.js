@@ -219,6 +219,25 @@
     const sid = getSidSafe();
     if (!sid) return;
 
+    // --- [추가: 설문 버튼 로직] ---
+    const surveyBtn = document.getElementById("btnStartSurvey");
+    if (surveyBtn) {
+      surveyBtn.onclick = () => {
+        const FORM_BASE = "https://docs.google.com/forms/d/e/1FAIpQLSdYVDquseww9O3hvJgRyYmlZxT0BhZ5e_gxmG8mgFWAbx3a4Q/viewform";
+        const u = new URL(FORM_BASE);
+        u.searchParams.set("usp", "pp_url");
+        u.searchParams.set("entry.1445339256", sid); // 가져온 sid 삽입
+        
+        // 고정 데이터들 추가
+        u.searchParams.append("entry.293321030", "SQ(체계화)");
+        u.searchParams.append("entry.293321030", "음성 (프로소디)");
+        u.searchParams.append("entry.2110754268", "SQ 해석을 더 상세히");
+        u.searchParams.set("entry.1674818339", "없음");
+
+        location.href = u.toString();
+      };
+    }
+
     const sidTextEl = document.getElementById("sidText");
     if (sidTextEl) sidTextEl.textContent = sid;
     
@@ -254,3 +273,4 @@
 
   document.addEventListener("DOMContentLoaded", init);
 })();
+

@@ -73,26 +73,12 @@
 
 <hr class="divider" />
 
-<section class="survey-section">
-  <div class="header">
-    <h3>음성분석 설문<h3>
-    <p class="muted"> 서비스 품질향상에 반영됩니다.</p>
-  </div>
-
-  <div class="card session-info">
-    <label for="sessionId" class="muted">나의 세션 ID (복사해서 설문에 사용하세요)</label>
-    <div class="input-group" style="display: flex; gap: 8px; margin-top: 8px;">
-      <input id="sessionId" type="text" readonly style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px;" />
-      <button id="btnCopySid" class="btn btn-secondary" type="button" style="padding: 0 15px;">복사</button>
-    </div>
-  </div>
-
-  <div class="action-area" style="text-align: center; margin-top: 20px;">
-    <button id="btnStartSurvey" class="btn btn-primary" type="button" style="width: 100%; padding: 15px; font-size: 1.1rem;">
-      설문 참여하고 전체 결과 확정하기
-    </button>
-  </div>
-</section>
+<div class="action-area" style="text-align: center; margin-top: 30px; margin-bottom: 50px;">
+  <button id="btnStartSurvey" class="btn btn-primary" type="button" style="width: 100%; padding: 18px; font-size: 1.2rem; font-weight: bold; cursor: pointer;">
+    설문 참여하고 전체 결과 확정하기
+  </button>
+  <p class="muted" style="font-size: 0.9rem; margin-top: 10px;">※ 버튼을 누르면 분석 세션 ID가 자동으로 포함된 설문지로 이동합니다.</p>
+</div>
 
 <script src="./runtime-config.js?v=1"></script>
 <script src="./session-guard.js"></script>
