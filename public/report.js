@@ -266,8 +266,6 @@ async function init() {
 
       if (stages.length > 0) drawChart(stages);
 
-    
-
     } catch (err) {
       console.error("데이터 로드 중 에러:", err);
       $("personaTitle").textContent = "데이터 로드 실패";
