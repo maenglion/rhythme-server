@@ -25,51 +25,55 @@
   </style>
 </head>
 <body>
-<div class="container">
-  <div class="header">
-    <div>
-      <h1 style="margin:0; font-size:28px;">분석 리포트</h1>
-      <div style="margin-top:8px;">
-        <span class="badge" id="qualityBadge">품질: -</span>
-        <span class="badge" id="baselineBadge">Baseline: -</span>
+<main class="container">
+  <section class="engine-summary">
+    <div class="card grid-2">
+      <div class="info-item">
+        <span class="muted">사고 체계화 지수 (SQ)</span>
+        <div id="sqScoreDisplay" class="val-highlight">--</div>
+      </div>
+      <div class="info-item">
+        <span class="muted">qEEG 데이터 상태</span>
+        <div id="qeegStatusDisplay" class="val-highlight">--</div>
       </div>
     </div>
-    <div class="session-area">
-      SESSION <button class="copy-btn" id="copySidBtn">ID 복사</button>
-      <span id="sidText" style="display:none;"></span>
-    </div>
-  </div>
+  </section>
 
-  <div class="index-grid">
-    <div><div style="color:var(--muted); font-size:12px;">인지 적응도</div><div id="index-adaptive" style="font-size:22px; font-weight:800; color:var(--secondary);">-</div></div>
-    <div><div style="color:var(--muted); font-size:12px;">에너지 밀도</div><div id="index-energy" style="font-size:22px; font-weight:800; color:var(--primary);">-</div></div>
-    <div><div style="color:var(--muted); font-size:12px;">회복 탄력성</div><div id="index-resilience" style="font-size:22px; font-weight:800; color:var(--secondary);">-</div></div>
-  </div>
+  <section class="persona-section card">
+    <div class="persona-header">
+      <h2 id="personaTitle">데이터 분석 중...</h2>
+      <div id="typeBadge" class="badge primary">BETA 1</div>
+    </div>
+    <div class="persona-content">
+      <p id="personaSummary" class="main-desc"></p>
+      <div class="persona-detail-grid">
+        <div class="detail-box">
+          <strong>인지적 강점</strong>
+          <ul id="strengthList"></ul>
+        </div>
+        <div class="detail-box warning">
+          <strong>주의 및 보완점</strong>
+          <p id="watchoutText"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="metrics-section card">
+    <h3>핵심 인지 제어 지표</h3>
+    <table>
+      <thead>
+        <tr><th>분석 항목</th><th>수치</th><th>인사이트</th></tr>
+      </thead>
+      <tbody id="metricsBody"></tbody>
+    </table>
+  </section>
 
   <div class="card">
-    <div id="personaTitle" style="font-size:22px; font-weight:800; color:var(--primary); margin-bottom:8px;">데이터 분석 중...</div>
-    <p id="personaSummary" style="color:var(--muted); margin:0; font-size:15px;">정보를 구성하고 있습니다.</p>
+    <h3>스테이지별 변화 추이</h3>
+    <canvas id="chart"></canvas>
   </div>
-
-  <div class="grid-container">
-    <div class="card">
-      <div style="font-weight:700; margin-bottom:12px;">3D 분석 매트릭스</div>
-      <table><thead><tr><th>축</th><th>근거</th><th>해석</th></tr></thead><tbody id="matrixBody"></tbody></table>
-    </div>
-    <div class="card">
-      <div style="font-weight:700; margin-bottom:12px;">스테이지 변화 추이</div>
-      <canvas id="chart"></canvas>
-      <div id="chartLegend" style="font-size:11px; color:var(--muted); margin-top:10px;"></div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div style="font-weight:700; margin-bottom:12px;">스테이지별 상세 지표</div>
-    <table><thead><tr><th>Stage</th><th>상태</th><th>Rate</th><th>Pause</th><th>Pitch</th><th>SNR</th></tr></thead><tbody id="stageTableBody"></tbody></table>
-  </div>
-
-  <div id="qeegBox" style="text-align:right; color:var(--muted); font-size:12px; margin-top:10px;"></div>
-</div>
+</main>
 
 <hr class="divider" />
 
