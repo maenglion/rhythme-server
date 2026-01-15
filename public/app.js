@@ -1,15 +1,18 @@
 // 1. 엔진 및 UI 제어 도구 가져오기
+// 1. 엔진 및 UI 제어 도구 가져오기
 import { VoiceProcessor } from "./voice-processor.js";
-import { 
-    setQuestionText, 
-    setDescriptionText, 
-    setTimer, 
-    setRecordButtonState 
+import {
+  setQuestionText,
+  setDescriptionText,
+  setTimer,
+  setRecordButtonState
 } from "./voice-ui.js";
 
-const vp = new VoiceProcessor();
 const CLOUD_RUN_URL = "https://rhythme-server-357918245340.asia-northeast3.run.app";
-const API = (path) => `${CLOUD_RUN_URL.replace(/\/$/, '')}${path}`;
+const API = (path) => `${CLOUD_RUN_URL.replace(/\/$/, "")}${path}`;
+
+const vp = new VoiceProcessor();
+
 
 const CONSENT_CACHE = {};
 
@@ -307,41 +310,6 @@ window.startResearch = function(under14) {
         }
     }
     window.showStep(3); 
-};
-
-window.loadAndToggleConsent = async function(path, headerElement) {
-    const item = headerElement.closest('.consent-item');
-    const textArea = item.querySelector('.consent-text-area');
-
-    // 1. 이미 열려있으면 닫기만 하고 종료
-    if (item.classList.contains('active')) {
-        item.classList.remove('active');
-        return;
-    }
-
-    // 2. 다른 열려있는 항목 닫기 (선택 사항)
-    document.querySelectorAll('.consent-item').forEach(el => el.classList.remove('active'));
-
-    // 3. ⭐️ 핵심: 캐시에 데이터가 없으면 서버에서 직접 가져오기
-    try {
-        if (!CONSENT_CACHE[path]) {
-            textArea.textContent = "내용을 불러오는 중...";
-            const response = await fetch(path); // 'terms-of-use/personal.txt' 경로로 요청
-            if (!response.ok) throw new Error("파일을 찾을 수 없습니다.");
-            
-            const text = await response.text();
-            CONSENT_CACHE[path] = text; // 가져온 내용을 냉장고(캐시)에 저장
-        }
-        
-        // 4. 화면에 뿌려주기
-        textArea.innerText = CONSENT_CACHE[path]; 
-    } catch (error) {
-        console.error("약관 로드 실패:", error);
-        textArea.innerText = "약관 내용을 불러오지 못했습니다. 경로를 확인해주세요.";
-    }
-
-    // 5. 화면에 보이기
-    item.classList.add('active');
 };
 
 window.toggleDiagnosis = function(element, value) {
