@@ -1,8 +1,6 @@
 // 1. 엔진 및 UI 제어 도구 가져오기
 // 1. 엔진 및 UI 제어 도구 가져오기
 import { VoiceProcessor } from "./voice-processor.js";
-import { stripSidOnNonReportPages } from "./session-guard.js";
-stripSidOnNonReportPages();
 import {
   setQuestionText,
   setDescriptionText,
@@ -85,6 +83,18 @@ cancelBtn.style.display = 'inline-block';
     modal.style.display = 'flex';
   });
 };
+
+//카피 링크 
+
+window.copyShareLink = async function () {
+  const u = new URL(location.href);
+  u.searchParams.delete("sid");
+  const shareUrl = u.toString();
+  try { await navigator.clipboard.writeText(shareUrl); alert("참여 링크 복사됨"); }
+  catch { prompt("복사해서 보내:", shareUrl); }
+};
+
+
 
 // 2. 토글 함수 수정
 window.loadAndToggleConsent = async function (path, headerEl) {

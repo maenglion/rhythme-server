@@ -3,85 +3,148 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>분석 리포트</title>
+  <title>분석 리포트 | RHYTHME</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
   <style>
-    :root { --primary: #BB86FC; --secondary: #03DAC6; --bg: #0F0F12; --card: #1E1E26; --muted: #A0A0AB; --border: rgba(255,255,255,0.08); }
-    body { margin: 0; background: var(--bg); color: #F4F4F5; font-family: 'Pretendard', system-ui; }
+    :root { 
+      --primary: #BB86FC; 
+      --secondary: #03DAC6; 
+      --bg: #0F0F12; 
+      --card: #1E1E26; 
+      --muted: #A0A0AB; 
+      --border: rgba(255,255,255,0.08); 
+    }
+    body { margin: 0; background: var(--bg); color: #F4F4F5; font-family: 'Pretendard', system-ui; line-height: 1.6; }
     .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
-    .header { margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-end; }
-    .session-area { background: rgba(187,134,252,0.1); padding: 6px 14px; border-radius: 20px; font-size: 11px; color: var(--primary); }
-    .index-grid { display: flex; justify-content: space-around; text-align: center; padding: 20px; background: #1E1E26; margin-bottom: 24px; border-radius: 20px; border: 1px solid var(--border); }
+    
+    /* 헤더 및 세션 영역 */
+    .header { margin-bottom: 32px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px; }
+    .header-title h1 { margin: 0; font-size: 28px; font-weight: 800; }
+    .header-badges { margin-top: 12px; display: flex; gap: 8px; }
+    
+    .session-area { background: rgba(187,134,252,0.1); padding: 8px 16px; border-radius: 12px; font-size: 12px; color: var(--primary); display: flex; align-items: center; gap: 10px; }
+    .copy-btn { background: var(--primary); color: #000; border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 11px; transition: opacity 0.2s; }
+    .copy-btn:hover { opacity: 0.8; }
+
+    /* 지표 그리드 */
+    .index-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; text-align: center; padding: 24px; background: var(--card); margin-bottom: 24px; border-radius: 20px; border: 1px solid var(--border); }
+    .index-item .label { color: var(--muted); font-size: 12px; margin-bottom: 4px; }
+    .index-item .value { font-size: 24px; font-weight: 800; }
+
+    /* 카드 공통 */
     .card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 24px; margin-bottom: 20px; }
-    .badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; background: rgba(255,255,255,0.1); margin-right: 5px; }
+    .card-title { font-weight: 700; margin-bottom: 16px; color: #fff; font-size: 16px; }
+
+    .badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; background: rgba(255,255,255,0.1); }
     .badge.good { color: #4CAF50; } .badge.warn { color: #FFC107; } .badge.bad { color: #CF6679; }
+
+    /* 그리드 레이아웃 */
     .grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     @media (max-width: 768px) { .grid-container { grid-template-columns: 1fr; } }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
-    th { text-align: left; color: var(--muted); border-bottom: 1px solid var(--border); padding: 8px; }
-    td { padding: 8px; border-bottom: 1px solid var(--border); }
-    canvas { width: 100%; height: 200px; }
-    .copy-btn { background: none; border: none; color: var(--primary); cursor: pointer; text-decoration: underline; font-weight: 700; margin-left: 5px; }
+
+    /* 테이블 스타일 */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; color: var(--muted); border-bottom: 1px solid var(--border); padding: 12px 8px; font-weight: 500; }
+    td { padding: 12px 8px; border-bottom: 1px solid var(--border); color: #E4E4E7; }
+    
+    canvas { width: 100% !important; height: auto !important; max-height: 220px; }
+
+    /* 하단 액션 버튼 */
+    .action-area { text-align: center; margin-top: 40px; padding-top: 40px; border-top: 1px solid var(--border); }
+    .btn-primary { background: var(--primary); color: #000; border: none; width: 100%; max-width: 400px; padding: 18px; border-radius: 12px; font-size: 17px; font-weight: 700; cursor: pointer; transition: transform 0.1s; }
+    .btn-primary:active { transform: scale(0.98); }
   </style>
 </head>
 <body>
+
 <div class="container">
-  <div class="header">
-    <div>
-      <h1 style="margin:0; font-size:28px;">분석 리포트</h1>
-      <div style="margin-top:8px;">
-        <span class="badge" id="qualityBadge">품질: -</span>
-        <span class="badge" id="baselineBadge">Baseline: -</span>
+  <header class="header">
+    <div class="header-title">
+      <h1>분석 리포트</h1>
+      <div class="header-badges">
+        <span class="badge" id="qualityBadge">품질: 로딩 중...</span>
+        <span class="badge" id="baselineBadge">Baseline: 확인 중...</span>
       </div>
     </div>
     <div class="session-area">
-      SESSION <button class="copy-btn" id="copySidBtn">ID 복사</button>
-      <span id="sidText" style="display:none;"></span>
+      <span>SESSION ID</span>
+      <button class="copy-btn" onclick="copyReportLink()">리포트 링크 복사</button>
     </div>
-  </div>
+  </header>
 
-  <div class="index-grid">
-    <div><div style="color:var(--muted); font-size:12px;">인지 적응도</div><div id="index-adaptive" style="font-size:22px; font-weight:800; color:var(--secondary);">-</div></div>
-    <div><div style="color:var(--muted); font-size:12px;">에너지 밀도</div><div id="index-energy" style="font-size:22px; font-weight:800; color:var(--primary);">-</div></div>
-    <div><div style="color:var(--muted); font-size:12px;">회복 탄력성</div><div id="index-resilience" style="font-size:22px; font-weight:800; color:var(--secondary);">-</div></div>
-  </div>
+  <section class="index-grid">
+    <div class="index-item">
+      <div class="label">인지 적응도</div>
+      <div id="index-adaptive" class="value" style="color:var(--secondary);">-</div>
+    </div>
+    <div class="index-item">
+      <div class="label">에너지 밀도</div>
+      <div id="index-energy" class="value" style="color:var(--primary);">-</div>
+    </div>
+    <div class="index-item">
+      <div class="label">회복 탄력성</div>
+      <div id="index-resilience" class="value" style="color:var(--secondary);">-</div>
+    </div>
+  </section>
 
-  <div class="card">
+  <article class="card">
     <div id="personaTitle" style="font-size:22px; font-weight:800; color:var(--primary); margin-bottom:8px;">데이터 분석 중...</div>
-    <p id="personaSummary" style="color:var(--muted); margin:0; font-size:15px;">정보를 구성하고 있습니다.</p>
-  </div>
+    <p id="personaSummary" style="color:var(--muted); margin:0; font-size:15px; line-height: 1.6;">정보를 구성하고 있습니다. 잠시만 기다려 주세요.</p>
+  </article>
 
   <div class="grid-container">
-    <div class="card">
-      <div style="font-weight:700; margin-bottom:12px;">3D 분석 매트릭스</div>
-      <table><thead><tr><th>축</th><th>근거</th><th>해석</th></tr></thead><tbody id="matrixBody"></tbody></table>
-    </div>
-    <div class="card">
-      <div style="font-weight:700; margin-bottom:12px;">스테이지 변화 추이</div>
+    <section class="card">
+      <div class="card-title">3D 분석 매트릭스</div>
+      <table>
+        <thead><tr><th>축</th><th>근거</th><th>해석</th></tr></thead>
+        <tbody id="matrixBody"></tbody>
+      </table>
+    </section>
+    
+    <section class="card">
+      <div class="card-title">스테이지 변화 추이</div>
       <canvas id="chart"></canvas>
-      <div id="chartLegend" style="font-size:11px; color:var(--muted); margin-top:10px;"></div>
-    </div>
+      <div id="chartLegend" style="font-size:11px; color:var(--muted); margin-top:12px; text-align: center;"></div>
+    </section>
   </div>
 
-  <div class="card">
-    <div style="font-weight:700; margin-bottom:12px;">스테이지별 상세 지표</div>
-    <table><thead><tr><th>Stage</th><th>상태</th><th>Rate</th><th>Pause</th><th>Pitch</th><th>SNR</th></tr></thead><tbody id="stageTableBody"></tbody></table>
-  </div>
+  <section class="card">
+    <div class="card-title">스테이지별 상세 지표</div>
+    <table>
+      <thead>
+        <tr><th>Stage</th><th>상태</th><th>Rate</th><th>Pause</th><th>Pitch</th><th>SNR</th></tr>
+      </thead>
+      <tbody id="stageTableBody"></tbody>
+    </table>
+  </section>
 
-  <div id="qeegBox" style="text-align:right; color:var(--muted); font-size:12px; margin-top:10px;"></div>
-</div>
+  <div id="qeegBox" style="text-align:right; color:var(--muted); font-size:11px; margin-top:10px;"></div>
 
-<hr class="divider" />
-
-<div class="action-area" style="text-align: center; margin-top: 30px; margin-bottom: 50px;">
-  <button id="btnStartSurvey" class="btn btn-primary" type="button" style="width: 100%; padding: 18px; font-size: 1.2rem; font-weight: bold; cursor: pointer;">
-    설문 참여하고 전체 결과 확정하기
-  </button>
-  <p class="muted" style="font-size: 0.9rem; margin-top: 10px;">※ 버튼을 누르면 분석 세션 ID가 자동으로 포함된 설문지로 이동합니다.</p>
+  <footer class="action-area">
+    <button id="btnStartSurvey" class="btn-primary" type="button">
+      설문 참여하고 결과 확정하기
+    </button>
+    <p style="font-size: 13px; color: var(--muted); margin-top: 14px;">
+      ※ 버튼 클릭 시 분석 세션 ID가 설문에 자동으로 포함됩니다.
+    </p>
+  </footer>
 </div>
 
 <script src="./runtime-config.js?v=1"></script>
 <script src="./session-guard.js"></script>
+<script>
+  // 리포트 링크 복사 함수 (정상적인 위치로 이동)
+  window.copyReportLink = async function () {
+    const reportUrl = location.href; 
+    try { 
+      await navigator.clipboard.writeText(reportUrl); 
+      alert("분석 리포트 링크가 복사되었습니다. 다른 기기에서도 확인 가능합니다."); 
+    } catch (err) { 
+      prompt("아래 링크를 복사해서 공유하세요:", reportUrl); 
+    }
+  };
+</script>
 <script src="./report.js"></script>
+
 </body>
 </html>

@@ -17,6 +17,14 @@ stripSidOnNonReportPages();
   // ---------------------------
 const API_BASE = "https://rhythme-server-357918245340.asia-northeast3.run.app";
 
+window.copyShareLink = async function () {
+  const u = new URL(location.href);
+  u.searchParams.delete("sid");
+  const shareUrl = u.toString();
+  try { await navigator.clipboard.writeText(shareUrl); }
+  catch { prompt("복사해서 보내:", shareUrl); }
+};
+
 function apiUrl(path) {
   const base = API_BASE.endsWith("/") ? API_BASE : API_BASE + "/";
   const clean = String(path || "").replace(/^\//, "");
