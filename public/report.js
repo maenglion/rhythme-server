@@ -73,8 +73,7 @@
   }
 
   // [분석] 페르소나 요약 생성 (데이터 리터러시)
-  function buildPersona(stages, survey, qeeg, insights) {
-  // 0. 기초 데이터 준비 (JS 계산용)
+ function buildPersona(stages, report, qeeg, insights) { // survey -> report로 변경
   if (!stages || stages.length < 2) {
     return { title: "데이터 분석 중", summary: "분석을 위한 충분한 세션 데이터가 아직 확보되지 않았습니다." };
   }
@@ -111,21 +110,17 @@
   }
 
   // --- [Step 3: 외부 데이터 결합 (설문 등)] ---
-  if (survey && survey.total_score > 70) {
-    summaryParts.push("자기보고 지표와 음성 데이터의 활력 지수가 높은 일치율을 보입니다.");
-  } else if (!survey) {
-    summaryParts.push("(설문 응답 데이터가 연결되지 않아 음성 지표 위주로 분석되었습니다.)");
+if (report && report.total_score > 70) {
+    summaryParts.push("기록지의 자기보고 지표와 음성 데이터의 활력 지수가 높은 일치율을 보입니다.");
+  } else if (!report) {
+    summaryParts.push("(기록지 내 추가 데이터가 연결되지 않아 음성 지표 위주로 분석되었습니다.)");
   }
 
-  // 최종 결과 반환
-  return {
-    title: title,
-    summary: summaryParts.join(" ")
-  };
+  return { title, summary: summaryParts.join(" ") };
 }
 
   // [분석] 3D 매트릭스 행 생성
-  function buildMatrix(stages, survey, qeeg) {
+function buildMatrix(stages, report, qeeg) { // survey -> report로 변경
     const sorted = [...stages].sort((a, b) => a.stage_id - b.stage_id);
     const b = sorted.find(s => s.stage_id === 1) || sorted[0];
     const last = sorted[sorted.length - 1];
@@ -214,36 +209,42 @@
     throw new Error("404");
   }
 
-  // [실행] 초기화 함수
-  async function init() {
+  
+// [실행] 초기화 함수
+async function init() {
     const sid = getSidSafe();
     if (!sid) return;
 
-    // --- [추가: 설문 버튼 로직] ---
-    const surveyBtn = document.getElementById("btnStartSurvey");
-    if (surveyBtn) {
-      surveyBtn.onclick = () => {
-        const FORM_BASE = "https://docs.google.com/forms/d/e/1FAIpQLSdYVDquseww9O3hvJgRyYmlZxT0BhZ5e_gxmG8mgFWAbx3a4Q/viewform";
-        const u = new URL(FORM_BASE);
-        u.searchParams.set("usp", "pp_url");
-        u.searchParams.set("entry.1445339256", sid); // 가져온 sid 삽입
-        
-        // 고정 데이터들 추가
-        u.searchParams.append("entry.293321030", "SQ(체계화)");
-        u.searchParams.append("entry.293321030", "음성 (프로소디)");
-        u.searchParams.append("entry.2110754268", "SQ 해석을 더 상세히");
-        u.searchParams.set("entry.1674818339", "없음");
-
-        location.href = u.toString();
-      };
-    }
-
+    // 1. 기록지(Report) 상단에 세션 표시 및 복사 기능
     const sidTextEl = document.getElementById("sidText");
     if (sidTextEl) sidTextEl.textContent = sid;
     
     const copyBtn = document.getElementById("copySidBtn");
     if (copyBtn) copyBtn.onclick = () => copyText(sid);
 
+    // 2. 하단 만족도 조사(Survey) 버튼 로직 - [가장 먼저/확실하게 연결]
+    const surveyBtn = document.getElementById("btnStartSurvey");
+    if (surveyBtn) {
+      // 기존 onclick 대신 addEventListener 사용 (더 안정적)
+      surveyBtn.addEventListener("click", (e) => {
+        e.preventDefault(); // 페이지 새로고침 방지
+        
+        const FORM_BASE = "https://docs.google.com/forms/d/e/1FAIpQLSdYVDquseww9O3hvJgRyYmlZxT0BhZ5e_gxmG8mgFWAbx3a4Q/viewform";
+        const u = new URL(FORM_BASE);
+        u.searchParams.set("usp", "pp_url");
+        u.searchParams.set("entry.1445339256", sid); // 기록지의 세션 ID를 만족도 조사로 전달
+        
+        u.searchParams.append("entry.293321030", "SQ(체계화)");
+        u.searchParams.append("entry.293321030", "음성 (프로소디)");
+        u.searchParams.append("entry.2110754268", "SQ 해석을 더 상세히");
+        u.searchParams.set("entry.1674818339", "없음");
+
+        // 창 이동
+        window.location.href = u.toString();
+      });
+    }
+
+    // 3. 기록지 데이터 로드 및 렌더링 (비동기 작업)
     try {
       const data = await fetchReportData(sid);
       const stages = data?.voice?.stages || [];
@@ -263,10 +264,10 @@
       const qeegCnt = data?.qeeg?.upload_cnt || 0;
       $("qeegBox").textContent = qeegCnt > 0 ? `qEEG 데이터 포함 (${qeegCnt}건)` : "qEEG 미업로드";
 
-      if (stages.length) drawChart(stages);
+      if (stages.length > 0) drawChart(stages);
 
     } catch (err) {
-      console.error(err);
+      console.error("데이터 로드 중 에러:", err);
       $("personaTitle").textContent = "데이터 로드 실패";
     }
   }
