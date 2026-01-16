@@ -725,76 +725,96 @@ tr:hover {
 }
 
 /* CASP 이름 정한 후 */
-/* 1. 보라색 헤더: 높이 줄이고 중앙 정렬 */
-.header-purple-box {
-    background: #6D28D9;
-    border-radius: 12px;
-    padding: 16px 12px; /* 높이 대폭 축소 */
+/* 전체 레이아웃: 여백과 대비 중심 */
+.step {
+    max-width: 480px;
+    margin: 0 auto;
     text-align: center;
-    margin-bottom: 8px;
+    color: #FFFFFF;
 }
 
-.protocol-title {
-    font-size: 1.4rem;
+/* 1. 헤더: 텍스트 간격 압축 */
+.index-header-monochrome {
+    margin-bottom: 24px;
+}
+
+.protocol-main-title {
+    font-size: 2rem;
     font-weight: 700;
-    color: #ffffff;
-    margin: 0 0 4px 0; /* 여백 최소화 */
+    margin: 0;
+    letter-spacing: -0.5px;
 }
 
-.name-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0px;
+.version-dimmed-sub {
+    font-size: 0.75rem;
+    color: #666666; /* 흐릿한 회색 */
+    margin-top: 4px;
 }
 
-.en-name { font-size: 0.85rem; color: rgba(255, 255, 255, 0.9); }
-.ko-name { font-size: 0.75rem; color: rgba(255, 255, 255, 0.6); }
-
-/* 2. 버전 정보 */
-.version-dimmed {
-    font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.2);
-    text-align: center;
-    margin-bottom: 16px;
+.name-sub-group-tight {
+    margin-top: 12px;
 }
 
-/* 3. 다크 정보 카드: 연구방식 ~ 책임자 통합 */
-.research-info-card {
-    background: #1c1c1e; /* 다크 박스 배경 */
-    border: 1px solid #2c2c2e;
-    border-radius: 10px;
-    padding: 20px;
+.en-sub-text { font-size: 0.9rem; color: #BBBBBB; margin: 0; line-height: 1.2; }
+.ko-sub-text { font-size: 0.85rem; color: #888888; margin: 2px 0 0 0; }
+
+/* 2. 다크 정보 카드: 어두운 회색으로 묶음 */
+.research-info-card-minimal {
+    background: #1A1A1A; /* 다크 박스 */
+    border-radius: 12px;
+    padding: 24px;
     text-align: left;
-    margin-bottom: 30px;
+    margin-bottom: 40px;
 }
 
-.spec-list {
+.spec-list-tight {
     list-style: none;
     padding: 0;
     margin: 0;
 }
 
-.spec-list li {
+.spec-list-tight li {
     font-size: 0.88rem;
-    color: #d1d1d6;
-    margin-bottom: 6px; /* 리스트 간격 밀착 */
+    color: #CCCCCC;
+    margin-bottom: 8px; /* 간격 축소 */
     line-height: 1.4;
 }
 
-.card-divider {
-    border: 0;
-    border-top: 1px solid #2c2c2e;
-    margin: 14px 0;
+.card-divider-monochrome {
+    border-top: 1px solid #333333;
+    margin: 16px 0;
 }
 
-.info-footer {
-    font-size: 0.78rem;
-    color: #8e8e93;
-    line-height: 1.5;
+.info-footer-compact {
+    font-size: 0.8rem;
+    color: #888888;
 }
 
-.company-name {
-    font-weight: 600;
-    color: #aeaeb2;
-    margin-bottom: 2px;
+.company-name-bold { font-weight: 600; color: #AAAAAA; margin: 0 0 2px 0; }
+.pi-name-dimmed { margin: 0; }
+
+/* 3. 버튼: 고대비 처리 */
+.button-group-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.btn-solid-white {
+    background: #FFFFFF;
+    color: #000000;
+    border: none;
+    padding: 16px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn-outline-gray {
+    background: transparent;
+    color: #888888;
+    border: 1px solid #444444;
+    padding: 16px;
+    border-radius: 8px;
+    cursor: pointer;
 }
