@@ -725,33 +725,76 @@ tr:hover {
 }
 
 /* CASP 이름 정한 후 */
+/* 1. 보라색 헤더: 높이 줄이고 중앙 정렬 */
 .header-purple-box {
-    background: #6D28D9; /* 진한 보라색 단색 */
+    background: #6D28D9;
     border-radius: 12px;
-    padding: 18px 16px; /* 높이 더욱 감소 */
+    padding: 16px 12px; /* 높이 대폭 축소 */
     text-align: center;
+    margin-bottom: 8px;
 }
 
 .protocol-title {
     font-size: 1.4rem;
     font-weight: 700;
     color: #ffffff;
-    margin-bottom: 6px; /* 간격 축소 */
+    margin: 0 0 4px 0; /* 여백 최소화 */
 }
 
 .name-group {
     display: flex;
     flex-direction: column;
-    gap: 0; /* 영문/한글 이름 바짝 붙임 */
+    gap: 0px;
 }
 
-.en-name { font-size: 0.85rem; color: rgba(255, 255, 255, 0.9); font-weight: 500; }
+.en-name { font-size: 0.85rem; color: rgba(255, 255, 255, 0.9); }
 .ko-name { font-size: 0.75rem; color: rgba(255, 255, 255, 0.6); }
 
+/* 2. 버전 정보 */
 .version-dimmed {
     font-size: 0.7rem;
     color: rgba(255, 255, 255, 0.2);
     text-align: center;
-    margin-top: 6px;
-    margin-bottom: 24px;
+    margin-bottom: 16px;
+}
+
+/* 3. 다크 정보 카드: 연구방식 ~ 책임자 통합 */
+.research-info-card {
+    background: #1c1c1e; /* 다크 박스 배경 */
+    border: 1px solid #2c2c2e;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: left;
+    margin-bottom: 30px;
+}
+
+.spec-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.spec-list li {
+    font-size: 0.88rem;
+    color: #d1d1d6;
+    margin-bottom: 6px; /* 리스트 간격 밀착 */
+    line-height: 1.4;
+}
+
+.card-divider {
+    border: 0;
+    border-top: 1px solid #2c2c2e;
+    margin: 14px 0;
+}
+
+.info-footer {
+    font-size: 0.78rem;
+    color: #8e8e93;
+    line-height: 1.5;
+}
+
+.company-name {
+    font-weight: 600;
+    color: #aeaeb2;
+    margin-bottom: 2px;
 }
