@@ -10,16 +10,26 @@
 <div class="container">
     <div class="progress-container"><div class="progress-bar" id="progressBar"></div></div>
 
-    <section id="step1" class="step active">
-        <h2 class="title">CASP Protocol v1.1</h2>
-        <div class="research-intro">
-            <p>
-  본 연구는 <strong>(주)소울스펙트럼(SoulSpectrum Inc.)</strong>에서 주관하며,
-  40초 발화를 10~15초 단위로 분절해 프로소디 특징과 SQ를 결합한 <strong>분포 기반 정규화 모델</strong>을 구축합니다.
-  모든 데이터는 <strong>익명 세션 ID</strong>로 처리됩니다.
-</p>
-            <p class="pi-info">연구책임자: 맹난영</p>
+<section id="step1" class="step active">
+    <div class="header-group">
+        <h2 class="title">CASP Protocol <span class="version">v1.1</span></h2>
+        <p class="full-name">Cognitive–Adaptive Stress Prosody Test</p>
+        <p class="korean-name">인지-적응형 스트레스 프로소디 테스트</p>
+    </div>
+    
+    <div class="research-summary-card">
+        <div class="org-tag">(주)소울스펙트럼 | SoulSpectrum Inc.</div>
+        
+        <ul class="protocol-specs">
+            <li><strong>연구 방식:</strong> 40초 발화 데이터 수집 (10~15초 분절 분석)</li>
+            <li><strong>핵심 모델:</strong> 프로소디 특징 × SQ 결합 분포 기반 정규화</li>
+            <li><strong>데이터 보호:</strong> 모든 데이터는 익명 세션 ID로 암호화 처리</li>
+        </ul>
+
+        <div class="pi-footer">
+            <span>연구책임자: 맹난영</span>
         </div>
+    </div>
         <div class="button-group" style="margin-top: 40px;">
             <button class="next-btn" onclick="startResearch(false)">14세 이상 연구 참여하기</button>
             <button class="next-btn secondary-btn" style="margin-top: 16px;" onclick="startResearch(true)">

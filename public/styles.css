@@ -723,3 +723,39 @@ tr:hover {
   font-size: 0.95rem; /* ✅ 1단계 줄임 */
   line-height: 1.45;
 }
+
+/* CASP 이름 정한 후 */
+
+.header-group {
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    background: linear-gradient(45deg, #a855f7, #6366f1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+}
+
+.version {
+    font-size: 1rem;
+    vertical-align: middle;
+    color: #888;
+}
+
+.full-name {
+    font-size: 0.95rem;
+    color: #e0e0e0;
+    font-weight: 500;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+}
+
+.korean-name {
+    font-size: 0.85rem;
+    color: #a0a0a0;
+    font-weight: 400;
+}
