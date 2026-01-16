@@ -725,52 +725,57 @@ tr:hover {
 }
 
 /* CASP 이름 정한 후 */
-/* 상단 타이틀 박스: 보라색 포인트 */
-.header-highlight-box {
-    border: 1.5px solid #8a2be2; /* 보라색 테두리 */
-    background: rgba(138, 43, 226, 0.03); /* 아주 연한 보라색 배경 */
+/* 상단 보라색 박스: 테두리 제거, 중앙 정렬, 높이 최적화 */
+.header-purple-box {
+    background: #6D28D9; /* 진한 보라색 */
     border-radius: 12px;
-    padding: 24px;
-    margin-bottom: 8px;
+    padding: 20px 16px; /* 높이 감소 */
     text-align: center;
+    margin-bottom: 8px;
 }
 
 .protocol-title {
-    font-size: 1.6rem;
+    font-size: 1.5rem;
     font-weight: 700;
     color: #ffffff;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
-.en-name { font-size: 0.95rem; color: #eee; margin-bottom: 4px; }
-.ko-name { font-size: 0.85rem; color: #aaa; }
+.name-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px; /* 영문/한글 이름 간격 최소화 */
+}
 
-/* 버전 정보: 흐리게 처리 */
+.en-name { font-size: 0.9rem; color: rgba(255, 255, 255, 0.9); font-weight: 500; }
+.ko-name { font-size: 0.8rem; color: rgba(255, 255, 255, 0.7); }
+
+/* 버전 정보: 흐리게 */
 .version-dimmed {
     font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.25);
     text-align: center;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
 }
 
-/* 메인 사양 컨테이너 */
+/* 연구 정보 컨테이너 */
 .research-container {
-    background: #161616;
-    border: 1px solid #2a2a2a;
+    background: #18181b;
+    border: 1px solid #27272a;
     border-radius: 8px;
     padding: 24px;
     text-align: left;
 }
 
-.spec-list { list-style: none; padding: 0; margin-bottom: 20px; }
+.spec-list { list-style: none; padding: 0; margin-bottom: 16px; }
 .spec-list li {
-    font-size: 0.9rem;
-    color: #ccc;
-    margin-bottom: 12px;
+    font-size: 0.88rem;
+    color: #d4d4d8;
+    margin-bottom: 8px;
     line-height: 1.5;
 }
 
-.divider { border: 0; border-top: 1px solid #2a2a2a; margin-bottom: 20px; }
+.divider { border: 0; border-top: 1px solid #27272a; margin: 16px 0; }
 
-.info-footer { font-size: 0.8rem; color: #777; }
-.company-name { font-weight: 600; margin-bottom: 4px; }
+.info-footer { font-size: 0.78rem; color: #71717a; }
+.company-name { font-weight: 600; margin-bottom: 2px; color: #a1a1aa; }
