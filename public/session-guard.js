@@ -5,7 +5,13 @@
 
 (function forceExternalOpenInKakao() {
   const ua = navigator.userAgent || "";
-  const isKakao = /KAKAOTALK/i.test(ua);
+const isInApp =
+  /KAKAOTALK/i.test(ua) ||                  // 카카오
+  /Instagram/i.test(ua) ||                  // 인스타 인앱
+  /FBAN|FBAV|FB_IAB|Facebook|Messenger/i.test(ua); // 페북/메신저
+
+if (!isInApp) return;
+
   if (!isKakao) return;
 
   const cleanUrl = location.href;
