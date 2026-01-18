@@ -304,7 +304,7 @@
   }
 
   // v2 데이터 로드
- async function fetchReportDataV2(sid) {
+async function fetchReportDataV2(sid) {
   const tries = [
     apiUrl("/report-data-v2") + "?sid=" + encodeURIComponent(sid),
     apiUrl("/report-data-v2/" + encodeURIComponent(sid)),
@@ -332,6 +332,28 @@
   throw new Error("report fetch failed\n" + attempts.join("\n"));
 }
 
+
+  // [실행] 초기화
+  async function init() {
+    const sid = getSidSafe();
+    if (!sid) return;
+
+    // 설문 버튼(기존 report.js 유지)
+    const surveyBtn = document.getElementById("btnStartSurvey");
+if (surveyBtn) {
+  surveyBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+
+    // ✅ 세션 연계 없이, 일반 설문 링크로만 이동
+    const FORM_URL =
+      "https://docs.google.com/forms/d/e/1FAIpQLSdYVDquseww9O3hvJgRyYmlZxT0BhZ5e_gxmG8mgFWAbx3a4Q/viewform";
+
+    window.location.href = FORM_URL;
+  });
+}
+
+    try {
+      const data = await fetchReportDataV2(sid);
 
       // v2 표준 접근
       const voice = data?.voice || {};
