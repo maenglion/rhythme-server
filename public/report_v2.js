@@ -304,31 +304,34 @@
   }
 
   // v2 데이터 로드
-  async function fetchReportDataV2(sid) {
-    const res = await fetch(apiUrl("/report-data-v2") + "?sid=" + encodeURIComponent(sid));
-    if (!res.ok) throw new Error(String(res.status));
-    const raw = await res.json();
-    return raw?.report_json || raw;
+ async function fetchReportDataV2(sid) {
+  const tries = [
+    apiUrl("/report-data-v2") + "?sid=" + encodeURIComponent(sid),
+    apiUrl("/report-data-v2/" + encodeURIComponent(sid)),
+    apiUrl("/report-data") + "?sid=" + encodeURIComponent(sid),
+    apiUrl("/report-data/" + encodeURIComponent(sid)),
+  ];
+
+  const attempts = [];
+
+  for (const url of tries) {
+    try {
+      const res = await fetch(url);
+      attempts.push(`${res.status} ${url}`);
+
+      if (!res.ok) continue;
+
+      const raw = await res.json();
+      return raw?.report_json || raw;
+    } catch (e) {
+      attempts.push(`ERR ${url} :: ${e?.message || e}`);
+    }
   }
 
-  // [실행] 초기화
-  async function init() {
-    const sid = getSidSafe();
-    if (!sid) return;
-
-    // 설문 버튼(기존 report.js 유지)
-const surveyBtn = document.getElementById("btnStartSurvey");
-if (surveyBtn) {
-  surveyBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    window.location.href =
-      "https://docs.google.com/forms/d/e/1FAIpQLSdYVDquseww9O3hvJgRyYmlZxT0BhZ5e_gxmG8mgFWAbx3a4Q/viewform";
-  });
+  // ✅ 어떤 URL들이 어떻게 실패했는지 한 방에 보이게
+  throw new Error("report fetch failed\n" + attempts.join("\n"));
 }
 
-
-    try {
-      const data = await fetchReportDataV2(sid);
 
       // v2 표준 접근
       const voice = data?.voice || {};
