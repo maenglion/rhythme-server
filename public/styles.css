@@ -818,3 +818,153 @@ tr:hover {
     border-radius: 8px;
     cursor: pointer;
 }
+
+
+/* report_v2 
+
+
+/* 기본 테마 및 변수 설정 */
+:root {
+  --bg-color: #121212;
+  --card-bg: #1e1e1e;
+  --primary: #bb86fc;
+  --secondary: #03dac6;
+  --error: #cf6679;
+  --text-main: #e0e0e0;
+  --text-muted: #a0a0a0;
+  --border: #333333;
+  --good: #4caf50;
+  --warn: #ff9800;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  margin: 0;
+  padding: 16px;
+  line-height: 1.5;
+}
+
+/* 카드 공통 스타일 */
+.card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 16px;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* 상단 배지 스타일 */
+.badge-group {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.badge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge.good { background: rgba(76, 175, 80, 0.2); color: var(--good); }
+.badge.warn { background: rgba(255, 152, 0, 0.2); color: var(--warn); }
+.badge.bad { background: rgba(207, 102, 121, 0.2); color: var(--error); }
+
+/* 프로필 파트 (Persona) */
+#personaTitle {
+  font-size: 24px;
+  margin: 0 0 8px 0;
+  color: var(--secondary);
+}
+
+#personaSummary {
+  font-size: 15px;
+  color: var(--text-main);
+  margin-bottom: 15px;
+}
+
+#strengthList {
+  padding-left: 20px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+#strengthList li { margin-bottom: 5px; }
+
+/* 핵심 지표 및 데이터 테이블 */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 10px;
+}
+
+th {
+  text-align: left;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 4px;
+}
+
+td {
+  padding: 10px 4px;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.val-col { font-weight: bold; color: var(--secondary); text-align: center; }
+.desc-col { font-size: 12px; color: var(--text-muted); }
+.muted { color: var(--text-muted); font-size: 11px; }
+
+/* 모바일 테이블 스크롤 대응 */
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 차트 영역 */
+#chart-container {
+  width: 100%;
+  height: 220px;
+  margin: 15px 0;
+}
+
+#chartLegend {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* 하단 액션 버튼 */
+.action-area {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+button {
+  background: var(--primary);
+  color: #000;
+  border: none;
+  padding: 14px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+button:active { opacity: 0.8; }

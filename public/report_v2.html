@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>리듬 분석 리포트 V2</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <section class="card" id="profile-section">
+        <div class="badge-group">
+            <span id="qualityBadge" class="badge">품질 분석 중...</span>
+            <span id="baselineBadge" class="badge">Baseline 확인 중...</span>
+        </div>
+        <h1 id="personaTitle">데이터를 불러오는 중...</h1>
+        <p id="personaSummary">분석이 완료되면 여기에 핵심 요약이 표시됩니다.</p>
+        <ul id="strengthList">
+            </ul>
+        <div id="qeegBox" class="muted" style="margin-top: 10px;">qEEG 확인 중...</div>
+    </section>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+        <div class="card" style="margin-bottom:0; padding: 15px 10px; text-align: center;">
+            <div class="muted">인지 적응</div>
+            <div id="index-adaptive" style="font-size: 18px; font-weight: bold; color: var(--secondary);">-</div>
+        </div>
+        <div class="card" style="margin-bottom:0; padding: 15px 10px; text-align: center;">
+            <div class="muted">에너지</div>
+            <div id="index-energy" style="font-size: 18px; font-weight: bold; color: var(--secondary);">-</div>
+        </div>
+        <div class="card" style="margin-bottom:0; padding: 15px 10px; text-align: center;">
+            <div class="muted">회복탄력</div>
+            <div id="index-resilience" style="font-size: 18px; font-weight: bold; color: var(--secondary);">-</div>
+        </div>
+    </div>
+
+    <section class="card" id="stage-card">
+        <div class="card-title">스테이지별 분석 데이터</div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>상태</th>
+                        <th>속도</th>
+                        <th>정지</th>
+                        <th>억양</th>
+                        <th>SNR</th>
+                    </tr>
+                </thead>
+                <tbody id="stageTableBody">
+                    </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card-title">심층 매트릭스 해석</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>분석축</th>
+                    <th>근거</th>
+                    <th>의미</th>
+                </tr>
+            </thead>
+            <tbody id="matrixBody">
+                </tbody>
+        </table>
+    </section>
+
+    <section class="card">
+        <div class="card-title">분석 추이</div>
+        <canvas id="chart" style="width: 100%; height: 200px;"></canvas>
+        <div id="chartLegend" class="muted" style="margin-top: 10px;"></div>
+    </section>
+
+    <section class="card" id="metrics-card">
+  <div class="card-title">핵심 인지 제어 지표</div>
+  <table>
+    <thead>
+      <tr>
+        <th>분석 항목</th>
+        <th>나의 수치</th>
+        <th>전문 해석</th>
+      </tr>
+    </thead>
+    <tbody id="metricsBody"></tbody>
+  </table>
+</section>
+
+
+    <section class="action-area">
+        <button id="btnStartSurvey">상세 심리 설문 시작하기</button>
+        <p class="muted" style="text-align: center; font-size: 11px;">
+            결과에 대해 궁금한 점이 있으신가요? 설문을 통해 더 자세한 리포트를 받아보세요.
+        </p>
+    </section>
+
+    <script src="report_v2.js"></script>
+</body>
+</html>
