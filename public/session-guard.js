@@ -2,6 +2,94 @@
  * RHYTHME 프로젝트 세션 가드 (최종 통합 버전)
  * 역할: 페이지 성격에 따른 SID 최적화 관리
  */
+
+(function forceExternalOpenInKakao() {
+  const ua = navigator.userAgent || "";
+  const isKakao = /KAKAOTALK/i.test(ua);
+
+  if (!isKakao) return;
+
+  // 현재 URL을 "깨끗한 공유 링크" 형태로 만들고 싶으면 여기서 sid 제거 로직도 같이 적용 가능
+  const cleanUrl = location.href;
+
+  const bar = document.createElement("div");
+  bar.style.cssText = `
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 999999;
+    padding: 12px 14px; background: #111; color: #fff; font-size: 14px;
+    display: flex; gap: 10px; align-items: center; justify-content: space-between;
+  `;
+  bar.innerHTML = `
+    <div style="line-height:1.2;">
+      카카오 인앱 브라우저에서는 입력이 막힐 수 있어요.<br/>
+      외부 브라우저로 열어주세요.
+    </div>
+    <button id="openExternalBtn" style="
+      padding: 10px 12px; border-radius: 10px; border: 0; font-weight: 700;
+    ">외부로 열기</button>
+  `;
+  document.body.appendChild(bar);
+
+  document.getElementById("openExternalBtn").onclick = () => {
+    // Android: 크롬 intent 시도 (실패하면 일반 열기)
+    const isAndroid = /Android/i.test(ua);
+    if (isAndroid) {
+      const noProto = cleanUrl.replace(/^https?:\/\//, "");
+      location.href = `intent://${noProto}#Intent;scheme=https;package=com.android.chrome;end`;
+      setTimeout(() => { location.href = cleanUrl; }, 600);
+    } else {
+      // iOS: 새 창 열기(차단될 수 있으니 그냥 이동도 같이)
+      window.open(cleanUrl, "_blank");
+      setTimeout(() => { location.href = cleanUrl; }, 200);
+    }
+  };
+})();
+
+
+
+(function forceExternalOpenInKakao() {
+  const ua = navigator.userAgent || "";
+  const isKakao = /KAKAOTALK/i.test(ua);
+
+  if (!isKakao) return;
+
+  // 현재 URL을 "깨끗한 공유 링크" 형태로 만들고 싶으면 여기서 sid 제거 로직도 같이 적용 가능
+  const cleanUrl = location.href;
+
+  const bar = document.createElement("div");
+  bar.style.cssText = `
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 999999;
+    padding: 12px 14px; background: #111; color: #fff; font-size: 14px;
+    display: flex; gap: 10px; align-items: center; justify-content: space-between;
+  `;
+  bar.innerHTML = `
+    <div style="line-height:1.2;">
+      카카오 인앱 브라우저에서는 입력이 막힐 수 있어요.<br/>
+      외부 브라우저로 열어주세요.
+    </div>
+    <button id="openExternalBtn" style="
+      padding: 10px 12px; border-radius: 10px; border: 0; font-weight: 700;
+    ">외부로 열기</button>
+  `;
+  document.body.appendChild(bar);
+
+  document.getElementById("openExternalBtn").onclick = () => {
+    // Android: 크롬 intent 시도 (실패하면 일반 열기)
+    const isAndroid = /Android/i.test(ua);
+    if (isAndroid) {
+      const noProto = cleanUrl.replace(/^https?:\/\//, "");
+      location.href = `intent://${noProto}#Intent;scheme=https;package=com.android.chrome;end`;
+      setTimeout(() => { location.href = cleanUrl; }, 600);
+    } else {
+      // iOS: 새 창 열기(차단될 수 있으니 그냥 이동도 같이)
+      window.open(cleanUrl, "_blank");
+      setTimeout(() => { location.href = cleanUrl; }, 200);
+    }
+  };
+})();
+
+
+
+
 (function () {
   const KEY = "SESSION_ID";
 
