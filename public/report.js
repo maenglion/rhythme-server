@@ -217,62 +217,73 @@ async function init() {
     if (!sid) return;
 
     // 1. 기록지(Report) 상단에 세션 표시 및 복사 기능
-    const sidTextEl = document.getElementById("sidText");
-    if (sidTextEl) sidTextEl.textContent = sid;
-    
-    const copyBtn = document.getElementById("copySidBtn");
-    if (copyBtn) copyBtn.onclick = () => copyText(sid);
+const sidTextEl = document.getElementById("sidText");
+if (sidTextEl) sidTextEl.textContent = sid;
 
-    // 2. 하단 만족도 조사(Survey) 버튼 로직 - [가장 먼저/확실하게 연결]
-    const surveyBtn = document.getElementById("btnStartSurvey");
-    if (surveyBtn) {
-      // 기존 onclick 대신 addEventListener 사용 (더 안정적)
-      surveyBtn.addEventListener("click", (e) => {
-        e.preventDefault(); // 페이지 새로고침 방지
-        
-        const FORM_BASE = "https://docs.google.com/forms/d/e/1FAIpQLSdYVDquseww9O3hvJgRyYmlZxT0BhZ5e_gxmG8mgFWAbx3a4Q/viewform";
-        const u = new URL(FORM_BASE);
-        u.searchParams.set("usp", "pp_url");
-        u.searchParams.set("entry.1445339256", sid); // 기록지의 세션 ID를 만족도 조사로 전달
-        
-        u.searchParams.append("entry.293321030", "SQ(체계화)");
-        u.searchParams.append("entry.293321030", "음성 (프로소디)");
-        u.searchParams.append("entry.2110754268", "SQ 해석을 더 상세히");
-        u.searchParams.set("entry.1674818339", "없음");
+// ✅ 리포트 링크 복사 버튼
+const copyReportLinkBtn = document.getElementById("copyReportLinkBtn");
+if (copyReportLinkBtn) {
+  copyReportLinkBtn.onclick = () => copyText(window.location.href);
+}
 
-        // 창 이동
-        window.location.href = u.toString();
-      });
-    }
+// ✅ 세션 ID 복사 버튼
+const copySidBtn = document.getElementById("copySidBtn");
+if (copySidBtn) {
+  copySidBtn.onclick = () => copyText(sid);
+}
 
-    // 3. 기록지 데이터 로드 및 렌더링 (비동기 작업)
-    try {
-      const data = await fetchReportData(sid);
-      const stages = data?.voice?.stages || [];
+// 2. 하단 만족도 조사(Survey) 버튼 로직: ✅ 무조건 일반 설문 링크로만 이동
+const surveyBtn = document.getElementById("btnStartSurvey");
+if (surveyBtn) {
+  surveyBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    window.location.href =
+      "https://docs.google.com/forms/d/e/1FAIpQLSdYVDquseww9O3hvJgRyYmlZxT0BhZ5e_gxmG8mgFWAbx3a4Q/viewform";
+  });
+}
 
-      updateIndexCards(stages);
-      const persona = buildPersona(stages, data.survey, data.qeeg);
-      $("personaTitle").textContent = persona.title;
-      $("personaSummary").textContent = persona.summary;
+// 3. 기록지 데이터 로드 및 렌더링 (비동기 작업)
+try {
+  const data = await fetchReportData(sid);
+  const stages = data?.voice?.stages || [];
 
-      renderStageTable(stages);
-      renderMatrix(buildMatrix(stages, data.survey, data.qeeg));
-      
-      const q = qualityFrom(stages);
-      setBadge($("qualityBadge"), `품질: ${q.label}`, q.kind);
-      setBadge($("baselineBadge"), hasBaseline(stages) ? "Baseline: 있음" : "Baseline: 없음", hasBaseline(stages) ? "good" : "warn");
+  // ✅ 상단 3지표
+  updateIndexCards(stages);
 
-      const qeegCnt = data?.qeeg?.upload_cnt || 0;
-      $("qeegBox").textContent = qeegCnt > 0 ? `qEEG 데이터 포함 (${qeegCnt}건)` : "qEEG 미업로드";
+  // ✅ 페르소나(여기서 buildPersona를 "세분화 버전"으로 바꾸면 됨)
+  const persona = buildPersona(stages, data.survey, data.qeeg, data.insights);
+  $("personaTitle").textContent = persona.title || "-";
+  $("personaSummary").textContent = persona.summary || "-";
 
-      if (stages.length > 0) drawChart(stages);
-
-    } catch (err) {
-      console.error("데이터 로드 중 에러:", err);
-      $("personaTitle").textContent = "데이터 로드 실패";
-    }
+  // ✅ (있으면) 강점 리스트 렌더
+  // - buildPersona가 type_code를 반환하도록 바꾼 뒤에 이게 살아남
+  const ul = document.getElementById("strengthList");
+  if (ul && window.STRENGTHS_MAP && persona.type_code) {
+    const strengths = window.STRENGTHS_MAP[persona.type_code] || [];
+    ul.innerHTML = strengths.map((s) => `<li>${s}</li>`).join("");
   }
+
+  // ✅ 표/매트릭스/차트
+  renderStageTable(stages);
+  renderMatrix(buildMatrix(stages, data.survey, data.qeeg));
+
+  // ✅ 배지
+  const q = qualityFrom(stages);
+  setBadge($("qualityBadge"), `품질: ${q.label}`, q.kind);
+  const baseOk = hasBaseline(stages);
+  setBadge($("baselineBadge"), baseOk ? "Baseline: 있음" : "Baseline: 없음", baseOk ? "good" : "warn");
+
+  // ✅ qEEG
+  const qeegCnt = data?.qeeg?.upload_cnt || 0;
+  $("qeegBox").textContent = qeegCnt > 0 ? `qEEG 데이터 포함 (${qeegCnt}건)` : "qEEG 미업로드";
+
+  if (stages.length > 0) drawChart(stages);
+
+} catch (err) {
+  console.error("데이터 로드 중 에러:", err);
+  $("personaTitle").textContent = "데이터 로드 실패";
+  $("personaSummary").textContent = "네트워크/세션ID/서버 응답을 확인해주세요.";
+} }
 
   document.addEventListener("DOMContentLoaded", init);
 })();
-
