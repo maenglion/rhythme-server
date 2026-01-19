@@ -7,7 +7,189 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <style>
+/* 기본 테마 설정: 냉철하고 분석적인 다크 모드 기반 */
+:root {
+    --bg-color: #f4f7f9;
+    --card-bg: #ffffff;
+    --primary: #2c3e50;    /* 깊은 신뢰감의 네이비 */
+    --secondary: #3498db;  /* 데이터 포인트 블루 */
+    --accent: #e74c3c;     /* F1 브레이크/강조 레드 */
+    --text-main: #333333;
+    --text-muted: #7f8c8d;
+    --border-color: #eee;
+    --radius: 12px;
+}
 
+/* 모바일 초기화 */
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.5;
+    margin: 0;
+    padding: 16px;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* 카드 스타일: 정보의 구획화 */
+.card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.card-title {
+    font-size: 16px;
+    font-weight: 800;
+    margin-bottom: 15px;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+}
+
+.card-title::before {
+    content: '';
+    width: 4px;
+    height: 16px;
+    background: var(--secondary);
+    margin-right: 8px;
+    border-radius: 2px;
+}
+
+/* 배지 스타일: 품질 및 상태 표시 */
+.badge-group {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.badge {
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 20px;
+    background: #e1eaf2;
+    color: var(--secondary);
+    font-weight: bold;
+}
+
+/* 타이틀 및 요약 */
+#personaTitle {
+    font-size: 24px;
+    font-weight: 800;
+    margin: 0 0 4px 0;
+    letter-spacing: -0.5px;
+}
+
+.muted {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+#strengthList {
+    padding-left: 20px;
+    margin: 15px 0;
+}
+
+#strengthList li {
+    font-size: 14px;
+    margin-bottom: 6px;
+    color: #444;
+}
+
+/* 인지 지표 3열 그리드 (모바일 최적화) */
+.grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.grid-item {
+    background: var(--card-bg);
+    padding: 15px 5px;
+    text-align: center;
+    border-radius: var(--radius);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.grid-item .label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+}
+
+.grid-item .value {
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--secondary);
+}
+
+/* 테이블 스타일: 모바일 가로 스크롤 대응 */
+.table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -5px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    min-width: 300px; /* 최소 너비 확보 */
+}
+
+th {
+    text-align: left;
+    color: var(--text-muted);
+    font-weight: 500;
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+td {
+    padding: 12px 8px;
+    border-bottom: 1px solid #f9f9f9;
+}
+
+/* 버튼 스타일: F1 엔진처럼 강력한 디자인 */
+#btnStartSurvey {
+    width: 100%;
+    padding: 16px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s;
+    box-shadow: 0 4px 15px rgba(44, 62, 80, 0.3);
+}
+
+#btnStartSurvey:active {
+    transform: scale(0.98);
+    background: #1a252f;
+}
+
+.action-area {
+    margin-top: 20px;
+    padding-bottom: 40px;
+}
+
+/* 차트 캔버스 영역 */
+canvas {
+    margin-top: 10px;
+    max-height: 220px;
+}</style>
+</body>
     <section class="card" id="profile-section">
         <div class="badge-group">
             <span id="qualityBadge" class="badge">품질 분석 중...</span>
