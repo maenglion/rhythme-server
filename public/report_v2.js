@@ -753,5 +753,32 @@ ensureMatrixExplainText();
     }
   }
 
+  function ensureMatrixExplainText() {
+  // matrix 카드가 없으면 종료
+  const matrixBody = document.getElementById("matrixBody");
+  if (!matrixBody) return;
+
+  // 이미 있으면 중복 삽입 금지
+  if (document.getElementById("matrixExplain")) return;
+
+  // matrixBody가 들어있는 card를 찾아서 tbody 아래에 설명 추가
+  const card = matrixBody.closest(".card");
+  if (!card) return;
+
+  const div = document.createElement("div");
+  div.id = "matrixExplain";
+  div.className = "muted";
+  div.style.cssText = "margin-top:10px; font-size:12px; line-height:1.4;";
+
+  div.innerHTML = `
+    <div><b>인지적 정밀도</b>: 휴지(Pause)가 줄수록 생각 흐름이 끊기지 않고 전달이 매끄럽다는 뜻입니다.</div>
+    <div><b>에너지 밀도</b>: 억양 변동(Pitch)과 속도(Speech)의 조합으로, 말의 생동감/강조 전달력을 봅니다.</div>
+    <div><b>회복 탄력성</b>: S3→S4에서 페이스가 얼마나 회복되는지로, 스트레스 이후 조절 능력을 추정합니다.</div>
+  `;
+
+  card.appendChild(div);
+}
+
+
   document.addEventListener("DOMContentLoaded", init);
 })();
