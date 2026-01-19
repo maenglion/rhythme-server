@@ -154,17 +154,54 @@ input[type="checkbox"]:checked::after {
 }
 
 /* AB 테스트 질문 */
-.ab-wrap { display: grid; gap: 12px; margin-top: 16px; }
+/* ============================================================
+   AB 테스트 (Step 4 미세 조정) - 텍스트 한 단계 축소
+   ============================================================ */
+
+/* A, B 텍스트 박스 본체 */
 .ab-box {
     border: 1px solid var(--border-color);
-    background: rgba(255,255,255,0.02);
-    border-radius: 12px; padding: 16px; text-align: left;
-}
-.ab-badge {
-    background: rgba(129, 140, 248, 0.2); color: var(--secondary);
-    padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+    padding: 16px; /* 내부 여백 유지 */
+    text-align: left;
+    transition: all 0.3s ease;
 }
 
+/* 박스 내부 실제 텍스트 (한 단계 줄임) */
+.ab-body {
+    font-size: 14px !important;    /* 기존 16px 내외에서 14px로 축소 */
+    line-height: 1.5;             /* 줄 간격 최적화 */
+    color: var(--text-main);
+    word-break: keep-all;         /* 단어 단위 줄바꿈으로 가독성 확보 */
+    letter-spacing: -0.01em;      /* 자간을 살짝 조여 전문적인 느낌 부여 */
+}
+
+/* A, B 배지 위치 및 크기 조정 */
+.ab-head {
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.ab-badge {
+    background: rgba(129, 140, 248, 0.2);
+    color: var(--secondary);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: 800;
+    font-size: 11px;             /* 배지도 텍스트에 맞춰 소폭 축소 */
+    text-transform: uppercase;
+}
+
+/* 아래 선택 버튼들과의 간격 16px 유지 */
+.ab-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;                   /* 칸 별 간격 16px 고정 */
+    margin-top: 16px;
+    margin-bottom: 24px;         /* 버튼 그룹과의 간격 */
+}
 /* ============================================================
    6. 음성 분석 및 리포트 테이블
    ============================================================ */
