@@ -9,16 +9,17 @@
 <body>
     <style>
 /* 기본 테마 설정: 냉철하고 분석적인 다크 모드 기반 */
+/* --- 리듬 분석 리포트 V2 다크 모드 최적화 --- */
 :root {
-    --bg-color: #f4f7f9;
-    --card-bg: #ffffff;
-    --primary: #2c3e50;    /* 깊은 신뢰감의 네이비 */
-    --secondary: #3498db;  /* 데이터 포인트 블루 */
-    --accent: #e74c3c;     /* F1 브레이크/강조 레드 */
-    --text-main: #333333;
-    --text-muted: #7f8c8d;
-    --border-color: #eee;
-    --radius: 12px;
+    --bg-color: #0f172a;       /* 아주 깊은 네이비 (다크 모드 배경) */
+    --card-bg: #1e293b;       /* 카드 배경 (약간 밝은 다크) */
+    --primary: #38bdf8;       /* 데이터 강조 (스카이 블루) */
+    --secondary: #818cf8;     /* 시스템 지표 (퍼플 블루) */
+    --accent: #f87171;        /* F1 브레이크/경고 (소프트 레드) */
+    --text-main: #f1f5f9;     /* 메인 글자색 (화이트 계열) */
+    --text-muted: #94a3b8;    /* 보조 설명색 (그레이 계열) */
+    --border-color: #334155;  /* 경계선 색상 */
+    --radius: 16px;           /* 모바일에서 부드러운 느낌을 주는 라운드 */
 }
 
 /* 모바일 초기화 */
@@ -30,26 +31,26 @@
 body {
     background-color: var(--bg-color);
     color: var(--text-main);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    line-height: 1.5;
+    font-family: -apple-system, sans-serif;
+    line-height: 1.6;
     margin: 0;
     padding: 16px;
-    -webkit-font-smoothing: antialiased;
 }
 
-/* 카드 스타일: 정보의 구획화 */
+/* 카드 디자인: 다크 모드에서 입체감 부여 */
 .card {
     background: var(--card-bg);
     border-radius: var(--radius);
-    padding: 20px;
+    padding: 24px 20px;
     margin-bottom: 16px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
 }
 
 .card-title {
     font-size: 16px;
-    font-weight: 800;
-    margin-bottom: 15px;
+    font-weight: 700;
+    margin-bottom: 18px;
     color: var(--primary);
     display: flex;
     align-items: center;
@@ -59,136 +60,102 @@ body {
     content: '';
     width: 4px;
     height: 16px;
-    background: var(--secondary);
-    margin-right: 8px;
+    background: var(--primary);
+    margin-right: 10px;
     border-radius: 2px;
 }
 
-/* 배지 스타일: 품질 및 상태 표시 */
-.badge-group {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 12px;
-}
-
-.badge {
-    font-size: 11px;
-    padding: 4px 8px;
-    border-radius: 20px;
-    background: #e1eaf2;
-    color: var(--secondary);
-    font-weight: bold;
-}
-
-/* 타이틀 및 요약 */
+/* 상단 요약 섹션 */
 #personaTitle {
-    font-size: 24px;
+    font-size: 26px;
     font-weight: 800;
-    margin: 0 0 4px 0;
-    letter-spacing: -0.5px;
-}
-
-.muted {
-    font-size: 13px;
-    color: var(--text-muted);
-}
-
-#strengthList {
-    padding-left: 20px;
-    margin: 15px 0;
+    margin: 0 0 8px 0;
+    color: #ffffff;
 }
 
 #strengthList li {
     font-size: 14px;
-    margin-bottom: 6px;
-    color: #444;
+    color: #cbd5e1;
+    margin-bottom: 8px;
 }
 
-/* 인지 지표 3열 그리드 (모바일 최적화) */
+/* 인지 지표 3열 (모바일용) */
 .grid-3 {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+    gap: 12px;
     margin-bottom: 16px;
 }
 
 .grid-item {
     background: var(--card-bg);
-    padding: 15px 5px;
+    padding: 16px 8px;
     text-align: center;
     border-radius: var(--radius);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    border: 1px solid var(--border-color);
 }
 
 .grid-item .label {
     font-size: 12px;
     color: var(--text-muted);
-    margin-bottom: 5px;
+    margin-bottom: 6px;
 }
 
 .grid-item .value {
-    font-size: 17px;
+    font-size: 18px;
     font-weight: 800;
     color: var(--secondary);
 }
 
-/* 테이블 스타일: 모바일 가로 스크롤 대응 */
+/* 테이블: 다크 모드 가독성 패치 */
 .table-wrapper {
     overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    margin: 0 -5px;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
     font-size: 13px;
-    min-width: 300px; /* 최소 너비 확보 */
 }
 
 th {
-    text-align: left;
     color: var(--text-muted);
-    font-weight: 500;
-    padding: 10px 8px;
-    border-bottom: 1px solid var(--border-color);
+    padding: 12px 8px;
+    border-bottom: 2px solid var(--border-color);
+    text-align: left;
 }
 
 td {
-    padding: 12px 8px;
-    border-bottom: 1px solid #f9f9f9;
+    padding: 14px 8px;
+    border-bottom: 1px solid var(--border-color);
+    color: #e2e8f0;
 }
 
-/* 버튼 스타일: F1 엔진처럼 강력한 디자인 */
+/* 버튼: F1 레이싱 시트 같은 느낌 */
 #btnStartSurvey {
     width: 100%;
-    padding: 16px;
-    background: var(--primary);
-    color: white;
+    padding: 18px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: #000; /* 다크 배경엔 밝은 버튼 내 검정 글씨가 가독성 좋음 */
     border: none;
     border-radius: var(--radius);
     font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: transform 0.1s;
-    box-shadow: 0 4px 15px rgba(44, 62, 80, 0.3);
+    font-weight: 800;
+    margin-top: 10px;
+    box-shadow: 0 4px 14px 0 rgba(56, 189, 248, 0.39);
 }
 
 #btnStartSurvey:active {
-    transform: scale(0.98);
-    background: #1a252f;
+    transform: scale(0.97);
+    opacity: 0.9;
 }
 
-.action-area {
-    margin-top: 20px;
-    padding-bottom: 40px;
+.muted {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.4;
 }
-
-/* 차트 캔버스 영역 */
-canvas {
-    margin-top: 10px;
-    max-height: 220px;
-}</style>
+</style>
 </body>
     <section class="card" id="profile-section">
         <div class="badge-group">

@@ -208,6 +208,9 @@
     }
   }
 
+
+
+  
   // ============================
 // Persona vA: 4축(16) + 상위5(아키타입)
 // ============================
@@ -504,89 +507,113 @@ function buildPersona(stages, report, qeeg, insights) {
     }
   }
 
-  function renderMetricsCard(metricsCard) {
-    if (!metricsCard || !Array.isArray(metricsCard) || metricsCard.length === 0) return;
-    ensureMetricsSection();
+  function buildMetricsCardFallback(stages) {
+  const sorted = [...(stages || [])].sort((a, b) => Number(a.stage_id) - Number(b.stage_id));
+  const last = sorted[sorted.length - 1] || {};
+  const s1 = sorted.find(s => Number(s.stage_id) === 1) || sorted[0] || {};
 
-    const body = $("metricsBody");
-    if (!body) return;
+  const lastSr = Number(last.speech_rate);
+  const lastPr = Number(last.pause_ratio);
+  const lastPs = Number(last.pitch_sd);
 
-    body.innerHTML = metricsCard
-      .map(
-        (m) => `
-      <tr>
-        <td>${m.label ?? "-"}</td>
-        <td class="val-col">${m.value ?? "-"}</td>
-        <td class="desc-col">${m.interpretation ?? "-"}</td>
-      </tr>
-    `
-      )
-      .join("");
+  const dSr = (Number.isFinite(lastSr) && Number.isFinite(Number(s1.speech_rate)))
+    ? (lastSr - Number(s1.speech_rate))
+    : null;
+
+  const density = (Number.isFinite(lastPs) && Number.isFinite(lastSr) && lastSr !== 0)
+    ? (lastPs / lastSr)
+    : null;
+
+  // disfluency_index가 서버에서 내려오면 표시
+  const dis = Number(last.disfluency_index);
+
+  const rows = [];
+
+  if (Number.isFinite(lastSr)) {
+    rows.push({
+      label: "Last Speech Rate",
+      value: lastSr.toFixed(2),
+      interpretation: "최근 구간의 발화 속도(초당 음절/단위). 빠를수록 처리 속도가 높을 수 있습니다."
+    });
   }
 
-function applyProfile() {
-  // ✅ 1) 서버 profile 있으면 그걸 우선
-  if (profile && profile.type_name) {
-    const titleEl = $("personaTitle");
-    const sumEl = $("personaSummary");
-    if (titleEl) titleEl.textContent = profile.type_name;
-    if (sumEl) sumEl.textContent = profile.summary || "";
-
-    const watchEl = $("watchoutText");
-    if (watchEl && profile.watchout) watchEl.textContent = profile.watchout;
-
-    const strengthList = $("strengthList");
-    if (strengthList) {
-      const strengths = STRENGTHS_MAP[profile.type_code] || [];
-      if (strengths.length) strengthList.innerHTML = strengths.map((s) => `<li>${s}</li>`).join("");
-    }
-    return;
+  if (Number.isFinite(lastPr)) {
+    rows.push({
+      label: "Last Pause Ratio",
+      value: lastPr.toFixed(3),
+      interpretation: "최근 구간의 정지 비율. 낮을수록 끊김이 적고 흐름이 타이트한 편입니다."
+    });
   }
 
-  // ✅ 2) 서버 profile이 없거나 빈약하면: 프론트 16타입(A안)로 대체
-  if (Array.isArray(stages) && stages.length >= 2) {
-    const persona = buildPersona(stages, data.survey, data.qeeg, data.insights);
-
-// 메인/서브 타이틀
-$("personaTitle").textContent = persona.title || "-";
-
-// subtitle을 summary에 붙이거나, 별도 엘리먼트가 있으면 거기 넣기
-// (HTML에 personaSubtitle 없으면 summary 앞에 붙여도 됨)
-const subEl = document.getElementById("personaSubtitle");
-if (subEl) {
-  subEl.textContent = persona.subtitle || "";
-} else {
-  // subtitle 엘리먼트 없으면 summary 첫 부분에 넣기(가볍게)
-  $("personaSummary").textContent = `${persona.subtitle ? persona.subtitle + " " : ""}${persona.summary || "-"}`;
-}
-
-// 강점 리스트(서브타입 기준)
-const ul = document.getElementById("strengthList");
-if (ul) {
-  const strengths = persona.strengths || [];
-  ul.innerHTML = strengths.map(s => `<li>${s}</li>`).join("");
-}
-
-// watchout(HTML에 있으면)
-const w = document.getElementById("watchoutText");
-if (w && persona.watchout) w.textContent = persona.watchout;
-
-    const titleEl = $("personaTitle");
-    const sumEl = $("personaSummary");
-
-    if (titleEl) titleEl.textContent = persona.title || "분석 결과";
-    if (sumEl) sumEl.textContent = `${persona.subtitle ? persona.subtitle + " " : ""}${persona.summary || ""}`;
-
-    const watchEl = $("watchoutText");
-    if (watchEl && persona.watchout) watchEl.textContent = persona.watchout;
-
-    const strengthList = $("strengthList");
-    if (strengthList) {
-      const strengths = persona.strengths || [];
-      strengthList.innerHTML = strengths.map((s) => `<li>${s}</li>`).join("");
-    }
+  if (Number.isFinite(density)) {
+    rows.push({
+      label: "Energy Density",
+      value: density.toFixed(2),
+      interpretation: "Pitch 변동(표현 에너지)을 속도로 나눈 값. 높을수록 억양/강조가 풍부한 경향."
+    });
   }
+
+  if (Number.isFinite(dis)) {
+    rows.push({
+      label: "Disfluency Index",
+      value: dis.toFixed(2),
+      interpretation: "말더듬/막힘/수정 등 비유창 패턴의 지표(모델/정의에 따라 다름)."
+    });
+  }
+
+  return rows;
 }
+
+
+  function renderMetricsCard(metricsCard, stages) {
+  const hasServer = Array.isArray(metricsCard) && metricsCard.length > 0;
+  const rows = hasServer ? metricsCard : buildMetricsCardFallback(stages);
+
+  if (!rows || rows.length === 0) return;
+
+  // HTML에 metricsBody가 이미 있으니 자동삽입은 필요 없음 (있어도 무해)
+  // ensureMetricsSection();
+
+  const body = $("metricsBody");
+  if (!body) return;
+
+  body.innerHTML = rows.map(m => `
+    <tr>
+      <td>${m.label ?? "-"}</td>
+      <td class="val-col">${m.value ?? "-"}</td>
+      <td class="desc-col">${m.interpretation ?? "-"}</td>
+    </tr>
+  `).join("");
+}
+
+
+function ensureMatrixExplainText() {
+  // matrixBody가 있는 카드(section.card) 찾아서 뒤에 설명 붙이기
+  const matrixBody = $("matrixBody");
+  if (!matrixBody) return;
+
+  const card = matrixBody.closest(".card");
+  if (!card) return;
+
+  // 이미 있으면 중복 삽입 방지
+  if (card.querySelector("#matrixExplain")) return;
+
+  const p = document.createElement("div");
+  p.id = "matrixExplain";
+  p.className = "muted";
+  p.style.cssText = "margin-top:10px; font-size:12px; line-height:1.35;";
+
+  p.innerHTML = `
+    <b>지표 설명</b><br/>
+    • <b>인지적 정밀도</b>: 말의 ‘끊김(정지 비율)’이 어떻게 변하는지로 보는 흐름 지표입니다. (ΔPause가 내려가면 더 유연/연속적)<br/>
+    • <b>에너지 밀도</b>: 억양 변동(Pitch SD)을 속도(Speech Rate)로 나눈 값입니다. 높을수록 강조/표현이 풍부한 경향.<br/>
+    • <b>회복 탄력성</b>: 스트레스 구간 후(S3→S4) 속도가 회복되는지 보는 지표입니다. (S3 또는 S4가 없으면 ‘측정 구간 부족’이 뜰 수 있어요)
+  `;
+
+  card.appendChild(p);
+}
+
+
 
 
   function applyTopSummary(data) {
@@ -680,7 +707,8 @@ if (strengthList) {
 const watchEl = $("watchoutText");
 if (watchEl && persona.watchout) watchEl.textContent = persona.watchout;
 
-      renderMetricsCard(metricsCard);
+      renderMetricsCard(metricsCard, stages);
+
 
       // report.js 기존 강점(품질/베이스라인/스테이지/차트)
       if (Array.isArray(stages) && stages.length) {
@@ -688,7 +716,9 @@ if (watchEl && persona.watchout) watchEl.textContent = persona.watchout;
 
         // 3D 매트릭스: v2에서 내려주면 그걸 우선, 없으면 fallback 계산
         const matrixRows = voice?.matrix_rows || data?.matrix_rows || buildMatrixFallback(stages);
-        renderMatrix(matrixRows);
+       renderMatrix(matrixRows);
+ensureMatrixExplainText();
+
 
         renderStageTable(stages);
 
