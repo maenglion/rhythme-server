@@ -197,3 +197,92 @@ td { padding: 14px 12px; border-bottom: 1px solid var(--border-color); color: #e
 #modalOkBtn { background: var(--primary) !important; color: #000 !important; }
 
 footer { width: 100%; padding: 40px 0; color: var(--text-muted); font-size: 11px; text-align: center; }
+
+/* ============================================================
+   성별 선택 (Gender Group) - 버튼형 UI 최적화
+   ============================================================ */
+.gender-group {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    margin-top: 8px; /* 레이블과의 간격 */
+}
+
+.gender-item {
+    flex: 1;
+    position: relative;
+}
+
+/* 실제 라디오 버튼은 숨김 (디자인적 요소만 남김) */
+.gender-item input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* 버튼 스타일: 리포트 V2의 딥 다크 톤 */
+.gender-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 54px;
+    background: #0f172a; /* 입력창 배경과 통일 */
+    border: 1px solid var(--border-color);
+    border-radius: 12px; /* 리포트와 동일한 라운드 */
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 마우스 호버 시 효과 */
+.gender-label:hover {
+    border-color: var(--secondary);
+    background: rgba(129, 140, 248, 0.05);
+}
+
+/* 선택되었을 때: 스카이 블루/퍼플 그라데이션 포인트 */
+.gender-item input[type="radio"]:checked + .gender-label {
+    background: linear-gradient(135deg, var(--primary), var(--secondary)) !important;
+    color: #000000 !important; /* 어두운 배경 대비 검정 글씨가 가독성 높음 */
+    border-color: var(--primary) !important;
+    font-weight: 800;
+    box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+}
+
+.gender-item input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* 2. 설문 답변 버튼(Step 4) 간격 조정 */
+.answer-group {
+    display: flex;
+    flex-direction: column;
+    gap: 16px; /* 답변 칸 별 간격 16px 적용 */
+}
+
+.ans-btn {
+    width: 100%;
+    height: 54px;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    color: var(--text-main);
+    font-size: 15px;
+    text-align: center; /* 텍스트 중앙 정렬 */
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* 답변 버튼 선택 시 강조 */
+.ans-btn.selected {
+    background: var(--primary) !important;
+    color: #000000 !important;
+    border-color: var(--primary) !important;
+    font-weight: 700;
+}
