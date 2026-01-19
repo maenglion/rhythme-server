@@ -1,150 +1,253 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>분석 리포트 | RHYTHME</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
-  <style>
-    :root { 
-      --primary: #BB86FC; 
-      --secondary: #03DAC6; 
-      --bg: #0F0F12; 
-      --card: #1E1E26; 
-      --muted: #A0A0AB; 
-      --border: rgba(255,255,255,0.08); 
-    }
-    body { margin: 0; background: var(--bg); color: #F4F4F5; font-family: 'Pretendard', system-ui; line-height: 1.6; }
-    .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
-    
-    /* 헤더 및 세션 영역 */
-    .header { margin-bottom: 32px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px; }
-    .header-title h1 { margin: 0; font-size: 28px; font-weight: 800; }
-    .header-badges { margin-top: 12px; display: flex; gap: 8px; }
-    
-    .session-area { background: rgba(187,134,252,0.1); padding: 8px 16px; border-radius: 12px; font-size: 12px; color: var(--primary); display: flex; align-items: center; gap: 10px; }
-    .copy-btn { background: var(--primary); color: #000; border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 11px; transition: opacity 0.2s; }
-    .copy-btn:hover { opacity: 0.8; }
-
-    /* 지표 그리드 */
-    .index-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; text-align: center; padding: 24px; background: var(--card); margin-bottom: 24px; border-radius: 20px; border: 1px solid var(--border); }
-    .index-item .label { color: var(--muted); font-size: 12px; margin-bottom: 4px; }
-    .index-item .value { font-size: 24px; font-weight: 800; }
-
-    /* 카드 공통 */
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 24px; margin-bottom: 20px; }
-    .card-title { font-weight: 700; margin-bottom: 16px; color: #fff; font-size: 16px; }
-
-    .badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; background: rgba(255,255,255,0.1); }
-    .badge.good { color: #4CAF50; } .badge.warn { color: #FFC107; } .badge.bad { color: #CF6679; }
-
-    /* 그리드 레이아웃 */
-    .grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    @media (max-width: 768px) { .grid-container { grid-template-columns: 1fr; } }
-
-    /* 테이블 스타일 */
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th { text-align: left; color: var(--muted); border-bottom: 1px solid var(--border); padding: 12px 8px; font-weight: 500; }
-    td { padding: 12px 8px; border-bottom: 1px solid var(--border); color: #E4E4E7; }
-    
-    canvas { width: 100% !important; height: auto !important; max-height: 220px; }
-
-    /* 하단 액션 버튼 */
-    .action-area { text-align: center; margin-top: 40px; padding-top: 40px; border-top: 1px solid var(--border); }
-    .btn-primary { background: var(--primary); color: #000; border: none; width: 100%; max-width: 400px; padding: 18px; border-radius: 12px; font-size: 17px; font-weight: 700; cursor: pointer; transition: transform 0.1s; }
-    .btn-primary:active { transform: scale(0.98); }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>리듬 분석 리포트 V2</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <style>
+/* 기본 테마 설정: 냉철하고 분석적인 다크 모드 기반 */
+/* --- 리듬 분석 리포트 V2 다크 모드 최적화 --- */
+:root {
+    --bg-color: #0f172a;       /* 아주 깊은 네이비 (다크 모드 배경) */
+    --card-bg: #1e293b;       /* 카드 배경 (약간 밝은 다크) */
+    --primary: #38bdf8;       /* 데이터 강조 (스카이 블루) */
+    --secondary: #818cf8;     /* 시스템 지표 (퍼플 블루) */
+    --accent: #f87171;        /* F1 브레이크/경고 (소프트 레드) */
+    --text-main: #f1f5f9;     /* 메인 글자색 (화이트 계열) */
+    --text-muted: #94a3b8;    /* 보조 설명색 (그레이 계열) */
+    --border-color: #334155;  /* 경계선 색상 */
+    --radius: 16px;           /* 모바일에서 부드러운 느낌을 주는 라운드 */
+}
 
-<div class="container">
-  <header class="header">
-    <div class="header-title">
-      <h1>CASP 분석 리포트</h1>
-      <div class="header-badges">
-        <span class="badge" id="qualityBadge">품질: 로딩 중...</span>
-        <span class="badge" id="baselineBadge">Baseline: 확인 중...</span>
-      </div>
-    </div>
-    <div class="session-area">
-      <span>SESSION ID</span>
-      <button class="copy-btn" onclick="copyReportLink()">리포트 링크 복사</button>
-    </div>
-  </header>
+/* 모바일 초기화 */
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
 
-  <section class="index-grid">
-    <div class="index-item">
-      <div class="label">인지 적응도</div>
-      <div id="index-adaptive" class="value" style="color:var(--secondary);">-</div>
-    </div>
-    <div class="index-item">
-      <div class="label">에너지 밀도</div>
-      <div id="index-energy" class="value" style="color:var(--primary);">-</div>
-    </div>
-    <div class="index-item">
-      <div class="label">회복 탄력성</div>
-      <div id="index-resilience" class="value" style="color:var(--secondary);">-</div>
-    </div>
-  </section>
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    font-family: -apple-system, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 16px;
+}
 
-  <article class="card">
-    <div id="personaTitle" style="font-size:22px; font-weight:800; color:var(--primary); margin-bottom:8px;">데이터 분석 중...</div>
-    <p id="personaSummary" style="color:var(--muted); margin:0; font-size:15px; line-height: 1.6;">정보를 구성하고 있습니다. 잠시만 기다려 주세요.</p>
-  </article>
+/* 카드 디자인: 다크 모드에서 입체감 부여 */
+.card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 24px 20px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+}
 
-  <div class="grid-container">
-    <section class="card">
-      <div class="card-title">3D 분석 매트릭스</div>
-      <table>
-        <thead><tr><th>축</th><th>근거</th><th>해석</th></tr></thead>
-        <tbody id="matrixBody"></tbody>
-      </table>
+.card-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 18px;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+}
+
+.card-title::before {
+    content: '';
+    width: 4px;
+    height: 16px;
+    background: var(--primary);
+    margin-right: 10px;
+    border-radius: 2px;
+}
+
+/* 상단 요약 섹션 */
+#personaTitle {
+    font-size: 26px;
+    font-weight: 800;
+    margin: 0 0 8px 0;
+    color: #ffffff;
+}
+
+#strengthList li {
+    font-size: 14px;
+    color: #cbd5e1;
+    margin-bottom: 8px;
+}
+
+/* 인지 지표 3열 (모바일용) */
+.grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.grid-item {
+    background: var(--card-bg);
+    padding: 16px 8px;
+    text-align: center;
+    border-radius: var(--radius);
+    border: 1px solid var(--border-color);
+}
+
+.grid-item .label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.grid-item .value {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--secondary);
+}
+
+/* 테이블: 다크 모드 가독성 패치 */
+.table-wrapper {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+th {
+    color: var(--text-muted);
+    padding: 12px 8px;
+    border-bottom: 2px solid var(--border-color);
+    text-align: left;
+}
+
+td {
+    padding: 14px 8px;
+    border-bottom: 1px solid var(--border-color);
+    color: #e2e8f0;
+}
+
+/* 버튼: F1 레이싱 시트 같은 느낌 */
+#btnStartSurvey {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: #000; /* 다크 배경엔 밝은 버튼 내 검정 글씨가 가독성 좋음 */
+    border: none;
+    border-radius: var(--radius);
+    font-size: 16px;
+    font-weight: 800;
+    margin-top: 10px;
+    box-shadow: 0 4px 14px 0 rgba(56, 189, 248, 0.39);
+}
+
+#btnStartSurvey:active {
+    transform: scale(0.97);
+    opacity: 0.9;
+}
+
+.muted {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+</style>
+</body>
+    <section class="card" id="profile-section">
+        <div class="badge-group">
+            <span id="qualityBadge" class="badge">품질 분석 중...</span>
+            <span id="baselineBadge" class="badge">Baseline 확인 중...</span>
+        </div>
+        <h1 id="personaTitle">데이터를 불러오는 중...</h1>
+        <p id="personaSubtitle" class="muted"></p>
+        <p id="personaSummary">분석이 완료되면 여기에 핵심 요약이 표시됩니다.</p>
+        <ul id="strengthList">
+            </ul>
+        <div id="qeegBox" class="muted" style="margin-top: 10px;">qEEG 확인 중...</div>
     </section>
-    
-    <section class="card">
-      <div class="card-title">스테이지 변화 추이</div>
-      <canvas id="chart"></canvas>
-      <div id="chartLegend" style="font-size:11px; color:var(--muted); margin-top:12px; text-align: center;"></div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+        <div class="card" style="margin-bottom:0; padding: 15px 10px; text-align: center;">
+            <div class="muted">인지 적응</div>
+            <div id="index-adaptive" style="font-size: 18px; font-weight: bold; color: var(--secondary);">-</div>
+        </div>
+        <div class="card" style="margin-bottom:0; padding: 15px 10px; text-align: center;">
+            <div class="muted">에너지</div>
+            <div id="index-energy" style="font-size: 18px; font-weight: bold; color: var(--secondary);">-</div>
+        </div>
+        <div class="card" style="margin-bottom:0; padding: 15px 10px; text-align: center;">
+            <div class="muted">회복탄력</div>
+            <div id="index-resilience" style="font-size: 18px; font-weight: bold; color: var(--secondary);">-</div>
+        </div>
+    </div>
+
+    <section class="card" id="stage-card">
+        <div class="card-title">스테이지별 분석 데이터</div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>상태</th>
+                        <th>속도</th>
+                        <th>정지</th>
+                        <th>억양</th>
+                        <th>SNR</th>
+                    </tr>
+                </thead>
+                <tbody id="stageTableBody">
+                    </tbody>
+            </table>
+        </div>
     </section>
-  </div>
 
-  <section class="card">
-    <div class="card-title">스테이지별 상세 지표</div>
-    <table>
-      <thead>
-        <tr><th>Stage</th><th>상태</th><th>Rate</th><th>Pause</th><th>Pitch</th><th>SNR</th></tr>
-      </thead>
-      <tbody id="stageTableBody"></tbody>
-    </table>
-  </section>
+    <section class="card">
+        <div class="card-title">심층 매트릭스 해석</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>분석축</th>
+                    <th>근거</th>
+                    <th>의미</th>
+                </tr>
+            </thead>
+            <tbody id="matrixBody">
+                </tbody>
+        </table>
+    </section>
 
-  <div id="qeegBox" style="text-align:right; color:var(--muted); font-size:11px; margin-top:10px;"></div>
+    <section class="card">
+        <div class="card-title">분석 추이</div>
+        <canvas id="chart" style="width: 100%; height: 200px;"></canvas>
+        <div id="chartLegend" class="muted" style="margin-top: 10px;"></div>
+    </section>
 
-  <footer class="action-area">
-    <button id="btnStartSurvey" class="btn-primary" type="button">
-      설문 참여하고 결과 확정하기
-    </button>
-    <p style="font-size: 13px; color: var(--muted); margin-top: 14px;">
-      ※ 버튼 클릭 시 분석 세션 ID가 설문에 자동으로 포함됩니다.
-    </p>
-  </footer>
-</div>
+    <section class="card" id="metrics-card">
+  <div class="card-title">핵심 인지 제어 지표</div>
+  <table>
+    <thead>
+      <tr>
+        <th>분석 항목</th>
+        <th>나의 수치</th>
+        <th>전문 해석</th>
+      </tr>
+    </thead>
+    <tbody id="metricsBody"></tbody>
+  </table>
+</section>
 
-<script src="./runtime-config.js?v=1"></script>
-<script src="./session-guard.js"></script>
-<script>
-  // 리포트 링크 복사 함수 (정상적인 위치로 이동)
-  window.copyReportLink = async function () {
-    const reportUrl = location.href; 
-    try { 
-      await navigator.clipboard.writeText(reportUrl); 
-      alert("분석 리포트 링크가 복사되었습니다. 다른 기기에서도 확인 가능합니다."); 
-    } catch (err) { 
-      prompt("아래 링크를 복사해서 공유하세요:", reportUrl); 
-    }
-  };
-</script>
-<script src="./report.js"></script>
+
+    <section class="action-area">
+        <button id="btnStartSurvey">상세 심리 설문 시작하기</button>
+        <p class="muted" style="text-align: center; font-size: 11px;">
+            결과에 대해 궁금한 점이 있으신가요? 설문을 통해 더 자세한 리포트를 받아보세요.
+        </p>
+    </section>
+<script src="report.js?v=20260119-2"></script>
 
 </body>
 </html>
