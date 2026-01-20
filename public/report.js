@@ -29,6 +29,55 @@ function getSidSafe() {
   return sid;
 }
 
+//품질결과 산출
+
+function assessStageQuality(r) {
+  const recorded = Number(r.recorded_ms ?? 0);
+  const pauseMs  = Number(r.pause_ms ?? 0);
+  const speechMs = Math.max(0, recorded - pauseMs);
+
+  const snr = Number(r.snr_db ?? r.snr_est_db ?? NaN);
+  const clip = Number(r.clip ?? r.clipping_ratio ?? 0);
+
+  // 1) 완료 여부
+  if (r.status !== "completed") {
+    return { level: "warn", reason: "녹음이 완료되지 않음" };
+  }
+
+  // 2) 발화량(커버리지) 부족: 음질 문제가 아니라 "해석 제한"으로 분리
+  //    (예: 40초 중 실제 말한 시간이 너무 짧은 경우)
+  if (recorded < 8000 || speechMs < 5000) {
+    return { level: "info", reason: "발화가 짧아 해석이 제한됨" };
+  }
+
+  // 3) 진짜 음질 경고만 남기기
+  if (Number.isFinite(snr) && snr < 6) {
+    return { level: "warn", reason: "주변 소음/말소리 비율이 낮음(SNR)" };
+  }
+  if (clip > 0.02) {
+    return { level: "warn", reason: "입력이 너무 커서 찢어짐(클리핑)" };
+  }
+
+  return { level: "ok", reason: "" };
+}
+
+function assessOverallQuality(rows) {
+  // stage 1~4 rows 들어온다고 가정
+  const stageChecks = rows.map(assessStageQuality);
+
+  const warnCount = stageChecks.filter(x => x.level === "warn").length;
+  const infoCount = stageChecks.filter(x => x.level === "info").length;
+
+  // ✅ “주의”는 2개 이상 stage에서 '진짜 음질 경고'일 때만
+  if (warnCount >= 2) return { label: "품질: 주의", detail: stageChecks };
+
+  // ✅ 경고는 아니지만 해석 제한이면 '안내'로
+  if (infoCount >= 2) return { label: "발화량: 부족(해석 제한)", detail: stageChecks };
+
+  return { label: "품질: 양호", detail: stageChecks };
+}
+
+
 function showInfo(title, message, detail = "") {
   if (typeof window.showInfoModal === "function") return window.showInfoModal(title, message, detail);
   if (typeof window.showErrorModal === "function") return window.showErrorModal(title, message, detail);
@@ -72,6 +121,11 @@ async function copyTextWithModal(text) {
     }
   }
 }
+
+
+// 품질결과 산출 
+
+
 
 document.addEventListener("DOMContentLoaded", () => {
   const sid = getSidSafe();
