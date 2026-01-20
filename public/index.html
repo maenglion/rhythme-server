@@ -185,43 +185,37 @@
         </div>
     </section>
 
-   <section id="step5" class="step">
+<section id="step5" class="step">
     <h3 class="title">qEEG 업로드</h3>
     <p class="description">
-        EC와 EO는 오른쪽 상단에 표기되어 있습니다. 
-        잘 모르시거나 한 장만 보유하고 있다면 아무 곳에나 올려주세요.(선택사항)
-        보조지표로 사용되므로 없으셔도 무방합니다.
+        정확한 분석을 위해 EC와 EO 파일을 각각 업로드해 주세요.<br>
+        (보조지표이므로 없으셔도 다음 단계 진행이 가능합니다.)
     </p>
     
-    <div class="upload-unit">
-        <div class="qeeg-box">
-            <div class="qeeg-info-text">
-                <span class="qeeg-type">EC</span>
-                <span class="description" style="margin-bottom:0;">(눈 감았을 때)</span>
+    <div class="qeeg-unit">
+        <label for="qeegEC" class="qeeg-card">
+            <div class="qeeg-info">
+                <span class="qeeg-tag">EC</span>
+                <span class="qeeg-desc">눈 감았을 때</span>
             </div>
-            <span id="ecStatus" class="qeeg-status">미첨부</span>
-        </div>
-        <input type="file" id="qeegEC" style="display:none" onchange="updateFileName('EC')">
-        <button class="file-btn btn-secondary" onclick="document.getElementById('qeegEC').click()">파일 선택</button>
+            <span id="ecStatus" class="qeeg-filename">미첨부</span>
+            <input type="file" id="qeegEC" style="display:none" onchange="updateFileName('EC')">
+        </label>
     </div>
 
-    <div style="height: 24px;"></div> <div class="upload-unit">
-        <div class="qeeg-box">
-            <div class="qeeg-info-text">
-                <span class="qeeg-type">EO</span>
-                <span class="description" style="margin-bottom:0;">(눈 떴을 때)</span>
+    <div class="qeeg-unit">
+        <label for="qeegEO" class="qeeg-card">
+            <div class="qeeg-info">
+                <span class="qeeg-tag">EO</span>
+                <span class="qeeg-desc">눈 떴을 때</span>
             </div>
-            <span id="eoStatus" class="qeeg-status">미첨부</span>
-        </div>
-        <input type="file" id="qeegEO" style="display:none" onchange="updateFileName('EO')">
-        <button class="file-btn btn-secondary" onclick="document.getElementById('qeegEO').click()">파일 선택</button>
+            <span id="eoStatus" class="qeeg-filename">미첨부</span>
+            <input type="file" id="qeegEO" style="display:none" onchange="updateFileName('EO')">
+        </label>
     </div>
 
-<button type="button" id="uploadBtn" class="next-btn" onclick="submitAll(event)">다음</button>
-
-<button type="button" id="nextStepBtn" class="next-btn secondary-btn" style="display:none;">
-  음성분석 이어하기
-</button>
+    <button type="button" id="uploadBtn" class="next-btn" onclick="submitAll(event)">다음</button>
+</section>
 
 </section>
  <div id="customModal" class="modal-overlay">
@@ -233,17 +227,77 @@
   </div>
 </div>
 
-<div id="chrome-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; display:flex; justify-content:center; align-items:center;">
-    <div style="background:#222; color:#fff; padding:30px; border-radius:15px; text-align:center; max-width:80%; border:1px solid #444;">
-        <h3 style="margin-top:0;">최적의 환경에서 접속해 주세요</h3>
-        <p>이 서비스는 <b>구글 크롬(Chrome)</b> 브라우저에 최적화되어 있습니다. 원활한 이용을 위해 크롬으로 접속을 권장합니다.</p>
+<div id="chrome-modal" onclick="closeModal(event)" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; display:flex; justify-content:center; align-items:center;">
+    <div style="background:#222; color:#fff; padding:25px; border-radius:15px; text-align:center; width:320px; border:1px solid #444; position:relative;" onclick="event.stopPropagation()">
         
-        <button id="btn-intent" style="display:none; background:#4285F4; color:white; border:none; padding:12px 20px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%; margin-bottom:10px;">크롬 앱으로 열기</button>
+        <span onclick="document.getElementById('chrome-modal').style.display='none'" style="position:absolute; top:10px; right:15px; cursor:pointer; font-size:20px; color:#888;">&times;</span>
+
+        <h3 style="margin-top:10px; font-size:18px;">최적의 환경 안내</h3>
+        <p style="font-size:14px; color:#ccc; line-height:1.5;">
+            <b>구글 크롬(Chrome)</b>에서 접속하시면<br>분석이 더욱 정확하고 빠릅니다.
+        </p>
         
-        <button onclick="copyCurrentUrl()" style="background:#444; color:white; border:none; padding:12px 20px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%;">URL 복사 후 크롬에서 열기</button>
+        <button id="btn-intent" style="display:none; background:#4285F4; color:white; border:none; padding:14px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%; margin-bottom:10px; font-size:15px;">
+            크롬 앱으로 즉시 이동
+        </button>
+        
+        <button onclick="copyCurrentUrl()" style="background:#444; color:white; border:none; padding:14px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%; font-size:15px;">
+            주소 복사 후 크롬 실행
+        </button>
     </div>
 </div>
+<script>
+  window.onload = function() {
+    const ua = navigator.userAgent.toLowerCase();
+    const isChrome = /chrome/.test(ua) && !/edge|opr|brave/.test(ua);
+    const isKakao = /kakaotalk/i.test(ua);
+    const isAndroid = /android/.test(ua);
 
+    // 크롬이 아니고 카카오톡도 아닐 때만 실행
+    if (!isChrome && !isKakao) {
+        const modal = document.getElementById('chrome-modal');
+        modal.style.display = 'flex';
+
+        if (isAndroid) {
+            const intentBtn = document.getElementById('btn-intent');
+            intentBtn.style.display = 'block';
+            
+            const url = window.location.href.replace(/https?:\/\//, '');
+            const intentUrl = `intent://${url}#Intent;scheme=https;package=com.android.chrome;end`;
+
+            // [자동 전환 시도] 페이지 로드 시 안드로이드라면 바로 크롬 실행 시도
+            setTimeout(() => {
+                location.href = intentUrl;
+            }, 500);
+
+            intentBtn.onclick = function() {
+                location.href = intentUrl;
+            };
+        }
+    }
+};
+
+function closeModal(event) {
+    document.getElementById('chrome-modal').style.display = 'none';
+}
+
+function copyCurrentUrl() {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+        alert('주소가 복사되었습니다! 크롬 앱을 열어 주소창에 붙여넣어 주세요.');
+    }).catch(err => {
+        // 복사 실패 시 구형 방식 대응
+        const dummy = document.createElement('input');
+        document.body.appendChild(dummy);
+        dummy.value = url;
+        dummy.select();
+        document.execCommand('copy');
+        document.body.removeChild(dummy);
+        alert('주소가 복사되었습니다.');
+    });
+}
+
+</script>
 <script src="./runtime-config.js?v=1"></script>
 <script src="./session-guard.js"></script>
 <script src="./report.js"></script>
