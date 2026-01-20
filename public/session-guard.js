@@ -3,6 +3,7 @@
  * 역할: 페이지 성격에 따른 SID 최적화 관리
  */
 
+
 (function forceExternalOpenInKakao() {
   const ua = navigator.userAgent || "";
 const isInApp =

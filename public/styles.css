@@ -825,14 +825,14 @@ tr:hover {
 
 /* 기본 테마 및 변수 설정 */
 :root {
-  --bg-color: #121212;
-  --card-bg: #1e1e1e;
+  --bg-color: #0f172a;
+  --card-bg: #1e293b;
   --primary: #bb86fc;
   --secondary: #03dac6;
   --error: #cf6679;
-  --text-main: #e0e0e0;
-  --text-muted: #a0a0a0;
-  --border: #333333;
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
+  --border: #334155;
   --good: #4caf50;
   --warn: #ff9800;
 }
