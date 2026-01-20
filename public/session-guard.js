@@ -3,6 +3,38 @@
  * 역할: 페이지 성격에 따른 SID 최적화 관리
  */
 
+const KEY_A = "SESSION_ID";
+const KEY_B = "rhythmi_session_id";
+
+function saveSid(sid) {
+  if (!sid) return;
+  localStorage.setItem(KEY_A, sid);
+  localStorage.setItem(KEY_B, sid);
+}
+
+function readSid() {
+  const u = new URL(location.href);
+  return (
+    u.searchParams.get("sid") ||
+    localStorage.getItem(KEY_B) ||
+    localStorage.getItem(KEY_A) ||
+    ""
+  );
+}
+
+function stripSidFromUrl() {
+  const u = new URL(location.href);
+  if (!u.searchParams.has("sid")) return;
+
+  // sid가 있으면 저장(끊김 방지)
+  const sid = u.searchParams.get("sid");
+  if (sid) saveSid(sid);
+
+  // URL에서만 제거
+  u.searchParams.delete("sid");
+  history.replaceState(null, "", u.toString());
+}
+
 
 (function forceExternalOpenInKakao() {
   const ua = navigator.userAgent || "";
@@ -81,11 +113,8 @@ const isProgressPage = !isMainPage && !isKeepSidPage;
 
 // 3) URL에서 sid 파라미터 제거 (단, 필요한 페이지는 제외)
 function stripSidFromUrl() {
-  const sid = new URL(location.href).searchParams.get("sid");
-if (sid) {
-  localStorage.setItem("SESSION_ID", sid);
-  localStorage.setItem("rhythmi_session_id", sid); // ✅ 이 줄 추가 (호환)
-}
+const sid = new URL(location.href).searchParams.get("sid");
+if (sid) saveSid(sid);
 
   // ✅ keep 페이지(리포트/qEEG)는 sid 유지
   if (isKeepSidPage) return;
@@ -98,25 +127,18 @@ if (sid) {
 }
 
   // 4) 세션 아이디 결정 로직
-  function getSid() {
-    const urlSid = new URLSearchParams(location.search).get("sid");
-    const storedSid = localStorage.getItem(KEY);
+function getSid() {
+  const urlSid = new URLSearchParams(location.search).get("sid");
+  const storedSid = readSid(); // ✅ 여기!
 
-    if (isReportPage) {
-      // 리포트: URL에 있는 것을 최우선으로 하되 저장소는 건드리지 않음
-      return urlSid || storedSid;
-    }
+  if (isReportPage) return urlSid || storedSid;
+  if (isMainPage) return storedSid;
 
-    if (isMainPage) {
-      // 메인: 저장된 것만 반환 (없으면 null), URL에 있는 타인의 SID는 무시
-      return storedSid;
-    }
+  const sid = urlSid || storedSid || generateUUID();
+  if (sid) saveSid(sid); // ✅ 여기!
+  return sid;
+}
 
-    // 진행 페이지: URL > 저장소 > 신규 발급
-    const sid = urlSid || storedSid || generateUUID();
-    if (sid) localStorage.setItem(KEY, sid);
-    return sid;
-  }
 
   // 5) URL에 sid 동기화
   function ensureSidInUrl(sid) {
@@ -187,17 +209,19 @@ if (sid) {
   }
 
   // 9) [전역] 새 연구 시작 (onclick="startResearch()")
-  window.startResearch = function (isMinor) {
-    console.log("[session-guard] 새로운 세션을 생성하고 시작합니다.");
-    localStorage.removeItem(KEY);
-    const newSid = generateUUID();
-    localStorage.setItem(KEY, newSid);
+ window.startResearch = function (isMinor) {
+  localStorage.removeItem(KEY_A);
+  localStorage.removeItem(KEY_B);
 
-    const u = new URL("step2_consent.html", location.origin); // 다음 페이지 파일명 확인 필요
-    u.searchParams.set("sid", newSid);
-    if (isMinor) u.searchParams.set("minor", "true");
-    location.href = u.toString();
-  };
+  const newSid = generateUUID();
+  saveSid(newSid);
+
+  const u = new URL("step2_consent.html", location.origin);
+  u.searchParams.set("sid", newSid);
+  if (isMinor) u.searchParams.set("minor", "true");
+  location.href = u.toString();
+};
+
 
   // 🚀 실행부
   document.addEventListener("DOMContentLoaded", () => {
