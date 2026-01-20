@@ -590,54 +590,35 @@ if (!q.ok) {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) {
-        const txt = await res.text().catch(() => "");
-        await logClientError(new Error("submit-voice-stage not ok"), {
-          type: "submit_failed",
-          url,
-          status: res.status,
-          body: txt.slice(0, 300),
-          stageIdx,
-          sid,
-        });
-        const hint =
-  res.status === 401 || res.status === 403 ? "권한/키 설정 문제일 수 있어요." :
-  res.status === 404 ? "API 주소가 잘못됐거나 배포된 서버가 응답하지 않아요." :
-  res.status >= 500 ? "서버 오류가 발생했어요. 잠시 후 다시 시도해 주세요." :
-  "네트워크/요청 오류가 발생했어요.";
+if (!res.ok) {
+  const txt = await res.text().catch(() => "");
+  const hint =
+    res.status === 401 || res.status === 403 ? "권한/키 설정 문제일 수 있어요." :
+    res.status === 404 ? "API 주소가 잘못됐거나 배포된 서버가 응답하지 않아요." :
+    res.status >= 500 ? "서버 오류가 발생했어요. 잠시 후 다시 시도해 주세요." :
+    "네트워크/요청 오류가 발생했어요.";
 
-showErrorModal(
-  "서버 전송에 실패했어요",
-  `녹음 데이터 전송이 실패했습니다. (${res.status}) ${hint}`,
-  (txt || "").slice(0, 200) // ✅ URL은 넣지 말고, 응답만 짧게
-);
-return;
+  window.showErrorModal?.(
+    "서버 전송에 실패했어요",
+    `녹음 데이터 전송이 실패했습니다. (${res.status}) ${hint}`,
+    (txt || "").slice(0, 200)
+  ) || alert("서버 전송에 실패했어요.");
 
-      }
+  return;
+}
 } catch (e) {
   const name = e?.name || "Error";
-  const msgText = String(e?.message || "");
-
-  // ✅ fetch/네트워크 계열 에러 먼저 잡기 (폰에서 가장 흔함)
-  if (name === "TypeError" || /failed to fetch|network|fetch/i.test(msgText)) {
-    showRetryVoiceTestModal(
-  sid,
-  "서버 전송에 실패했어요",
-  `녹음 데이터 전송이 실패했습니다. (${res.status}) ${hint}\n\n같은 세션으로 다시 시도할게요.`,
-  (txt || "").slice(0, 200)
-);
-return;
-
-  }
   const msg =
     name === "NotAllowedError" ? "마이크 권한이 거부되었습니다. 브라우저 설정에서 마이크를 허용해 주세요." :
     name === "NotFoundError"   ? "마이크 장치를 찾지 못했습니다. 이어폰/블루투스/외부 마이크 연결을 확인해 주세요." :
     name === "NotReadableError"? "다른 앱이 마이크를 사용 중일 수 있어요. 전화/녹음/카메라 앱을 종료하고 다시 시도해 주세요." :
-    name === "SecurityError"   ? "보안상 마이크 접근이 차단되었습니다. HTTPS/권한 설정을 확인해 주세요." :
-                                 "마이크 초기화에 실패했습니다. 다시 시도해 주세요.";
+    "마이크 초기화에 실패했습니다. 다시 시도해 주세요.";
 
-  showErrorModal("녹음을 시작할 수 없어요", msg, `${name}: ${e?.message || ""}`.trim());
+  window.showErrorModal?.("녹음을 시작할 수 없어요", msg, `${name}: ${e?.message || ""}`.trim())
+    || alert(msg);
+  return;
 }
+
 
 function showRetryVoiceTestModal(sid, title, message, debug = "") {
   // sid 보존(혹시 localStorage가 비었을 때 대비)
@@ -659,8 +640,6 @@ function showRetryVoiceTestModal(sid, title, message, debug = "") {
     };
   }
 }
-
-
 
     // ✅ POST 성공 직후 진행상태 저장
     saveProgress(sid, {
@@ -774,9 +753,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
 <div style="margin-top: 40px;">
     </div>
+<script src="./ui-modal.js?v=1"></script>
 <script src="./runtime-config.js?v=1"></script>
 <script src="./session-guard.js"></script>
 <script src="./report.js"></script>
+
 
     </body>
 </html>

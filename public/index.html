@@ -247,44 +247,53 @@
     </div>
 </div>
 <script>
-// 1. 모달 닫기 기능 (공통 사용)
-window.closeModal = function () {
-    const modal = document.getElementById('chrome-modal') || document.getElementById('customModal');
-    if (modal) modal.style.display = 'none';
-};
-
-// 2. 크롬 유도 및 자동 전환 로직
+// 1. 브라우저 체크 및 모달 제어 (Gatekeeper)
 (function() {
     const ua = navigator.userAgent.toLowerCase();
-    const isChrome = /chrome/.test(ua) && !/edge|opr|brave/.test(ua);
+    // 순수 크롬인지 확인 (Edge, Brave 등 제외)
+    const isChrome = /chrome/.test(ua) && !/edge|opr|brave/.test(ua) && !/kakaotalk/i.test(ua);
     const isKakao = /kakaotalk/i.test(ua);
     const isAndroid = /android/.test(ua);
 
-    // 환경 체크 (크롬도 아니고 카톡도 아닐 때)
+    // 크롬이 아니고 카톡도 아닐 때만 모달 작동
     if (!isChrome && !isKakao) {
-        window.addEventListener('load', function() {
+        window.addEventListener('DOMContentLoaded', function() {
             const modal = document.getElementById('chrome-modal');
             if (modal) {
                 modal.style.display = 'flex';
                 
+                // 안드로이드라면 '크롬 이동' 버튼 활성화 (자동 실행 대신 클릭 유도)
                 if (isAndroid) {
-                    const url = window.location.href.replace(/https?:\/\//, '');
-                    const intentUrl = `intent://${url}#Intent;scheme=https;package=com.android.chrome;end`;
-                    
-                    // 안드로이드는 0.5초 뒤 자동 전환 시도
-                    setTimeout(() => { location.href = intentUrl; }, 500);
+                    const intentBtn = document.getElementById('btn-intent');
+                    if (intentBtn) {
+                        intentBtn.style.display = 'block';
+                        const url = window.location.href.replace(/https?:\/\//, '');
+                        intentBtn.onclick = function() {
+                            // 사용자가 직접 클릭해야 앱 전환이 확실하게 일어납니다.
+                            location.href = `intent://${url}#Intent;scheme=https;package=com.android.chrome;end`;
+                        };
+                    }
                 }
             }
         });
     }
 })();
 
-// 3. URL 복사 기능
+// 2. 통합 모달 닫기 함수 (app.js 로직과 호환)
+window.closeModal = function() {
+    const chromeModal = document.getElementById('chrome-modal');
+    const customModal = document.getElementById('customModal');
+    if (chromeModal) chromeModal.style.display = 'none';
+    if (customModal) customModal.style.display = 'none';
+};
+
+// 3. URL 복사 함수
 function copyCurrentUrl() {
     const url = window.location.href;
     navigator.clipboard.writeText(url).then(() => {
-        alert('주소가 복사되었습니다.');
+        alert('주소가 복사되었습니다. 크롬 앱을 열어 주소창에 붙여넣어 주세요!');
     }).catch(() => {
+        // 구형 브라우저 대응
         const dummy = document.createElement('input');
         document.body.appendChild(dummy);
         dummy.value = url;
