@@ -67,14 +67,25 @@ if (!isInApp) return;
   const isProgressPage = !isMainPage && !isReportPage; // 실제 검사 진행 중인 페이지들
 
   // 3) URL에서 sid 파라미터 강제 제거 함수
-  function stripSidFromUrl() {
-    const u = new URL(location.href);
-    if (u.searchParams.has("sid")) {
-      u.searchParams.delete("sid");
-      history.replaceState(null, "", u.toString());
-      console.log("[session-guard] URL에서 SID를 제거했습니다.");
-    }
+function stripSidFromUrl() {
+  const u = new URL(location.href);
+  const urlSid = u.searchParams.get("sid");
+  const storedSid = localStorage.getItem(KEY);
+
+  // ✅ "처음 들어온 기기"는 URL sid를 저장소에 먼저 저장해준다
+  //    (이미 storedSid가 있으면 URL sid는 무시 = 세션 오염 방지)
+  if (urlSid && !storedSid) {
+    localStorage.setItem(KEY, urlSid);
+    console.log("[session-guard] URL sid를 저장소에 저장 =", urlSid);
   }
+
+  // ✅ 그 다음 URL에서는 제거
+  if (u.searchParams.has("sid")) {
+    u.searchParams.delete("sid");
+    history.replaceState(null, "", u.toString());
+    console.log("[session-guard] URL에서 SID를 제거했습니다.");
+  }
+}
 
   // 4) 세션 아이디 결정 로직
   function getSid() {
