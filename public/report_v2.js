@@ -781,33 +781,37 @@ ensureMatrixExplainText();
   card.appendChild(div);
 }
 
-
+// 세션아이디 복사 와 리포트 링크 복사 
 function getSidFromUrlOrStorage() {
   const u = new URL(location.href);
-  return (
-    u.searchParams.get("sid") ||
-    localStorage.getItem("rhythmi_session_id") ||
-    ""
-  );
+  return u.searchParams.get("sid") || localStorage.getItem("rhythmi_session_id") || "";
 }
 
-async function copyReportLinkWithSid() {
-  const sid = getSidFromUrlOrStorage();
-  if (!sid) {
-    alert("세션 ID를 찾을 수 없어 리포트 링크를 만들 수 없어요.");
-    return;
-  }
+async function copyText(t) {
+  try { await navigator.clipboard.writeText(t); }
+  catch { prompt("복사", t); }
+}
+
+function buildReportUrlWithSid(sid) {
   const u = new URL(location.href);
-  u.searchParams.set("sid", sid); // ✅ 무조건 포함
-  await navigator.clipboard.writeText(u.toString());
+  u.searchParams.set("sid", sid);
+  return u.toString();
 }
 
-const copyReportLinkBtn = document.getElementById("copyReportLinkBtn");
-if (copyReportLinkBtn) {
-  copyReportLinkBtn.onclick = copyReportLinkWithSid; // ✅ 기존 window.location.href 복사 대신
+function initCopyButtons() {
+  const sid = getSidFromUrlOrStorage();
+  if (!sid) return;
+
+  const sidTextEl = document.getElementById("sidText");
+  if (sidTextEl) sidTextEl.textContent = sid;
+
+  const copySidBtn = document.getElementById("copySidBtn");
+  if (copySidBtn) copySidBtn.onclick = () => copyText(sid);               // ✅ sid만
+
+  const copyReportLinkBtn = document.getElementById("copyReportLinkBtn");
+  if (copyReportLinkBtn) copyReportLinkBtn.onclick = () => copyText(buildReportUrlWithSid(sid)); // ✅ URL
 }
 
 
-
-  document.addEventListener("DOMContentLoaded", init);
+  document.addEventListener("DOMContentLoaded", initCopyButtons);
 })();
