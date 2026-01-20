@@ -484,6 +484,98 @@ function judgeVoiceQuality(metrics) {
 }
 
 
+//-----------------------------
+// 소음측정중 홀딩 방지 패치 
+//-----------------------------
+// -------------------------
+// Noise measure (failsafe)
+// -------------------------
+function getAudioCtx() {
+  if (!window.__rh_audioCtx) {
+    window.__rh_audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return window.__rh_audioCtx;
+}
+
+async function ensureAudioRunning() {
+  const ctx = getAudioCtx();
+  // 모바일/브라우저에서 버튼 클릭(유저 제스처) 안에서 resume 안 하면 계속 suspended로 남는 케이스 많음
+  if (ctx.state !== "running") await ctx.resume();
+  return ctx;
+}
+
+function percentile(arr, p) {
+  if (!arr.length) return 0;
+  const a = [...arr].sort((x, y) => x - y);
+  const idx = Math.max(0, Math.min(a.length - 1, Math.floor((a.length - 1) * p)));
+  return a[idx];
+}
+
+/**
+ * stream: getUserMedia로 받은 스트림
+ * onDone: (noiseFloorRms) => { ... startRecording ... }
+ */
+async function measureNoiseThen(stream, onDone, opts = {}) {
+  const MEASURE_MS = opts.measureMs ?? 1200;     // 소음 측정 시간
+  const FAILSAFE_MS = opts.failsafeMs ?? 2500;   // 이 시간이 지나면 무조건 다음 단계로 넘어감
+
+  const ctx = await ensureAudioRunning();
+
+  const src = ctx.createMediaStreamSource(stream);
+  const analyser = ctx.createAnalyser();
+  analyser.fftSize = 2048;
+
+  src.connect(analyser);
+
+  const buf = new Float32Array(analyser.fftSize);
+  const rmsSamples = [];
+
+  const t0 = performance.now();
+  let rafId = null;
+  let done = false;
+
+  const failsafe = setTimeout(() => {
+    if (done) return;
+    done = true;
+    try { if (rafId) cancelAnimationFrame(rafId); } catch {}
+    const floor = percentile(rmsSamples, 0.2); // 20퍼센타일(튀는 값에 덜 민감)
+    console.warn("[noise] FAILSAFE -> next. ctx=", ctx.state, "samples=", rmsSamples.length, "floor=", floor);
+    onDone(floor || 0);
+  }, FAILSAFE_MS);
+
+  function tick() {
+    analyser.getFloatTimeDomainData(buf);
+
+    // RMS 계산
+    let sum = 0;
+    for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
+    const rms = Math.sqrt(sum / buf.length);
+
+    rmsSamples.push(rms);
+
+    const elapsed = performance.now() - t0;
+    // 디버그 로그 (너무 많으면 보기 힘드니 가끔만)
+    if (rmsSamples.length % 30 === 0) {
+      console.log("[noise] ctx=", ctx.state, "elapsed=", Math.round(elapsed), "ms", "rms=", rms.toFixed(6));
+    }
+
+    if (elapsed >= MEASURE_MS) {
+      if (done) return;
+      done = true;
+      clearTimeout(failsafe);
+      const floor = percentile(rmsSamples, 0.2);
+      console.log("[noise] DONE. ctx=", ctx.state, "samples=", rmsSamples.length, "floor=", floor);
+      onDone(floor || 0);
+      return;
+    }
+
+    rafId = requestAnimationFrame(tick);
+  }
+
+  tick();
+}
+
+
   // ---------------------------
   // 녹음 + 전송
   // ---------------------------
@@ -495,40 +587,67 @@ function judgeVoiceQuality(metrics) {
   if (!s) return;
 
   // ✅ sid는 try 밖에서 잡아야 catch에서도 안전하게 사용 가능
-  const sid = getSid();
   if (!sid) {
-    alert("세션이 없습니다. 처음부터 다시 진행해주세요.");
-    location.href = "./index.html";
-    return;
-  }
+  (window.showErrorModal || alert)(
+    "세션이 없어요",
+    "처음부터 다시 진행해주세요.",
+    ""
+  );
+  location.href = "./index.html";
+  return;
+}
 
   // age_group 계산
   const age = parseInt(localStorage.getItem("rhythmi_age") || "0", 10);
   const age_group = age < 14 ? "under14" : (age < 19 ? "child" : "adult");
 
-  try {
+
     // 1) 캘리브레이션
-    setRecordButtonState({ recording: false, calibrating: true });
-    await vp.calibrateSilence(2);
 
-    // 2) 녹음 시작 UI
-    setRecordButtonState({ recording: true, calibrating: false });
-    if (recBtn) recBtn.dataset.recording = "1";
+ function getVpCtx(vp) {
+  return vp?.audioCtx || vp?.ctx || vp?.audioContext || null;
+}
 
-    // 3) 조기 종료 버튼
-    if (finishBtn) {
-      finishBtn.style.display = "inline-block";
-      finishBtn.onclick = () => {
-        try {
-          if (typeof vp.stop === "function") vp.stop();
-          else vp._stopped = true;
-        } finally {
-          finishBtn.style.display = "none";
-        }
-      };
-    }
+async function calibrateSilenceSafe(vp, seconds = 2, timeoutMs = 2800) {
+  const ctx = getVpCtx(vp);
 
-    // 4) 녹음
+  // suspended면 깨우기
+  if (ctx && ctx.state && ctx.state !== "running") {
+    try { await ctx.resume(); } catch {}
+  }
+
+  // vp.calibrateSilence가 안 끝나면 timeout으로 강제 진행
+  const calibPromise = vp.calibrateSilence(seconds);
+  const timeoutPromise = new Promise((resolve) =>
+    setTimeout(() => resolve({ __timeout: true }), timeoutMs)
+  );
+
+  return Promise.race([
+    calibPromise
+      .then((v) => ({ __timeout: false, value: v }))
+      .catch((e) => ({ __timeout: true, error: e })),
+    timeoutPromise
+  ]);
+}
+
+try {
+  // 1) 캘리브레이션 UI
+  setRecordButtonState({ recording: false, calibrating: true });
+
+  // ✅ 여기서만 캘리브레이션 1번 실행 (기존 await vp.calibrateSilence(2); 는 삭제)
+  const calib = await calibrateSilenceSafe(vp, 2, 2800);
+  if (calib.__timeout) {
+    console.warn("[calib] timeout/failed -> continue", calib.error || "");
+  }
+
+  // 2) 녹음 시작 UI
+  setRecordButtonState({ recording: true, calibrating: false });
+  if (recBtn) recBtn.dataset.recording = "1";
+
+
+
+
+   // 4) 녹음
     const metrics = await vp.startStage({
       durationSec: 40,
       onTick: ({ leftMs }) => setTimer(leftMs, 40),
