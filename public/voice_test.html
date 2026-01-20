@@ -620,12 +620,14 @@ return;
 
   // ✅ fetch/네트워크 계열 에러 먼저 잡기 (폰에서 가장 흔함)
   if (name === "TypeError" || /failed to fetch|network|fetch/i.test(msgText)) {
-    showErrorModal(
-      "서버 통신에 실패했어요",
-      "서버가 내려갔거나(API), 주소/CORS 문제일 수 있어요. 잠시 후 다시 시도해 주세요.",
-      `${name}: ${msgText}`.slice(0, 200)
-    );
-    return;
+    showRetryVoiceTestModal(
+  sid,
+  "서버 전송에 실패했어요",
+  `녹음 데이터 전송이 실패했습니다. (${res.status}) ${hint}\n\n같은 세션으로 다시 시도할게요.`,
+  (txt || "").slice(0, 200)
+);
+return;
+
   }
   const msg =
     name === "NotAllowedError" ? "마이크 권한이 거부되었습니다. 브라우저 설정에서 마이크를 허용해 주세요." :
