@@ -33,6 +33,8 @@ body {
   background-color: #0b0f1a;
   color: #ffffff;
   line-height: 1.5;
+  font-size: 16px; /* 전체적인 기본 크기 증가 */
+
 }
 
 /* 카드 및 레이아웃 */
@@ -48,7 +50,6 @@ body {
 /* 제목 및 텍스트 위계 */
 h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: #fff; }
 .card-title { font-size: 15px; font-weight: 700; color: var(--primary); margin-bottom: 12px; }
-.muted { color: var(--text-muted); font-size: 13px; font-weight: 400; }
 .mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; letter-spacing: -0.2px; }
 
 /* 핵심 지표 (SQ Index) 강조 */
@@ -85,26 +86,54 @@ h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: #fff; }
   border: 1px solid rgba(255,255,255,0.1); 
 }
 
-/* 4축 프로필 바 시스템 */
+
+/* 3. 4축 프로필 레이아웃 세밀 조정 */
+.axis-item {
+  margin: 20px 0; /* 항목 간 간격 확대 */
+}
+
+.axis-label {
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.axis-label .kr {
+  font-size: 13px;
+  color: var(--primary); /* 한글은 강조색으로 표시 */
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+.value {
+  font-size: 18px;
+  color: #fff;
+}
+
+/* 4축 프로필 막대 그래프 시스템 */
 .barWrap { 
   width: 100%; 
-  background: rgba(255,255,255,0.05); 
-  border-radius: 6px; 
-  height: 10px; 
-  margin: 8px 0;
+  background: rgba(255, 255, 255, 0.08); /* 배경을 조금 더 밝게 해서 기준선 명확화 */
+  border-radius: 8px; 
+  height: 14px; /* 기존 10px에서 14px로 키워 시인성 확보 */
+  margin: 12px 0; /* 위아래 간격 넓힘 */
+  overflow: hidden; /* 내부 막대가 튀어나가지 않게 통제 */
 }
 
 .bar { 
   height: 100%; 
-  background: var(--primary); 
-  border-radius: 6px;
-  box-shadow: 0 0 10px rgba(187, 134, 252, 0.3);
+  background: var(--primary); /* 보라색 테마 유지 */
+  border-radius: 8px;
+  box-shadow: 0 0 12px rgba(187, 134, 252, 0.4); /* 광원 효과 강화 */
+  transition: width 0.6s cubic-bezier(0.25, 0.1, 0.25, 1); /* 데이터가 부드럽게 차오르는 애니메이션 */
 }
 
 /* 테이블 디자인 최적화 */
 table { margin-top: 10px; }
-th { color: var(--text-muted); font-weight: 600; font-size: 11px; text-transform: uppercase; }
-td { font-size: 13px; padding: 12px 8px; }
+th { color: var(--text-muted); font-weight: 600; font-size: 14px; text-transform: uppercase; }
+td { font-size: 14px; padding: 14px 10px; }
 
 /* CTA 섹션 (가장 강조) */
 #ctaCard {
@@ -117,6 +146,19 @@ td { font-size: 13px; padding: 12px 8px; }
   padding: 16px;
   background: #fff; /* 테스트 시작은 반전 색상으로 강조 */
   color: #000;
+}
+
+/* 2. 설명 텍스트 (가장 중요한 수정) */
+.muted-desc {
+  color: rgba(255, 255, 255, 0.85); /* 더 밝게 하여 가독성 확보 */
+  font-size: 14px; /* 기존 12px에서 14px로 확대 */
+  margin-top: 6px;
+  line-height: 1.6;
+}
+
+.muted {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px; /* 메타 정보 크기 상향 */
 }
   </style>
 
@@ -158,40 +200,45 @@ td { font-size: 13px; padding: 12px 8px; }
       <div id="sqDesc" class="muted" style="margin-top:8px;"></div>
     </div>
 
-    <div class="card" id="axisCard">
-      <div style="font-weight:900; margin-bottom:10px;">4축 프로필</div>
+<div class="card" id="axisCard">
+  <div style="font-weight:900; margin-bottom:15px; font-size:18px;">4축 프로필 <span class="muted" style="font-size:14px;">(4-Axis Profile)</span></div>
 
-      <div style="margin:10px 0;">
-        <div class="row" style="justify-content:space-between;">
-          <div>Speed</div><div class="mono" id="axSpeedV">—</div>
-        </div>
-        <div class="barWrap"><div id="axSpeed" class="bar"></div></div>
-        <div class="muted" id="axSpeedT"></div>
-      </div>
+  <div class="axis-item">
+    <div class="row" style="justify-content:space-between;">
+      <div class="axis-label">Speed <span class="kr">속도</span></div>
+      <div class="mono value" id="axSpeedV">—</div>
+    </div>
+    <div class="barWrap"><div id="axSpeed" class="bar"></div></div>
+    <div class="muted-desc" id="axSpeedT"></div>
+  </div>
 
-      <div style="margin:10px 0;">
-        <div class="row" style="justify-content:space-between;">
-          <div>Continuity</div><div class="mono" id="axContV">—</div>
-        </div>
-        <div class="barWrap"><div id="axCont" class="bar"></div></div>
-        <div class="muted" id="axContT"></div>
-      </div>
+  <div class="axis-item">
+    <div class="row" style="justify-content:space-between;">
+      <div class="axis-label">Continuity <span class="kr">지속성</span></div>
+      <div class="mono value" id="axContV">—</div>
+    </div>
+    <div class="barWrap"><div id="axCont" class="bar"></div></div>
+    <div class="muted-desc" id="axContT"></div>
+  </div>
 
-      <div style="margin:10px 0;">
-        <div class="row" style="justify-content:space-between;">
-          <div>Regulation / Recovery</div><div class="mono" id="axRegV">—</div>
-        </div>
-        <div class="barWrap"><div id="axReg" class="bar"></div></div>
-        <div class="muted" id="axRegT"></div>
-      </div>
+  <div class="axis-item">
+    <div class="row" style="justify-content:space-between;">
+      <div class="axis-label">Regulation / Recovery <span class="kr">조절 및 회복</span></div>
+      <div class="mono value" id="axRegV">—</div>
+    </div>
+    <div class="barWrap"><div id="axReg" class="bar"></div></div>
+    <div class="muted-desc" id="axRegT"></div>
+  </div>
 
-      <div style="margin:10px 0;">
-        <div class="row" style="justify-content:space-between;">
-          <div>Stability</div><div class="mono" id="axStabV">—</div>
-        </div>
-        <div class="barWrap"><div id="axStab" class="bar"></div></div>
-        <div class="muted" id="axStabT"></div>
-      </div>
+  <div class="axis-item">
+    <div class="row" style="justify-content:space-between;">
+      <div class="axis-label">Stability <span class="kr">안정성</span></div>
+      <div class="mono value" id="axStabV">—</div>
+    </div>
+    <div class="barWrap"><div id="axStab" class="bar"></div></div>
+    <div class="muted-desc" id="axStabT"></div>
+  </div>
+</div>
 
       <div id="traitLine" class="muted" style="margin-top:10px;"></div>
     </div>
@@ -223,7 +270,7 @@ td { font-size: 13px; padding: 12px 8px; }
 
       <div id="endSentinel" style="height:1px;"></div>
   </div>
-<script src="./ui-modal.js?v=1"></script>
+
 <script src="./report.js?v=1"></script>
 </div>
 </body>
