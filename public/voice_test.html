@@ -781,38 +781,36 @@ function showRetryVoiceTestModal(sid, title, message, debug = "") {
     stageIdx += 1;
     renderStage();
 
-  } catch (err) {
-    console.error("오류:", err);
+ } catch (err) {
+  console.error("오류:", err);
 
-    // ✅ 녹음/권한/MediaRecorder 등 나머지 에러 자동로그
-    try {
-      await logClientError(err, { type: "outer_catch", stageIdx, sid });
-    } catch (_) {}
+  // 자동 로그
+  try {
+    await logClientError(err, { type: "outer_catch", stageIdx, sid });
+  } catch (_) {}
 
-    const ua = navigator.userAgent || "";
-const isInApp =
-  /KAKAOTALK/i.test(ua) ||
-  /Instagram/i.test(ua) ||
-  /FBAN|FBAV|FB_IAB|Facebook|Messenger/i.test(ua);
+  const name = err?.name || "Error";
+  const msg = err?.message || String(err || "");
 
-const hint =
-  res.status === 401 || res.status === 403 ? "권한/키 설정 문제일 수 있어요." :
-  res.status === 404 ? "API 주소가 잘못됐거나 서버가 응답하지 않아요." :
-  res.status >= 500 ? "서버 오류가 발생했어요. 잠시 후 다시 시도해 주세요." :
-  "네트워크/요청 오류가 발생했어요.";
+  // 인앱 브라우저 힌트(필요하면)
+  const ua = navigator.userAgent || "";
+  const isInApp =
+    /KAKAOTALK/i.test(ua) ||
+    /Instagram/i.test(ua) ||
+    /FBAN|FBAV|FB_IAB|Facebook|Messenger/i.test(ua);
 
-showErrorModal(
-  "서버 전송에 실패했어요",
-  isInApp
-    ? `인앱 브라우저에서는 업로드가 막힐 수 있어요. 외부 브라우저로 열어 다시 시도해 주세요. (${res.status}) ${hint}`
-    : `녹음 데이터 전송이 실패했습니다. (${res.status}) ${hint}`,
-  (txt || "").slice(0, 200)
-);
-return;
+  showErrorModal(
+    "녹음을 진행할 수 없어요",
+    isInApp
+      ? "인앱 브라우저에서는 마이크/업로드가 막힐 수 있어요. 외부 브라우저(크롬/사파리)로 열어 다시 시도해 주세요."
+      : "녹음 중 오류가 발생했어요. 다시 시도해 주세요.",
+    `${name}: ${msg}`.slice(0, 200)
+  );
 
+  setRecordButtonState({ recording: false, calibrating: false });
+  if (recBtn) recBtn.dataset.recording = "0";
+  try { if (typeof vp.stop === "function") vp.stop(); } catch {}
 
-    setRecordButtonState({ recording: false, calibrating: false });
-    if (recBtn) recBtn.dataset.recording = "0";
 
   } finally {
     // ✅ 버튼/핸들러 정리(성공/실패/return 모두 포함)
