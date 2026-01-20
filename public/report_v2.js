@@ -1,5 +1,7 @@
 // report.js (v2 통일 + report.js 왁구 유지 + result.js 프로필/metrics_card 흡수)
 
+
+
 (function () {
   const CLOUD_RUN_URL = "https://rhythme-server-as3ud42lpa-du.a.run.app";
   const apiUrl = (path) => `${CLOUD_RUN_URL.replace(/\/$/, "")}${path}`;
@@ -778,6 +780,33 @@ ensureMatrixExplainText();
 
   card.appendChild(div);
 }
+
+
+function getSidFromUrlOrStorage() {
+  const u = new URL(location.href);
+  return (
+    u.searchParams.get("sid") ||
+    localStorage.getItem("rhythmi_session_id") ||
+    ""
+  );
+}
+
+async function copyReportLinkWithSid() {
+  const sid = getSidFromUrlOrStorage();
+  if (!sid) {
+    alert("세션 ID를 찾을 수 없어 리포트 링크를 만들 수 없어요.");
+    return;
+  }
+  const u = new URL(location.href);
+  u.searchParams.set("sid", sid); // ✅ 무조건 포함
+  await navigator.clipboard.writeText(u.toString());
+}
+
+const copyReportLinkBtn = document.getElementById("copyReportLinkBtn");
+if (copyReportLinkBtn) {
+  copyReportLinkBtn.onclick = copyReportLinkWithSid; // ✅ 기존 window.location.href 복사 대신
+}
+
 
 
   document.addEventListener("DOMContentLoaded", init);
