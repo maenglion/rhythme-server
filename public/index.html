@@ -247,46 +247,44 @@
     </div>
 </div>
 <script>
-  window.onload = function() {
+// 1. 모달 닫기 기능 (공통 사용)
+window.closeModal = function () {
+    const modal = document.getElementById('chrome-modal') || document.getElementById('customModal');
+    if (modal) modal.style.display = 'none';
+};
+
+// 2. 크롬 유도 및 자동 전환 로직
+(function() {
     const ua = navigator.userAgent.toLowerCase();
     const isChrome = /chrome/.test(ua) && !/edge|opr|brave/.test(ua);
     const isKakao = /kakaotalk/i.test(ua);
     const isAndroid = /android/.test(ua);
 
-    // 크롬이 아니고 카카오톡도 아닐 때만 실행
+    // 환경 체크 (크롬도 아니고 카톡도 아닐 때)
     if (!isChrome && !isKakao) {
-        const modal = document.getElementById('chrome-modal');
-        modal.style.display = 'flex';
-
-        if (isAndroid) {
-            const intentBtn = document.getElementById('btn-intent');
-            intentBtn.style.display = 'block';
-            
-            const url = window.location.href.replace(/https?:\/\//, '');
-            const intentUrl = `intent://${url}#Intent;scheme=https;package=com.android.chrome;end`;
-
-            // [자동 전환 시도] 페이지 로드 시 안드로이드라면 바로 크롬 실행 시도
-            setTimeout(() => {
-                location.href = intentUrl;
-            }, 500);
-
-            intentBtn.onclick = function() {
-                location.href = intentUrl;
-            };
-        }
+        window.addEventListener('load', function() {
+            const modal = document.getElementById('chrome-modal');
+            if (modal) {
+                modal.style.display = 'flex';
+                
+                if (isAndroid) {
+                    const url = window.location.href.replace(/https?:\/\//, '');
+                    const intentUrl = `intent://${url}#Intent;scheme=https;package=com.android.chrome;end`;
+                    
+                    // 안드로이드는 0.5초 뒤 자동 전환 시도
+                    setTimeout(() => { location.href = intentUrl; }, 500);
+                }
+            }
+        });
     }
-};
+})();
 
-function closeModal(event) {
-    document.getElementById('chrome-modal').style.display = 'none';
-}
-
+// 3. URL 복사 기능
 function copyCurrentUrl() {
     const url = window.location.href;
     navigator.clipboard.writeText(url).then(() => {
-        alert('주소가 복사되었습니다! 크롬 앱을 열어 주소창에 붙여넣어 주세요.');
-    }).catch(err => {
-        // 복사 실패 시 구형 방식 대응
+        alert('주소가 복사되었습니다.');
+    }).catch(() => {
         const dummy = document.createElement('input');
         document.body.appendChild(dummy);
         dummy.value = url;
