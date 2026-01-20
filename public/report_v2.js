@@ -126,33 +126,84 @@ async function fetchReportData(sid) {
   return res.json();
 }
 
-function normalizeStages(payload) {
-  // 서버 형태가 달라도 최대한 흡수
-  const candidates = [
-    payload?.stages,
-    payload?.voice_stages,
-    payload?.voice,
-    payload?.voice_info,
-    payload?.data?.stages,
-    payload?.data?.voice_stages
-  ].find(x => Array.isArray(x));
+function findStageArrayDeep(root) {
+  const seen = new Set();
+  const q = [root];
 
-  const rows = (candidates || []).map(r => ({
-    stage_id: Number(r.stage_id ?? r.id),
-    status: r.status,
-    recorded_ms: r.recorded_ms,
-    speech_rate: r.speech_rate,
-    pause_ratio: r.pause_ratio,
-    pitch_sd: r.pitch_sd,
-    snr_db: r.snr_db ?? r.snr_est_db,
-    pause_ms: r.pause_ms,
-    clip: r.clip ?? r.clipping_ratio,
-    created_at: r.created_at
-  })).filter(r => Number.isFinite(r.stage_id))
-    .sort((a,b)=>a.stage_id-b.stage_id);
+  while (q.length) {
+    const cur = q.shift();
+    if (!cur || typeof cur !== "object") continue;
+    if (seen.has(cur)) continue;
+    seen.add(cur);
+
+    if (Array.isArray(cur)) {
+      // stage-like object가 섞여있는 배열이면 그걸 채택
+      const ok = cur.length && cur.some(x =>
+        x && typeof x === "object" &&
+        (("stage_id" in x) || ("stageId" in x) || ("id" in x)) &&
+        (("speech_rate" in x) || ("speechRate" in x) || ("pause_ratio" in x) || ("pauseRatio" in x))
+      );
+      if (ok) return cur;
+
+      // 아니면 배열 원소들 계속 탐색
+      for (const x of cur) q.push(x);
+    } else {
+      for (const k of Object.keys(cur)) q.push(cur[k]);
+    }
+  }
+  return null;
+}
+
+function normalizeStages(payload) {
+  // 1) 깊게 stage 배열 찾기
+  const arr = findStageArrayDeep(payload) || [];
+
+  // 2) 키 매핑 + 값 보정
+  const rows = arr.map((r) => {
+    const stageIdRaw = r.stage_id ?? r.stageId ?? r.id ?? r.stage ?? null;
+    const stage_id = Number(stageIdRaw);
+
+    let recorded_ms = Number(r.recorded_ms ?? r.recordedMs ?? r.recorded ?? r.duration_ms ?? r.durationMs ?? NaN);
+    // 혹시 초 단위로 오면(ms로) 보정 (40초면 40)
+    if (Number.isFinite(recorded_ms) && recorded_ms > 0 && recorded_ms <= 200) recorded_ms *= 1000;
+
+    let speech_rate = Number(r.speech_rate ?? r.speechRate ?? r.rate ?? NaN);
+    // 728 같은 형태면 7.28로 보정
+    if (Number.isFinite(speech_rate) && speech_rate > 50) speech_rate /= 100;
+
+    let pause_ratio = Number(r.pause_ratio ?? r.pauseRatio ?? r.pause ?? NaN);
+    // 27.1 같은 형태면 0.271로 보정
+    if (Number.isFinite(pause_ratio) && pause_ratio > 1.5) pause_ratio /= 100;
+
+    const pitch_sd = Number(r.pitch_sd ?? r.pitchSd ?? r.pitchSD ?? NaN);
+    const snr_db = Number(r.snr_db ?? r.snrDb ?? r.snr_est_db ?? r.snrEstDb ?? NaN);
+
+    const pause_ms = Number(r.pause_ms ?? r.pauseMs ?? NaN);
+
+    return {
+      stage_id,
+      status: r.status,
+      recorded_ms,
+      speech_rate,
+      pause_ratio,
+      pitch_sd,
+      snr_db,
+      pause_ms,
+      created_at: r.created_at
+    };
+  }).filter(r => Number.isFinite(r.stage_id))
+    .sort((a,b) => a.stage_id - b.stage_id);
+
+  // 디버그(한 번만 확인)
+  console.log("[report_v2] normalizeStages:", {
+    topKeys: payload && typeof payload === "object" ? Object.keys(payload) : null,
+    rowsLen: rows.length,
+    sample: rows[0]
+  });
 
   return rows;
 }
+
 
 // ---------------------------
 // Render
