@@ -63,3 +63,15 @@
     }
   };
 })();
+window.showInfoModal = function (title, message, detail = "") {
+  if (typeof window.showErrorModal === "function") {
+    window.showErrorModal(title, message, detail);
+    return;
+  }
+  if (typeof window.showModal === "function") {
+    window.showModal(`${title}\n\n${message}${detail ? `\n\n${detail}` : ""}`);
+    return;
+  }
+  console.log(title, message, detail);
+};
+

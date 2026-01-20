@@ -1061,3 +1061,42 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+function getSidSafe() {
+  return (
+    new URLSearchParams(location.search).get("sid") ||
+    localStorage.getItem("SESSION_ID") ||
+    localStorage.getItem("rhythmi_session_id") ||
+    window.SESSION_ID ||
+    ""
+  );
+}
+
+async function copySidWithModal() {
+  const sid = getSidSafe();
+  if (!sid) {
+    window.showInfoModal?.("세션 ID 없음", "세션 ID를 찾지 못했어요. 링크에 sid가 있는지 확인해 주세요.");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(sid);
+    window.showInfoModal?.("복사 완료", "세션 ID가 복사되었어요.");
+  } catch (e) {
+    // fallback: 자동복사 막힌 환경이면 모달에 값 보여주기
+    window.showInfoModal?.(
+      "복사 실패",
+      "이 환경에서는 자동 복사가 막혀 있어요. 아래 세션 ID를 길게 눌러 복사해 주세요.",
+      sid
+    );
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const sidTextEl = document.getElementById("sidText");
+  if (sidTextEl) sidTextEl.textContent = getSidSafe() || "(없음)";
+
+  const copySidBtn = document.getElementById("copySidBtn");
+  if (copySidBtn) copySidBtn.onclick = copySidWithModal;
+});
+
