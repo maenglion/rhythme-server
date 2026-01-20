@@ -67,12 +67,25 @@
     };
     if (document.body) mount(); else window.addEventListener("DOMContentLoaded", mount);
   })();
+function initSession() {
+    // 1. 저장소 접근 시 에러 방지 (일부 시크릿 모드 대응)
+    let storedSid = null;
+    try {
+      storedSid = localStorage.getItem(KEY) || localStorage.getItem(ALT_KEY);
+    } catch (e) {
+      console.warn("Storage access denied");
+    }
 
-  function initSession() {
-    const storedSid = localStorage.getItem(KEY) || localStorage.getItem(ALT_KEY);
     let activeSid = urlSid || storedSid;
 
-    // 1) 메인 페이지: 있으면 쓰고, 없으면 새로 생성 후 URL 청소
+    // [핵심] 2. 페이지 판별을 하기도 전에, activeSid가 보이면 무조건 전역 변수에 먼저 꽂습니다.
+    // 이렇게 해야 report.js가 뒤늦게 실행되어도 값을 바로 가져갈 수 있습니다.
+    if (activeSid) {
+      window.SESSION_ID = activeSid; 
+      console.log("[session-guard] Global SID set immediately:", activeSid);
+    }
+
+    // 1) 메인 페이지 처리
     if (isMainPage) {
       if (!activeSid) activeSid = generateUUID();
       syncSid(activeSid);
@@ -80,23 +93,27 @@
       return;
     }
 
-    // 2) 리포트 페이지: URL sid를 최우선으로 하되, 절대 URL에서 지우지 않음 (공유용)
+    // 2) 리포트 페이지 처리
     if (isReportPage) {
-      if (activeSid) syncSid(activeSid);
-      // URL에 sid가 없다면 저장소 값이라도 붙여줌 (시크릿 모드에서 세션 복구용)
-      if (!urlSid && activeSid) ensureSidInUrl(activeSid);
-      return;
-    }
-
-    // 3) 진행 페이지: sid가 없으면 Guard 작동 (메인으로 추방)
-    if (isProgressPage) {
       if (!activeSid) {
-        alert("세션이 만료되었거나 올바르지 않은 접근입니다. 메인으로 이동합니다.");
+        alert("리포트 정보가 없습니다. 메인으로 이동합니다.");
         location.href = "index.html";
         return;
       }
       syncSid(activeSid);
-      ensureSidInUrl(activeSid); // 항상 URL에 sid를 강제함
+      ensureSidInUrl(activeSid);
+      return;
+    }
+
+    // 3) 진행 페이지 처리
+    if (isProgressPage) {
+      if (!activeSid) {
+        alert("세션이 만료되었습니다. 메인으로 이동합니다.");
+        location.href = "index.html";
+        return;
+      }
+      syncSid(activeSid);
+      ensureSidInUrl(activeSid);
     }
   }
 
