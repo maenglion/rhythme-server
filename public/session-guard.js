@@ -80,11 +80,11 @@ const isProgressPage = !isMainPage && !isKeepSidPage;
 
 // 3) URL에서 sid 파라미터 제거 (단, 필요한 페이지는 제외)
 function stripSidFromUrl() {
-  const u = new URL(location.href);
-
-  // sid 있으면 저장(모바일 안정화)
-  const sid = u.searchParams.get("sid");
-  if (sid) localStorage.setItem(KEY, sid);
+  const sid = new URL(location.href).searchParams.get("sid");
+if (sid) {
+  localStorage.setItem("SESSION_ID", sid);
+  localStorage.setItem("rhythmi_session_id", sid); // ✅ 이 줄 추가 (호환)
+}
 
   // ✅ keep 페이지(리포트/qEEG)는 sid 유지
   if (isKeepSidPage) return;
