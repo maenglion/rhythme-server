@@ -123,6 +123,8 @@
             transform: translate(-50%, -50%);
             z-index: 1;
         }
+         html, body { height: auto !important; min-height: 100%; overflow-y: auto !important; }
+  body { -webkit-overflow-scrolling: touch; }
     </style>
 </head>
 <body>
@@ -180,6 +182,10 @@ document.getElementById("goReportBtn")?.addEventListener("click", () => {
   if (!sid2) return;
   location.href = `./report.html?sid=${encodeURIComponent(sid2)}`;
 });
+
+document.documentElement.style.overflowY = "auto";
+document.body.style.overflowY = "auto";
+document.body.style.height = "auto";
 </script>
 <script src="./runtime-config.js?v=1"></script>
 <script src="./session-guard.js"></script>
