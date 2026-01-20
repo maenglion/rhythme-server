@@ -637,6 +637,28 @@ return;
   showErrorModal("녹음을 시작할 수 없어요", msg, `${name}: ${e?.message || ""}`.trim());
 }
 
+function showRetryVoiceTestModal(sid, title, message, debug = "") {
+  // sid 보존(혹시 localStorage가 비었을 때 대비)
+  if (sid) {
+    localStorage.setItem("SESSION_ID", sid);
+    localStorage.setItem("rhythmi_session_id", sid);
+  }
+
+  showErrorModal(title, message, debug);
+
+  // ✅ 모달 OK 버튼 누르면 같은 sid로 voice_test 다시 시작(리로드/캐시버스트)
+  const okBtn = document.getElementById("modalOkBtn");
+  if (okBtn) {
+    okBtn.onclick = () => {
+      const url = new URL("voice_test.html", location.origin);
+      url.searchParams.set("sid", sid);
+      url.searchParams.set("retry", Date.now().toString()); // 캐시/상태 리셋용
+      location.href = url.toString();
+    };
+  }
+}
+
+
 
     // ✅ POST 성공 직후 진행상태 저장
     saveProgress(sid, {
