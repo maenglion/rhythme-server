@@ -78,6 +78,8 @@ function assessOverallQuality(rows) {
 }
 
 
+// 품질계산 라벨 
+
 function showInfo(title, message, detail = "") {
   if (typeof window.showInfoModal === "function") return window.showInfoModal(title, message, detail);
   if (typeof window.showErrorModal === "function") return window.showErrorModal(title, message, detail);
@@ -332,34 +334,98 @@ document.addEventListener("DOMContentLoaded", () => {
 // ============================
 
 // 0) 유틸
-function num(v) {
+function _num(v, d = NaN) {
   const n = Number(v);
-  return Number.isFinite(n) ? n : null;
+  return Number.isFinite(n) ? n : d;
 }
 
-function pickStage(stages, id) {
-  return stages.find(s => Number(s.stage_id) === id) || null;
+function _getRecordedMs(r) {
+  return _num(r.recorded_ms, 0);
 }
 
-function sortStages(stages) {
-  return [...(stages || [])].sort((a, b) => Number(a.stage_id) - Number(b.stage_id));
+function _getPauseMs(r) {
+  // pause_ms가 있으면 그걸 신뢰
+  const pm = _num(r.pause_ms, NaN);
+  if (Number.isFinite(pm)) return pm;
+
+  // 없으면 pause_ratio * recorded_ms로 대충 복원(없을 수도 있음)
+  const pr = _num(r.pause_ratio, NaN);
+  const rec = _getRecordedMs(r);
+  if (Number.isFinite(pr) && rec > 0) return pr * rec;
+
+  return 0;
 }
 
-// 1) 축 판단 기준(튜닝 가능)
-const AXIS_THRESHOLDS = {
-  // Speech Rate: fast / measured
-  FAST_SR: 7.2,
+function _getSpeechMs(r) {
+  const rec = _getRecordedMs(r);
+  const pauseMs = _getPauseMs(r);
+  return Math.max(0, rec - pauseMs);
+}
 
-  // Pause Ratio: tight / spacious  (pause_ratio가 낮을수록 타이트)
-  TIGHT_PR: 0.30,
+function _getSNR(r) {
+  // 서버 컬럼/클라 컬럼 둘 다 대응
+  return _num(r.snr_db ?? r.snr_est_db, NaN);
+}
 
-  // Expressive: pitch_sd / (speech_rate) = density
-  EXPRESSIVE_DENSITY: 9.0,
+function _getClip(r) {
+  return _num(r.clip ?? r.clipping_ratio, 0);
+}
 
-  // Adaptive: 가속/휴지 개선 + 회복
-  ADAPT_DSR: 0.25,       // S1→Last 속도 증가
-  ADAPT_DPR: -0.01,      // S1→Last 휴지 감소(개선)
-};
+// 스테이지 단위 평가: "음질 경고" vs "발화량 부족(해석 제한)" 분리
+function assessStageQuality(r) {
+  const status = String(r.status || "");
+  const recorded = _getRecordedMs(r);
+  const speechMs = _getSpeechMs(r);
+  const snr = _getSNR(r);
+  const clip = _getClip(r);
+
+  if (status !== "completed") {
+    return { level: "warn", reason: "완료되지 않음", meta: { recorded, speechMs, snr, clip } };
+  }
+
+  // ✅ 발화량/커버리지 부족: 음질 문제가 아니라 "해석 제한"
+  // 기준: 말한 시간이 5초 미만이거나, 전체 녹음이 너무 짧음
+  if (recorded < 8000 || speechMs < 5000) {
+    return { level: "info", reason: "발화가 짧음(해석 제한)", meta: { recorded, speechMs, snr, clip } };
+  }
+
+  // ✅ 진짜 음질 경고만 남김
+  if (Number.isFinite(snr) && snr < 6) {
+    return { level: "warn", reason: "SNR 낮음(소음/거리)", meta: { recorded, speechMs, snr, clip } };
+  }
+  if (clip > 0.02) {
+    return { level: "warn", reason: "클리핑(너무 큼)", meta: { recorded, speechMs, snr, clip } };
+  }
+
+  return { level: "ok", reason: "", meta: { recorded, speechMs, snr, clip } };
+}
+
+// 전체 품질: Stage1은 baseline 여부만. 품질은 Stage2~4 중심으로 판단
+function assessOverallQuality(rows) {
+  const byId = new Map(rows.map(r => [Number(r.stage_id ?? r.id), r]));
+  const s1 = byId.get(1);
+
+  const baselineOk = !!s1 && String(s1.status) === "completed" && _getRecordedMs(s1) > 1000;
+
+  // 품질 판단은 2~4 위주
+  const target = [2, 3, 4].map(id => byId.get(id)).filter(Boolean);
+  const checks = target.map(assessStageQuality);
+
+  const warn = checks.filter(x => x.level === "warn");
+  const info = checks.filter(x => x.level === "info");
+
+  let label = "품질: 양호";
+  if (warn.length >= 2) label = "품질: 주의(음질)";
+  else if (info.length >= 2) label = "발화량: 부족(해석 제한)";
+
+  // 간단 이유(리포트에 1줄로 보여주기 좋게)
+  const reasons = checks
+    .map((c, idx) => c.reason ? `S${idx + 2} ${c.reason}` : "")
+    .filter(Boolean);
+
+  return { label, baselineOk, reasons, checks };
+}
+
 
 // 2) 상위 5개 아키타입 (parent)
 const PARENT_TYPES = {
@@ -428,6 +494,37 @@ const AXIS_STRENGTHS = {
   ADAPT: ["후반 적응", "상황 전환 대응"],
   SENS: ["민감한 신호 감지", "안정화 필요 인지"],
 };
+
+// ---- missing helpers for persona vA ----
+function num(v, d = null) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : d;
+}
+
+function sortStages(stages) {
+  return [...(stages || [])].sort((a, b) => {
+    const ia = Number(a.stage_id ?? a.id ?? 0);
+    const ib = Number(b.stage_id ?? b.id ?? 0);
+    return ia - ib;
+  });
+}
+
+function pickStage(sortedStages, stageId) {
+  return (sortedStages || []).find(s => Number(s.stage_id ?? s.id) === Number(stageId)) || null;
+}
+
+// ✅ 임계치(일단 “너 스샷 결과(안정 설계형/회복 스토리)”가 유지되게 잡은 기본값)
+// 나중에 데이터 쌓이면 조정하면 됨
+const AXIS_THRESHOLDS = {
+  FAST_SR: 7.2,               // Last speech_rate가 이 이상이면 FAST
+  TIGHT_PR: 0.28,             // Last pause_ratio가 이 이하이면 TIGHT
+  EXPRESSIVE_DENSITY: 10.0,   // (pitch_sd / speech_rate) 이 이상이면 EXPR
+  ADAPT_DSR: 0.8,             // S1→Last ΔSR 이 이상이면 ADAPT 쪽 가산
+  ADAPT_DPR: -0.05            // S1→Last ΔPause가 이 이하(=감소)면 ADAPT 쪽 가산
+};
+
+
+
 
 // 5) 4축 계산 + parent/subtype 결정
 function classifyPersona16(stages) {
