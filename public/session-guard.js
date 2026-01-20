@@ -1,15 +1,19 @@
 /**
- * RHYTHME 프로젝트 세션 가드 (최종 수정본)
+ * RHYTHME 프로젝트 세션 가드 (최종 해결사 버전)
  */
 (function sessionGuard() {
   const KEY = "SESSION_ID";
   const ALT_KEY = "rhythmi_session_id";
 
-  // 1) 초기 설정: 현재 URL에서 SID 추출 (가장 우선순위 높음)
   const urlParams = new URLSearchParams(location.search);
   const urlSid = urlParams.get("sid");
 
-  // 2) 고유 ID 생성 함수
+  // 페이지 판별
+  const PATH = (location.pathname || "").toLowerCase();
+  const isMainPage = PATH === "/" || PATH.endsWith("/index.html") || PATH === "";
+  const isReportPage = ["report.html", "result.html", "analysis-report"].some((p) => PATH.includes(p));
+  const isProgressPage = !isMainPage && !isReportPage;
+
   function generateUUID() {
     if (typeof crypto?.randomUUID === "function") return crypto.randomUUID();
     return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) =>
@@ -17,7 +21,6 @@
     );
   }
 
-  // 3) SID 동기화 함수
   function syncSid(sid) {
     if (!sid) return null;
     window.SESSION_ID = sid;
@@ -28,93 +31,74 @@
     return sid;
   }
 
-  // 4) 외부 브라우저 강제 오픈 (SID 유지 로직 추가)
-  (function forceExternalOpen() {
-    const ua = navigator.userAgent || "";
-    const isKakao = /KAKAOTALK/i.test(ua);
-    // 인앱 브라우저 체크 (페이스북, 인스타그램 등)
-    const isInApp = isKakao || /Instagram/i.test(ua) || /FBAN|FBAV|FB_IAB|Facebook|Messenger/i.test(ua);
+  // URL 파라미터 강제 동기화 (진행 페이지용)
+  function ensureSidInUrl(sid) {
+    const u = new URL(location.href);
+    if (u.searchParams.get("sid") !== sid) {
+      u.searchParams.set("sid", sid);
+      window.history.replaceState(null, "", u.toString());
+    }
+  }
 
-    // 이미 외부 브라우저거나 카카오가 아니면 실행 안 함
-    if (!isInApp || !isKakao) return;
+  // 메인 전용: URL 청소
+  function clearUrlFromMain() {
+    const u = new URL(location.href);
+    if (u.searchParams.has("sid")) {
+      u.searchParams.delete("sid");
+      window.history.replaceState(null, "", u.pathname);
+    }
+  }
 
+  // 카카오 외부 브라우저 바 (SID 보존형)
+  (function initKakaoBar() {
+    if (!/KAKAOTALK/i.test(navigator.userAgent)) return;
     const mount = () => {
-      // 이미 바가 있으면 생성 안 함
-      if (document.getElementById("external-open-bar")) return;
-
       const bar = document.createElement("div");
-      bar.id = "external-open-bar";
-      bar.style.cssText = `
-        position: fixed; left: 0; right: 0; bottom: 0; z-index: 999999;
-        padding: 12px 14px; background: #111; color: #fff; font-size: 14px;
-        display: flex; gap: 10px; align-items: center; justify-content: space-between;
-      `;
-      bar.innerHTML = `
-        <div style="line-height:1.2;">
-          카카오톡에서는 리포트 확인이 어려울 수 있습니다.<br/>
-          <b>안전한 확인을 위해 외부 브라우저로 열기</b>를 눌러주세요.
-        </div>
-        <button id="openExternalBtn" style="
-          padding: 10px 12px; border-radius: 10px; border: 0; font-weight: 700; background: #fee500; color: #000;
-        ">외부로 열기</button>
-      `;
+      bar.style.cssText = `position:fixed;left:0;right:0;bottom:0;z-index:999999;padding:12px 14px;background:#111;color:#fff;font-size:14px;display:flex;align-items:center;justify-content:space-between;`;
+      bar.innerHTML = `<div>카카오톡에서는 리포트가 열리지 않을 수 있습니다.</div>
+        <button id="extBtn" style="padding:10px;border-radius:8px;background:#fee500;font-weight:700;border:0;">외부로 열기</button>`;
       document.body.appendChild(bar);
-
-      document.getElementById("openExternalBtn").onclick = () => {
-        // [중요] 외부로 나갈 때 현재의 sid를 포함한 URL을 생성
-        const currentSid = urlSid || localStorage.getItem(KEY) || localStorage.getItem(ALT_KEY);
-        const targetUrl = new URL(location.href);
-        if (currentSid) targetUrl.searchParams.set("sid", currentSid);
-
-        location.href = "kakaotalk://web/openExternal?url=" + encodeURIComponent(targetUrl.toString());
+      document.getElementById("extBtn").onclick = () => {
+        const sid = urlSid || localStorage.getItem(KEY) || localStorage.getItem(ALT_KEY);
+        const target = new URL(location.href);
+        if (sid) target.searchParams.set("sid", sid);
+        location.href = "kakaotalk://web/openExternal?url=" + encodeURIComponent(target.toString());
       };
     };
-
-    if (document.body) mount();
-    else window.addEventListener("DOMContentLoaded", mount);
+    if (document.body) mount(); else window.addEventListener("DOMContentLoaded", mount);
   })();
-
-  // 5) 페이지 로직 처리
-  const PATH = (location.pathname || "").toLowerCase();
-  const isMainPage = PATH === "/" || PATH.endsWith("/index.html") || PATH === "";
-  const isReportPage = ["report.html", "result.html", "analysis-report"].some((p) => PATH.includes(p));
 
   function initSession() {
     const storedSid = localStorage.getItem(KEY) || localStorage.getItem(ALT_KEY);
-    
-    // 최종 사용할 SID 결정
     let activeSid = urlSid || storedSid;
 
-    // 메인 페이지인데 아무런 SID가 없다면 새로 생성
-    if (!activeSid && isMainPage) {
-      activeSid = generateUUID();
-    }
-
-    if (activeSid) {
+    // 1) 메인 페이지: 있으면 쓰고, 없으면 새로 생성 후 URL 청소
+    if (isMainPage) {
+      if (!activeSid) activeSid = generateUUID();
       syncSid(activeSid);
+      clearUrlFromMain();
+      return;
     }
 
-    // 메인 페이지라면 URL의 sid 파라미터 제거 (깔끔하게)
-    if (isMainPage && urlSid) {
-      const u = new URL(location.href);
-      u.searchParams.delete("sid");
-      history.replaceState(null, "", u.toString());
+    // 2) 리포트 페이지: URL sid를 최우선으로 하되, 절대 URL에서 지우지 않음 (공유용)
+    if (isReportPage) {
+      if (activeSid) syncSid(activeSid);
+      // URL에 sid가 없다면 저장소 값이라도 붙여줌 (시크릿 모드에서 세션 복구용)
+      if (!urlSid && activeSid) ensureSidInUrl(activeSid);
+      return;
     }
 
-    // 리포트 페이지나 진행 페이지에서 SID가 URL에 없으면 붙여줌
-    if (!isMainPage && activeSid) {
-      const u = new URL(location.href);
-      if (u.searchParams.get("sid") !== activeSid) {
-        u.searchParams.set("sid", activeSid);
-        history.replaceState(null, "", u.toString());
+    // 3) 진행 페이지: sid가 없으면 Guard 작동 (메인으로 추방)
+    if (isProgressPage) {
+      if (!activeSid) {
+        alert("세션이 만료되었거나 올바르지 않은 접근입니다. 메인으로 이동합니다.");
+        location.href = "index.html";
+        return;
       }
+      syncSid(activeSid);
+      ensureSidInUrl(activeSid); // 항상 URL에 sid를 강제함
     }
   }
 
-  // 실행
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initSession);
-  } else {
-    initSession();
-  }
+  initSession();
 })();
