@@ -489,11 +489,18 @@ const s4 = isUnder14
         alert("오류가 발생했습니다. 카톡에서 다시 시도해 주세요.");
         return;
       }
-    } catch (err) {
-      await logClientError(err, { type: "submit_exception", url, stageIdx, sid });
-      alert("오류가 발생했습니다. 카톡에서 다시 시도해 주세요.");
-      return;
-    }
+    } catch (e) {
+  const name = e?.name || "Error";
+  const msg =
+    name === "NotAllowedError" ? "마이크 권한이 거부되었습니다. 브라우저 설정에서 마이크를 허용해 주세요." :
+    name === "NotFoundError"   ? "마이크 장치를 찾지 못했습니다. 이어폰/블루투스/외부 마이크 연결을 확인해 주세요." :
+    name === "NotReadableError"? "다른 앱이 마이크를 사용 중일 수 있어요. 전화/녹음/카메라 앱을 종료하고 다시 시도해 주세요." :
+    name === "SecurityError"   ? "보안상 마이크 접근이 차단되었습니다. HTTPS/권한 설정을 확인해 주세요." :
+                                 "마이크 초기화에 실패했습니다. 다시 시도해 주세요.";
+
+  showErrorModal("녹음을 시작할 수 없어요", msg, `${name}: ${e?.message || ""}`.trim());
+}
+
 
     // ✅ POST 성공 직후 진행상태 저장
     saveProgress(sid, {
