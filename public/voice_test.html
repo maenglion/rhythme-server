@@ -386,6 +386,103 @@ const s4 = isUnder14
     const recBtn = document.querySelector("#recordBtn");
     if (recBtn) recBtn.dataset.recording = "0";
   }
+// ---------------------
+// 녹음 품질 체크
+//-------------------------
+
+function isInAppBrowser() {
+  const ua = navigator.userAgent || "";
+  return /KAKAOTALK/i.test(ua) || /Instagram/i.test(ua) || /FBAN|FBAV|FB_IAB|Facebook|Messenger/i.test(ua);
+}
+
+// showErrorModal 없으면 안전하게 fallback
+function showError(title, message, debug = "") {
+  if (typeof window.showErrorModal === "function") {
+    window.showErrorModal(title, message, debug);
+  } else if (typeof window.showModal === "function") {
+    window.showModal(`${title}\n\n${message}`);
+  } else {
+    alert(`${title}\n\n${message}`);
+  }
+}
+
+// ✅ 핵심: metrics로 "분석 가능한 음성인지" 판정
+function judgeVoiceQuality(metrics) {
+  const snr = Number(metrics?.snr_est_db);
+  const pause = Number(metrics?.pause_ratio);
+  const rate = Number(metrics?.speech_rate);
+  const clip = Number(metrics?.clipping_ratio);
+  const pitchSd = Number(metrics?.pitch_sd);
+
+  // 1) 마이크 입력/분석 자체가 깨진 케이스
+  if (!metrics || metrics.status !== "completed") {
+    return { ok: false, title: "녹음이 완료되지 않았어요", msg: "다시 시도해 주세요.", code: "not_completed" };
+  }
+
+  // 2) 라디오/환경소음/마이크 너무 멀다 → SNR 너무 낮음
+  if (Number.isFinite(snr) && snr < 10) {
+    return {
+      ok: false,
+      title: "소음이 너무 커서 분석이 어려워요",
+      msg: "라디오/TV/선풍기 등 소음을 끄고, 마이크를 20~30cm로 가까이 한 뒤 다시 녹음해 주세요.",
+      code: "snr_low"
+    };
+  }
+
+  // 3) “말 거의 없는데도 점수 나오는” 대표 패턴: SNR 비정상적으로 큼(계산이 무너졌거나 클릭음 등)
+  if (Number.isFinite(snr) && snr > 60) {
+    return {
+      ok: false,
+      title: "음성이 제대로 감지되지 않았어요",
+      msg: "말소리 대신 클릭/키보드/작은 잡음이 들어간 것 같아요. 조용한 곳에서 또박또박 말해 주세요.",
+      code: "snr_invalid_high"
+    };
+  }
+
+  // 4) 거의 무음/잡음인데 발화로 오인 → pause_ratio가 극단값 + rate도 비정상 조합이면 차단
+  // (너 스샷에서 pause 0.009 같은 극단값이 나왔잖아)
+  if (Number.isFinite(pause) && (pause < 0.01 || pause > 0.95)) {
+    return {
+      ok: false,
+      title: "음성 입력이 불안정해요",
+      msg: "마이크 거리를 확인하고(20~30cm), 주변 소음을 줄인 뒤 다시 시도해 주세요.",
+      code: "pause_extreme"
+    };
+  }
+
+  // 5) 클리핑(너무 크게 들어감)
+  if (Number.isFinite(clip) && clip > 0.02) {
+    return {
+      ok: false,
+      title: "소리가 너무 커서 찢어졌어요",
+      msg: "마이크를 조금 멀리하거나(30~40cm), 더 작은 목소리로 다시 녹음해 주세요.",
+      code: "clipping"
+    };
+  }
+
+  // 6) 피치 변동이 거의 0에 가까우면(= 말이 아니라 기계음/노이즈일 가능성)
+  if (Number.isFinite(pitchSd) && pitchSd > 0 && pitchSd < 5) {
+    return {
+      ok: false,
+      title: "말소리로 판단하기 어려워요",
+      msg: "라디오/기계음/잡음이 들어간 것 같아요. 조용한 곳에서 다시 녹음해 주세요.",
+      code: "pitch_flat"
+    };
+  }
+
+  // (선택) 발화 속도 비정상
+  if (Number.isFinite(rate) && (rate < 1 || rate > 11)) {
+    return {
+      ok: false,
+      title: "분석 값이 비정상이에요",
+      msg: "입력이 불안정하게 들어갔습니다. 마이크/소음 상태를 확인 후 다시 녹음해 주세요.",
+      code: "rate_outlier"
+    };
+  }
+
+  return { ok: true };
+}
+
 
   // ---------------------------
   // 녹음 + 전송
@@ -438,6 +535,23 @@ const s4 = isUnder14
     });
 
     console.log("Stage Metrics:", metrics);
+
+    // ✅ 추가: 품질 게이트(여기!)
+const q = judgeVoiceQuality(metrics);
+if (!q.ok) {
+  await logClientError(new Error("quality_gate"), {
+    type: "quality_gate",
+    code: q.code,
+    stageIdx,
+    sid,
+    metrics,
+  });
+
+  showError(q.title, q.msg);
+  // 스테이지 진행/서버 전송 모두 막기 (재녹음 유도)
+  setRecordButtonState({ recording: false, calibrating: false });
+  return;
+}
 
     // 5) 서버 전송 payload
     const payload = {
@@ -542,7 +656,27 @@ return;
       await logClientError(err, { type: "outer_catch", stageIdx, sid });
     } catch (_) {}
 
-    alert("오류가 발생했습니다. 카톡에서 다시 시도해 주세요.");
+    const ua = navigator.userAgent || "";
+const isInApp =
+  /KAKAOTALK/i.test(ua) ||
+  /Instagram/i.test(ua) ||
+  /FBAN|FBAV|FB_IAB|Facebook|Messenger/i.test(ua);
+
+const hint =
+  res.status === 401 || res.status === 403 ? "권한/키 설정 문제일 수 있어요." :
+  res.status === 404 ? "API 주소가 잘못됐거나 서버가 응답하지 않아요." :
+  res.status >= 500 ? "서버 오류가 발생했어요. 잠시 후 다시 시도해 주세요." :
+  "네트워크/요청 오류가 발생했어요.";
+
+showErrorModal(
+  "서버 전송에 실패했어요",
+  isInApp
+    ? `인앱 브라우저에서는 업로드가 막힐 수 있어요. 외부 브라우저로 열어 다시 시도해 주세요. (${res.status}) ${hint}`
+    : `녹음 데이터 전송이 실패했습니다. (${res.status}) ${hint}`,
+  (txt || "").slice(0, 200)
+);
+return;
+
 
     setRecordButtonState({ recording: false, calibrating: false });
     if (recBtn) recBtn.dataset.recording = "0";
