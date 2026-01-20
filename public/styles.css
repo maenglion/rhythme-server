@@ -248,12 +248,46 @@ input[type="checkbox"]:checked::after {
 .ans-btn.selected { background-color: #BB86FC; color: #000; border-color: #BB86FC; }
 
 /* 10. qEEG 업로드 박스 */
-.qeeg-box { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: #1E1E1E; border: 1px solid #333; border-radius: 8px 8px 0 0; }
-.qeeg-status { font-size: 12px; color: #757575; }
-.file-btn { background: #333 !important; color: #FFF !important; border-radius: 0 0 8px 8px !important; margin-top: 0 !important; }
+/* [2] qEEG 업로드 박스 (상단) */
+.qeeg-box { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 16px; 
+    background: #1E1E1E; 
+    border: 1px solid #333; 
+    border-bottom: none; /* 아래 버튼과 연결되도록 하단 테두리 제거 */
+    border-radius: 12px 12px 0 0; /* 곡률을 조금 더 줌 */
+}
+
+.qeeg-status { font-size: 13px; color: #757575; }
 .qeeg-status.status-active {
     color: #BB86FC !important; 
     font-weight: bold;
+}
+
+/* [3] 파일 선택 버튼 (하단) */
+/* input type="file" 자체가 아니라 그를 감싸는 label 혹은 클래스에 적용 */
+.file-btn { 
+    display: block;
+    width: 100%;
+    padding: 14px 0; /* 클릭 영역 확보 */
+    background: #333 !important; 
+    color: #FFF !important; 
+    border: 1px solid #444; /* 박스와 이어지는 느낌 */
+    border-radius: 0 0 12px 12px !important; 
+    margin-top: 0 !important; 
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* 클릭했을 때 시스템적인 피드백 */
+.file-btn:active {
+    background: #444 !important;
+    transform: scale(0.98); 
 }
 /* 11. 메인 버튼 (343x52) */
 .next-btn {
