@@ -3,6 +3,7 @@
  * 역할: 페이지 성격에 따른 SID 최적화 관리 + 저장키 통일(syncSid)
  */
 (function forceExternalOpenInKakao() {
+  
   const ua = navigator.userAgent || "";
   const isKakao = /KAKAOTALK/i.test(ua); // ✅ 추가
 
@@ -47,7 +48,22 @@
 
 (function () {
   const KEY = "SESSION_ID";
-  const ALT_KEY = "rhythmi_session_id"; // ✅ 기존 페이지들이 쓰는 다른 키까지 동기화
+  const ALT = "rhythmi_session_id";
+
+function readStoredSid() {
+  return localStorage.getItem(KEY) || localStorage.getItem(ALT);
+}
+
+function persistSid(sid) {
+  if (!sid) return;
+  try {
+    localStorage.setItem(KEY, sid);
+    localStorage.setItem(ALT, sid);
+  } catch (e) {
+    console.warn("[session-guard] persistSid failed", e);
+  }
+  window.SESSION_ID = sid;
+}
 
   // 1) 고유 ID 생성 (UUID v4)
   function generateUUID() {
@@ -94,47 +110,40 @@
   const isProgressPage = !isMainPage && !isReportPage; // 실제 검사 진행 중인 페이지들
 
   // 3) URL에서 sid 파라미터 제거 (✅ 메인에서는 "저장하지 않고" 제거만)
-  function stripSidFromUrl() {
-    const u = new URL(location.href);
-    if (u.searchParams.has("sid")) {
-      u.searchParams.delete("sid");
-      history.replaceState(null, "", u.toString());
-      console.log("[session-guard] URL에서 SID를 제거했습니다.");
-    }
+function stripSidFromUrl() {
+  const u = new URL(location.href);
+  if (u.searchParams.has("sid")) {
+    u.searchParams.delete("sid");
+    history.replaceState(null, "", u.toString());
+    console.log("[session-guard] URL에서 SID를 제거했습니다.");
   }
-
-  // 4) 세션 아이디 결정 로직 (✅ 두 키 동기화 포함)
-  function getSid() {
-    const urlSid = new URLSearchParams(location.search).get("sid");
-    const storedSid = readStoredSid();
-
-    if (isReportPage) {
-      // 리포트: URL sid 우선. 저장소는 건드리지 않음(공유자/뷰어 세션 오염 방지)
-      return urlSid || storedSid;
-    }
-
- if (isMainPage) {
-  stripSidFromUrl();
-
-  // ✅ 시크릿/첫 방문에서 localStorage가 비어있으면 SID를 하나 심어둔다 (URL에는 안 붙임)
-  let sid = localStorage.getItem(KEY);
-  if (!sid) {
-    sid = generateUUID();
-    localStorage.setItem(KEY, sid);
-  }
-  window.SESSION_ID = sid;
-
-  checkInApp();
-  console.log("[session-guard] 메인 페이지: URL 정화 + SID seed =", sid);
-  return;
 }
 
 
-    // 진행 페이지: URL > 저장소 > 신규 발급
-    const sid = urlSid || storedSid || generateUUID();
-    syncSid(sid); // ✅ 여기서 두 키 + window 동기화
+  // 4) 세션 아이디 결정 로직 (✅ 두 키 동기화 포함)
+  function getSid() {
+  const urlSid = new URLSearchParams(location.search).get("sid");
+  const storedSid = readStoredSid();
+
+  if (isReportPage) {
+    // 리포트: URL 우선, 저장소는 건드리지 않음
+    window.SESSION_ID = urlSid || storedSid;
+    return urlSid || storedSid;
+  }
+
+  if (isMainPage) {
+    // ✅ 메인: 없으면 새로 발급해서 저장소에 seed
+    const sid = storedSid || generateUUID();
+    persistSid(sid);
     return sid;
   }
+
+  // 진행 페이지: URL > 저장소 > 신규 발급 (그리고 저장)
+  const sid = urlSid || storedSid || generateUUID();
+  persistSid(sid);
+  return sid;
+}
+
 
   // 5) URL에 sid 동기화
   function ensureSidInUrl(sid) {
@@ -226,31 +235,32 @@
 
   // 🚀 실행부
   document.addEventListener("DOMContentLoaded", () => {
-    // A. 메인 페이지: URL sid 제거 후 종료 (전파 안 함)
-    if (isMainPage) {
-      stripSidFromUrl();
-      checkInApp();
-      console.log("[session-guard] 메인 페이지: URL 정화 완료");
-      return;
-    }
-
-    // B. 리포트 페이지: URL sid 유지 (저장소 보호)
-    if (isReportPage) {
-      const sid = getSid();
-      if (sid) ensureSidInUrl(sid);
-      checkInApp();
-      console.log("[session-guard] 리포트 페이지: SID 유지 =", sid);
-      return;
-    }
-
-    // C. 진행 페이지 (Progress): SID 유지 및 모든 링크 전파
-    const sid = getSid();
-    if (sid) {
-      ensureSidInUrl(sid);
-      propagateSidToLinks(sid);
-      bindNavWithSid(sid);
-    }
+  // A. 메인 페이지
+  if (isMainPage) {
+    getSid();           // ✅ 여기서 seed
+    stripSidFromUrl();  // URL 정화
     checkInApp();
-    console.log("[session-guard] 진행 페이지: 세션 전파 중 =", sid);
-  });
+    console.log("[session-guard] 메인 페이지: URL 정화 + SID seed =", window.SESSION_ID);
+    return;
+  }
+
+  // B. 리포트
+  if (isReportPage) {
+    const sid = getSid();
+    if (sid) ensureSidInUrl(sid);
+    checkInApp();
+    console.log("[session-guard] 리포트 페이지: SID 유지 =", sid);
+    return;
+  }
+
+  // C. 진행 페이지
+  const sid = getSid();
+  if (sid) {
+    ensureSidInUrl(sid);
+    propagateSidToLinks(sid);
+    bindNavWithSid(sid);
+  }
+  checkInApp();
+  console.log("[session-guard] 진행 페이지: 세션 전파 중 =", sid);
+});
 })();
