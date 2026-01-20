@@ -431,7 +431,7 @@ function judgeVoiceQuality(metrics) {
   }
 
   // 2) 라디오/환경소음/마이크 너무 멀다 → SNR 너무 낮음
-  if (Number.isFinite(snr) && snr < 10) {
+  if (Number.isFinite(snr) && snr < 6) {
     return {
       ok: false,
       title: "소음이 너무 커서 분석이 어려워요",
