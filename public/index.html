@@ -233,6 +233,17 @@
   </div>
 </div>
 
+<div id="chrome-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; display:flex; justify-content:center; align-items:center;">
+    <div style="background:#222; color:#fff; padding:30px; border-radius:15px; text-align:center; max-width:80%; border:1px solid #444;">
+        <h3 style="margin-top:0;">최적의 환경에서 접속해 주세요</h3>
+        <p>이 서비스는 <b>구글 크롬(Chrome)</b> 브라우저에 최적화되어 있습니다. 원활한 이용을 위해 크롬으로 접속을 권장합니다.</p>
+        
+        <button id="btn-intent" style="display:none; background:#4285F4; color:white; border:none; padding:12px 20px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%; margin-bottom:10px;">크롬 앱으로 열기</button>
+        
+        <button onclick="copyCurrentUrl()" style="background:#444; color:white; border:none; padding:12px 20px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%;">URL 복사 후 크롬에서 열기</button>
+    </div>
+</div>
+
 <script src="./runtime-config.js?v=1"></script>
 <script src="./session-guard.js"></script>
 <script src="./report.js"></script>
