@@ -2,12 +2,9 @@
  * RHYTHME 프로젝트 세션 가드 (통합 + SID 동기화 버전)
  * 역할: 페이지 성격에 따른 SID 최적화 관리 + 저장키 통일(syncSid)
  */
-
 (function forceExternalOpenInKakao() {
   const ua = navigator.userAgent || "";
-  const isKakao = /KAKAOTALK/i.test(ua);
-
-  // ✅ 카카오 인앱에서만 바 노출 (다른 인앱은 별도 로직에서 처리)
+  const isKakao = /KAKAOTALK/i.test(ua); // ✅ 추가
   if (!isKakao) return;
 
   const cleanUrl = location.href;
@@ -28,12 +25,10 @@
         padding: 10px 12px; border-radius: 10px; border: 0; font-weight: 700;
       ">외부로 열기</button>
     `;
-
     document.body.appendChild(bar);
 
     document.getElementById("openExternalBtn").onclick = () => {
-      location.href =
-        "kakaotalk://web/openExternal?url=" + encodeURIComponent(cleanUrl);
+      location.href = "kakaotalk://web/openExternal?url=" + encodeURIComponent(cleanUrl);
     };
   };
 
@@ -109,10 +104,22 @@
       return urlSid || storedSid;
     }
 
-    if (isMainPage) {
-      // 메인: 저장된 것만 반환. URL sid(남의 공유 링크)는 무시
-      return storedSid;
-    }
+ if (isMainPage) {
+  stripSidFromUrl();
+
+  // ✅ 시크릿/첫 방문에서 localStorage가 비어있으면 SID를 하나 심어둔다 (URL에는 안 붙임)
+  let sid = localStorage.getItem(KEY);
+  if (!sid) {
+    sid = generateUUID();
+    localStorage.setItem(KEY, sid);
+  }
+  window.SESSION_ID = sid;
+
+  checkInApp();
+  console.log("[session-guard] 메인 페이지: URL 정화 + SID seed =", sid);
+  return;
+}
+
 
     // 진행 페이지: URL > 저장소 > 신규 발급
     const sid = urlSid || storedSid || generateUUID();
