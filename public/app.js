@@ -979,6 +979,43 @@ const payload = {
   renderStage();
 }
 
+
+// 브라우저 판별 후 모달 띄우기 
+
+window.onload = function() {
+    const ua = navigator.userAgent.toLowerCase();
+    const isChrome = /chrome/.test(ua) && !/edge|opr|brave/.test(ua); // 순수 크롬 체크
+    const isKakao = /kakaotalk/i.test(ua); // 카카오톡 체크
+
+    // 크롬도 아니고 카카오톡도 아닐 때 모달 표시
+    if (!isChrome && !isKakao) {
+        const modal = document.getElementById('chrome-modal');
+        modal.style.display = 'flex';
+
+        // 안드로이드라면 '크롬 앱으로 열기' 버튼 활성화
+        if (/android/.test(ua)) {
+            const intentBtn = document.getElementById('btn-intent');
+            intentBtn.style.display = 'block';
+            intentBtn.onclick = function() {
+                const url = window.location.href.replace(/https?:\/\//, '');
+                location.href = `intent://${url}#Intent;scheme=https;package=com.android.chrome;end`;
+            };
+        }
+    }
+};
+
+// URL 복사 함수
+function copyCurrentUrl() {
+    const dummy = document.createElement('input');
+    const text = window.location.href;
+    document.body.appendChild(dummy);
+    dummy.value = text;
+    dummy.select();
+    document.execCommand('copy');
+    document.body.removeChild(dummy);
+    alert('주소가 복사되었습니다. 크롬 앱을 열어 주소창에 붙여넣어 주세요!');
+}
+
 /* ============================================================
    [핵심] 초기화 및 버튼 이벤트 연결
    ============================================================ */
