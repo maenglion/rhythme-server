@@ -657,7 +657,6 @@ try {
 
 
 
-
    // 4) 녹음
     const metrics = await vp.startStage({
       durationSec: 40,
@@ -666,22 +665,6 @@ try {
 
     console.log("Stage Metrics:", metrics);
 
-    // ✅ 추가: 품질 게이트(여기!)
-const q = judgeVoiceQuality(metrics);
-if (!q.ok) {
-  await logClientError(new Error("quality_gate"), {
-    type: "quality_gate",
-    code: q.code,
-    stageIdx,
-    sid,
-    metrics,
-  });
-
-  showError(q.title, q.msg);
-  // 스테이지 진행/서버 전송 모두 막기 (재녹음 유도)
-  setRecordButtonState({ recording: false, calibrating: false });
-  return;
-}
 
     // 5) 서버 전송 payload
     const payload = {
