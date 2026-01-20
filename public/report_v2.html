@@ -6,21 +6,104 @@
   <title>VOICE Report v2</title>
   <link rel="stylesheet" href="styles.css" />
   <style>
-    .card { background:#121826; border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:16px; margin:12px 0; }
-    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-    .muted { opacity:.75; font-size:12px; }
-    .btn { background:#1f2937; color:#fff; border:1px solid rgba(255,255,255,.12); padding:10px 12px; border-radius:12px; cursor:pointer; font-weight:800; }
-    .btn.ghost { background:transparent; }
-    .pill { display:inline-flex; align-items:center; padding:6px 10px; border-radius:999px; font-size:12px; border:1px solid rgba(255,255,255,.14); }
-    .pill.ok { background:rgba(16,185,129,.12); border-color:rgba(16,185,129,.25); }
-    .pill.warn { background:rgba(245,158,11,.12); border-color:rgba(245,158,11,.25); }
-    .pill.off { background:rgba(148,163,184,.10); border-color:rgba(148,163,184,.20); opacity:.85; }
-    .barWrap { width:100%; background:rgba(255,255,255,.06); border-radius:999px; overflow:hidden; height:14px; }
-    .bar { height:14px; background:rgba(187,134,252,.85); width:0%; transition: width .35s ease; }
-    .bar.gray { background:rgba(148,163,184,.55); }
-    table { width:100%; border-collapse:collapse; font-size:12px; }
-    td,th { padding:8px; border-bottom:1px solid rgba(255,255,255,.08); text-align:left; }
+/* 기본 폰트 시스템 최적화 */
+:root {
+  --primary: #bb86fc;
+  --bg-card: #121826;
+  --border: rgba(255, 255, 255, 0.08);
+  --text-muted: rgba(255, 255, 255, 0.6);
+}
+
+body {
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+  background-color: #0b0f1a;
+  color: #ffffff;
+  line-height: 1.5;
+}
+
+/* 카드 및 레이아웃 */
+.card { 
+  background: var(--bg-card); 
+  border: 1px solid var(--border); 
+  border-radius: 20px; /* 조금 더 부드러운 곡률로 신뢰도 상승 */
+  padding: 20px; 
+  margin: 16px 0; 
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+/* 제목 및 텍스트 위계 */
+h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: #fff; }
+.card-title { font-size: 15px; font-weight: 700; color: var(--primary); margin-bottom: 12px; }
+.muted { color: var(--text-muted); font-size: 13px; font-weight: 400; }
+.mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; letter-spacing: -0.2px; }
+
+/* 핵심 지표 (SQ Index) 강조 */
+#sqScore { 
+  font-size: 42px; /* 가독성 극대화 */
+  font-weight: 900; 
+  background: linear-gradient(135deg, #fff 0%, var(--primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* 버튼 시스템 (크기 및 상태 구분) */
+.btn { 
+  background: var(--primary); 
+  color: #000; 
+  border: none; 
+  padding: 12px 18px; 
+  border-radius: 12px; 
+  cursor: pointer; 
+  font-size: 14px;
+  font-weight: 700; 
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn:hover { transform: translateY(-1px); filter: brightness(1.1); }
+.btn:active { transform: translateY(0); }
+
+.btn.ghost { 
+  background: rgba(255,255,255,0.05); 
+  color: #fff; 
+  border: 1px solid rgba(255,255,255,0.1); 
+}
+
+/* 4축 프로필 바 시스템 */
+.barWrap { 
+  width: 100%; 
+  background: rgba(255,255,255,0.05); 
+  border-radius: 6px; 
+  height: 10px; 
+  margin: 8px 0;
+}
+
+.bar { 
+  height: 100%; 
+  background: var(--primary); 
+  border-radius: 6px;
+  box-shadow: 0 0 10px rgba(187, 134, 252, 0.3);
+}
+
+/* 테이블 디자인 최적화 */
+table { margin-top: 10px; }
+th { color: var(--text-muted); font-weight: 600; font-size: 11px; text-transform: uppercase; }
+td { font-size: 13px; padding: 12px 8px; }
+
+/* CTA 섹션 (가장 강조) */
+#ctaCard {
+  border: 2px solid rgba(187, 134, 252, 0.2);
+  background: linear-gradient(180deg, rgba(187, 134, 252, 0.05) 0%, rgba(18, 24, 38, 1) 100%);
+}
+#btnStartTest {
+  width: 100%; /* 모바일 대응 및 주목도 향상 */
+  font-size: 16px;
+  padding: 16px;
+  background: #fff; /* 테스트 시작은 반전 색상으로 강조 */
+  color: #000;
+}
   </style>
 
   <!-- ✅ 모달 먼저 -->
