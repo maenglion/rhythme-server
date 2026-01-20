@@ -61,20 +61,40 @@ if (!isInApp) return;
   }
 
   // 2) 페이지 판별 로직
-  const PATH = (location.pathname || "").toLowerCase();
-  const isMainPage = PATH === "/" || PATH.endsWith("/index.html") || PATH === "";
-  const isReportPage = ["report.html", "result.html", "analysis-report"].some((p) => PATH.includes(p));
-  const isProgressPage = !isMainPage && !isReportPage; // 실제 검사 진행 중인 페이지들
+// 2) 페이지 판별 로직
+const PATH = (location.pathname || "").toLowerCase();
+const isMainPage = PATH === "/" || PATH.endsWith("/index.html") || PATH === "";
 
-  // 3) URL에서 sid 파라미터 강제 제거 함수
-  function stripSidFromUrl() {
-    const u = new URL(location.href);
-    if (u.searchParams.has("sid")) {
-      u.searchParams.delete("sid");
-      history.replaceState(null, "", u.toString());
-      console.log("[session-guard] URL에서 SID를 제거했습니다.");
-    }
+// (기존) 리포트 페이지 판별
+const isReportPage = ["report.html", "result.html", "analysis-report", "report_v2.html"].some((p) =>
+  PATH.includes(p)
+);
+
+// ✅ sid를 URL에 남겨야 하는 페이지 추가 (qEEG 페이지명 맞춰!)
+const KEEP_SID_PAGES = ["qeeg.html"]; // 예: "qeeg.html" / "qeeg_v2.html" / "qeeg_info.html"
+const isKeepSidPage = isReportPage || KEEP_SID_PAGES.some((p) => PATH.includes(p));
+
+// ✅ 진행 페이지 판별도 keepSid 기준으로
+const isProgressPage = !isMainPage && !isKeepSidPage;
+
+
+// 3) URL에서 sid 파라미터 제거 (단, 필요한 페이지는 제외)
+function stripSidFromUrl() {
+  const u = new URL(location.href);
+
+  // sid 있으면 저장(모바일 안정화)
+  const sid = u.searchParams.get("sid");
+  if (sid) localStorage.setItem(KEY, sid);
+
+  // ✅ keep 페이지(리포트/qEEG)는 sid 유지
+  if (isKeepSidPage) return;
+
+  if (u.searchParams.has("sid")) {
+    u.searchParams.delete("sid");
+    history.replaceState(null, "", u.toString());
+    console.log("[session-guard] URL에서 SID를 제거했습니다.");
   }
+}
 
   // 4) 세션 아이디 결정 로직
   function getSid() {
