@@ -238,6 +238,17 @@ function getVoiceVersion() {
   return v;
 }
 
+// runVoiceStage() 보다 위에!
+const sid =
+  new URL(location.href).searchParams.get("sid")
+  || localStorage.getItem("rhythmi_session_id")
+  || "";
+
+if (!sid) {
+  console.warn("[voice_test] sid is missing");
+  // 필요하면 여기서 showError로 막아도 됨
+}
+
 
   // ---------------------------
   // Stage 설계
