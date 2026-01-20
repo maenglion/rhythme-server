@@ -8,21 +8,83 @@
   const $ = (id) => document.getElementById(id);
 
   // [기능] 세션 ID 가져오기
-  function getSidSafe() {
-    const sid =
-      window.getSid?.() ||
-      new URLSearchParams(location.search).get("sid") ||
-      localStorage.getItem("SESSION_ID") ||
-      window.SESSION_ID ||
-      null;
+ // ================================
+// Report: Session ID 표시 + 복사(모달)
+// ================================
+function getSidSafe() {
+  const urlSid = new URLSearchParams(location.search).get("sid");
+  const sid =
+    urlSid ||
+    localStorage.getItem("SESSION_ID") ||
+    localStorage.getItem("rhythmi_session_id") ||
+    window.SESSION_ID ||
+    "";
 
-    if (!sid) {
-      alert("세션이 없습니다. 처음부터 다시 진행해주세요.");
-      location.href = "./index.html";
-      return null;
-    }
-    return sid;
+  // 있으면 저장해서 다른 페이지에서도 일관되게
+  if (sid) {
+    window.SESSION_ID = sid;
+    localStorage.setItem("SESSION_ID", sid);
+    localStorage.setItem("rhythmi_session_id", sid);
   }
+  return sid;
+}
+
+function showInfo(title, message, detail = "") {
+  if (typeof window.showInfoModal === "function") return window.showInfoModal(title, message, detail);
+  if (typeof window.showErrorModal === "function") return window.showErrorModal(title, message, detail);
+  if (typeof window.showModal === "function") return window.showModal(`${title}\n\n${message}${detail ? `\n\n${detail}` : ""}`);
+  console.log(title, message, detail);
+}
+
+async function copyTextWithModal(text) {
+  if (!text) {
+    showInfo("세션 ID 없음", "세션 ID를 찾지 못했어요. report.html URL에 sid가 있는지 확인해 주세요.");
+    return false;
+  }
+
+  try {
+    await navigator.clipboard.writeText(text);
+    showInfo("복사 완료", "세션 ID가 복사되었어요.");
+    return true;
+  } catch (_) {
+    // fallback (인앱/권한/비보안 컨텍스트 대응)
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, ta.value.length);
+
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+
+      if (ok) {
+        showInfo("복사 완료", "세션 ID가 복사되었어요.");
+        return true;
+      }
+      throw new Error("execCommand copy failed");
+    } catch (_) {
+      showInfo("복사 실패", "자동 복사가 막혀 있어요. 아래 세션 ID를 길게 눌러 복사해 주세요.", text);
+      return false;
+    }
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const sid = getSidSafe();
+
+  const sidEl = document.getElementById("displaySessionId");
+  if (sidEl) sidEl.textContent = sid ? `Session ID: ${sid}` : "Session ID: 없음";
+
+  const btn = document.getElementById("btnCopySession");
+  if (btn) {
+    btn.onclick = () => copyTextWithModal(getSidSafe());
+  }
+});
+
 
   // [기능] 숫자 포맷팅
   function fmt(n, digits = 2) {
