@@ -981,28 +981,17 @@ const payload = {
 
 
 // 브라우저 판별 후 모달 띄우기 
+function isInAppBrowser() {
+  const ua = navigator.userAgent || "";
+  return /KAKAOTALK|Instagram|FBAN|FBAV|FB_IAB|Facebook|Messenger/i.test(ua);
+}
 
-window.onload = function() {
-    const ua = navigator.userAgent.toLowerCase();
-    const isChrome = /chrome/.test(ua) && !/edge|opr|brave/.test(ua); // 순수 크롬 체크
-    const isKakao = /kakaotalk/i.test(ua); // 카카오톡 체크
+document.addEventListener("DOMContentLoaded", () => {
+  if (isInAppBrowser()) {
+    showOpenInChromeModal(); // 모달 띄우기
+  }
+});
 
-    // 크롬도 아니고 카카오톡도 아닐 때 모달 표시
-    if (!isChrome && !isKakao) {
-        const modal = document.getElementById('chrome-modal');
-        modal.style.display = 'flex';
-
-        // 안드로이드라면 '크롬 앱으로 열기' 버튼 활성화
-        if (/android/.test(ua)) {
-            const intentBtn = document.getElementById('btn-intent');
-            intentBtn.style.display = 'block';
-            intentBtn.onclick = function() {
-                const url = window.location.href.replace(/https?:\/\//, '');
-                location.href = `intent://${url}#Intent;scheme=https;package=com.android.chrome;end`;
-            };
-        }
-    }
-};
 
 // URL 복사 함수
 function copyCurrentUrl() {
