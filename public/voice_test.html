@@ -508,13 +508,35 @@ async function measureNoiseThen(stream, onDone, opts = {}) {
   tick();
 }
 
+// 오디오로 추가
+
+async function getTabAudioStream() {
+  const s = await navigator.mediaDevices.getDisplayMedia({
+    video: true,
+    audio: true
+  });
+
+  // 비디오는 필요 없으니 즉시 종료
+  s.getVideoTracks().forEach(t => t.stop());
+
+  if (s.getAudioTracks().length === 0) {
+    throw new Error("탭 공유에서 '오디오 공유'를 체크해야 해요.");
+  }
+  return s;
+}
 
   // ---------------------------
-  // 녹음 + 전송
+  // 녹음 + 전송  => 끝단 지표 용으로 잠시 변경 
   // ---------------------------
- async function runVoiceStage() {
+// runVoiceStage 시작부에 추가/교체
+async function runVoiceStage({ source = "mic" } = {}) {
   const recBtn = document.querySelector("#recordBtn");
   const finishBtn = document.getElementById("finishBtn");
+
+  const inputStream =
+    source === "tab"
+      ? await getTabAudioStream()
+      : await navigator.mediaDevices.getUserMedia({ audio: true });
 
   const s = STAGES[stageIdx];
   if (!s) return;
@@ -535,22 +557,21 @@ async function measureNoiseThen(stream, onDone, opts = {}) {
   const age_group = age < 14 ? "under14" : (age < 19 ? "child" : "adult");
 
 
+
     // 1) 캘리브레이션
 
  function getVpCtx(vp) {
   return vp?.audioCtx || vp?.ctx || vp?.audioContext || null;
 }
 
-async function calibrateSilenceSafe(vp, seconds = 2, timeoutMs = 2800) {
+async function calibrateSilenceSafe(vp, seconds = 2, timeoutMs = 2800, inputStream) {
   const ctx = getVpCtx(vp);
 
-  // suspended면 깨우기
   if (ctx && ctx.state && ctx.state !== "running") {
     try { await ctx.resume(); } catch {}
   }
 
-  // vp.calibrateSilence가 안 끝나면 timeout으로 강제 진행
-  const calibPromise = vp.calibrateSilence(seconds);
+  const calibPromise = vp.calibrateSilence(seconds, inputStream);
   const timeoutPromise = new Promise((resolve) =>
     setTimeout(() => resolve({ __timeout: true }), timeoutMs)
   );
@@ -563,26 +584,23 @@ async function calibrateSilenceSafe(vp, seconds = 2, timeoutMs = 2800) {
   ]);
 }
 
-try {
-  // 1) 캘리브레이션 UI
-  setRecordButtonState({ recording: false, calibrating: true });
+  try {
+    setRecordButtonState({ recording: false, calibrating: true });
 
   // ✅ 여기서만 캘리브레이션 1번 실행 (기존 await vp.calibrateSilence(2); 는 삭제)
-  const calib = await calibrateSilenceSafe(vp, 2, 2800);
-  if (calib.__timeout) {
-    console.warn("[calib] timeout/failed -> continue", calib.error || "");
-  }
+   const calib = await calibrateSilenceSafe(vp, 2, 2800, inputStream);
+    if (calib.__timeout) console.warn("[calib] timeout/failed -> continue", calib.error || "");
 
-  // 2) 녹음 시작 UI
-  setRecordButtonState({ recording: true, calibrating: false });
-  if (recBtn) recBtn.dataset.recording = "1";
+    setRecordButtonState({ recording: true, calibrating: false });
+    if (recBtn) recBtn.dataset.recording = "1";
 
 
 
    // 4) 녹음
-    const metrics = await vp.startStage({
+ const metrics = await vp.startStage({
       durationSec: 40,
       onTick: ({ leftMs }) => setTimer(leftMs, 40),
+      inputStream
     });
 
     console.log("Stage Metrics:", metrics);
