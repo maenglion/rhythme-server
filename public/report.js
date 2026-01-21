@@ -1,4 +1,3 @@
-pages
 // run only on report pages
 
 // ===== report.js: RUN ONLY ON REPORT PAGES =====
