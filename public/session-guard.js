@@ -14,10 +14,6 @@
   const isReportPage = ["report.html", "result.html", "analysis-report"].some((p) => PATH.includes(p));
   const isProgressPage = !isMainPage && !isReportPage;
 
- if (!sid) {
-  console.log("[session-guard] no sid yet (waiting for user start)");
-  return;
-}
 
   function syncSid(sid) {
     if (!sid) return null;
