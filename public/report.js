@@ -1,4 +1,26 @@
-// ---------------------------
+pages
+// run only on report pages
+
+// ===== report.js: RUN ONLY ON REPORT PAGES =====
+(() => {
+  const PATH = (location.pathname || "").toLowerCase();
+  const isReportPage =
+    PATH.includes("report") ||
+    PATH.includes("result") ||
+    PATH.includes("analysis-report");
+
+  // 또는 리포트 전용 DOM이 있을 때만 실행(더 안전)
+  const hasReportRoot =
+    document.getElementById("reportRoot") ||
+    document.getElementById("reportContainer") ||
+    document.querySelector("[data-page='report']");
+
+  if (!isReportPage && !hasReportRoot) {
+    console.debug("[report] skipped on non-report page:", PATH);
+    return;
+  }
+
+ // ---------------------------
 // API helper
 // ---------------------------
 const DEFAULT_API_BASE = "https://rhythme-server-357918245340.asia-northeast3.run.app";
@@ -537,4 +559,4 @@ function setupReportCopyUI() {
 }
 
 document.addEventListener("DOMContentLoaded", setupReportCopyUI);
-
+})();
