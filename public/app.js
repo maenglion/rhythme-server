@@ -1053,13 +1053,12 @@ function initVoicePage() {
   });
 }
 
-
-document.addEventListener("DOMContentLoaded", () => {
+// 레코드 녹음으로 해야함 임시 
+function bootVoicePage() {
   initVoicePage();
 
   const finishBtn = document.getElementById("finishBtn");
   if (finishBtn) {
-    // 혹시 inline onclick 있었으면 제거
     finishBtn.onclick = null;
     finishBtn.style.display = "none";
     finishBtn.disabled = true;
@@ -1067,7 +1066,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const nextBtn = document.getElementById("nextStepBtn");
   if (nextBtn) {
-    nextBtn.onclick = null; // ✅ inline onclick 무력화
+    nextBtn.onclick = null;
     nextBtn.addEventListener("click", () => {
       const sid = localStorage.getItem("SESSION_ID");
       if (!sid) {
@@ -1078,8 +1077,14 @@ document.addEventListener("DOMContentLoaded", () => {
       location.href = `voice_info.html?sid=${encodeURIComponent(sid)}`;
     });
   }
-});
+}
 
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", bootVoicePage);
+} else {
+  bootVoicePage();
+}
+//
 function getSidSafe() {
   return (
     new URLSearchParams(location.search).get("sid") ||
