@@ -886,7 +886,13 @@ function renderStage() {
   if (nBtn) nBtn.style.display = 'none';
 }
 
-async function runVoiceStage() {
+// 오디오 입력 스트림을 받도록 일부 코드 추가
+async function runVoiceStage({ source = "mic" } = {}) {
+  const stream = source === "tab"
+    ? await getTabAudioStream()
+    : await navigator.mediaDevices.getUserMedia({ audio: true });  //여기까지가 오디오 코드
+
+  await vp.start(stream); 
   const s = STAGES[stageIdx];
   const clickTime = performance.now();
 
@@ -981,6 +987,23 @@ const payload = {
   renderStage();
 }
 
+// 탭 오디오 스트림 함수 (추후 지울 함수로 오디오 음성 입력)
+async function getTabAudioStream() {
+  const s = await navigator.mediaDevices.getDisplayMedia({
+    video: true,   // 탭 선택 UI 때문에 필요
+    audio: true
+  });
+
+  // 비디오는 필요 없으니 끄기
+  s.getVideoTracks().forEach(t => t.stop());
+
+  if (s.getAudioTracks().length === 0) {
+    throw new Error("탭 공유에서 '오디오 공유' 체크 안 한 듯");
+  }
+  return s;
+}
+
+
 
 // 브라우저 판별 후 모달 띄우기 
 function isInAppBrowser() {
@@ -1008,24 +1031,28 @@ function copyCurrentUrl() {
 }
 
 /* ============================================================
-   [핵심] 초기화 및 버튼 이벤트 연결
+   [핵심] 임시로 테스트를 위해 변경함
    ============================================================ */
-
 function initVoicePage() {
   const recBtn = document.getElementById("recordBtn");
-  if (!recBtn) return; 
+  if (!recBtn) return;
 
-  recBtn.addEventListener("click", async () => {
+  recBtn.addEventListener("click", async (e) => {
     if (recBtn.dataset.recording === "1") {
       console.log("녹음 중단 요청...");
       recBtn.disabled = true;
       vp.stop();
-    } else {
-      console.log("녹음 시작 시퀀스 진입...");
-      await runVoiceStage();
+      return;
     }
+
+    // ✅ Alt 클릭이면 '탭 오디오', 아니면 '마이크'
+    const source = e.altKey ? "tab" : "mic";
+    console.log("녹음 시작:", source);
+
+    await runVoiceStage({ source });
   });
 }
+
 
 document.addEventListener("DOMContentLoaded", () => {
   initVoicePage();
