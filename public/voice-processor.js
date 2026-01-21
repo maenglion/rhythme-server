@@ -1,6 +1,5 @@
 // ./voice-processor.js
 
-// ./voice-processor.js
 export class VoiceProcessor {
   constructor() {
     this.ctx = null;
@@ -14,28 +13,18 @@ export class VoiceProcessor {
     this.noiseRms = null; // baseline RMS (calibrateSilence에서 채움)
   }
 
-  // ✅ 핵심: 외부 stream(탭오디오/마이크)을 주입 가능하게
-  async init(inputStream) {
-    // 이미 준비되어 있고, inputStream도 안 바꾸는 경우 재사용
-    if (!inputStream && this.ctx && this.analyser && this.stream) return;
+  stop() {
+    this._stopped = true;
+    if (this._raf) cancelAnimationFrame(this._raf);
+    this._raf = null;
+  }
 
-    // stream 결정
-    if (inputStream) {
-      // 기존 스트림이 있으면 정리(선택)
-      if (this.stream && this.stream !== inputStream) {
-        try { this.stream.getTracks().forEach(t => t.stop()); } catch {}
-      }
-      this.stream = inputStream;
-    } else {
-      this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    }
+  async init() {
+    // 이미 준비되어 있으면 재사용
+    if (this.ctx && this.analyser && this.stream) return;
 
-    // AudioContext 준비/재개
-    this.ctx = this.ctx || new (window.AudioContext || window.webkitAudioContext)();
-    if (this.ctx.state === "suspended") await this.ctx.resume();
-
-    // 기존 연결 정리
-    try { this.source && this.source.disconnect(); } catch {}
+    this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
     this.source = this.ctx.createMediaStreamSource(this.stream);
 
     this.analyser = this.ctx.createAnalyser();
@@ -43,27 +32,8 @@ export class VoiceProcessor {
     this.source.connect(this.analyser);
   }
 
-  stop() {
-    this._stopped = true;
-
-    try { if (this._raf) cancelAnimationFrame(this._raf); } catch {}
-    this._raf = null;
-
-    try { this.source && this.source.disconnect(); } catch {}
-
-    // 스트림 종료(탭오디오/마이크 공통)
-    try {
-      if (this.stream) this.stream.getTracks().forEach(t => t.stop());
-    } catch {}
-
-    this.stream = null;
-    this.source = null;
-    this.analyser = null;
-    // ctx는 재사용 가능하니 close는 일단 안 함
-  }
-
-  async calibrateSilence(seconds = 2, inputStream) {
-    await this.init(inputStream);
+  async calibrateSilence(seconds = 2) {
+    await this.init();
 
     const rmsList = [];
     const start = performance.now();
@@ -79,8 +49,8 @@ export class VoiceProcessor {
     return { noise_floor_db: toDb(this.noiseRms) };
   }
 
-  async startStage({ durationSec = 40, onTick, inputStream } = {}) {
-    await this.init(inputStream);
+  async startStage({ durationSec = 40, onTick } = {}) {
+    await this.init();
     this._stopped = false;
 
     const buf = new Float32Array(this.analyser.fftSize);
@@ -107,6 +77,7 @@ export class VoiceProcessor {
     const startedAt = performance.now();
     const endAt = startedAt + durationSec * 1000;
 
+    // “버튼 클릭 → 실제 프레임 처리 시작” 지연 (대충이라도)
     let firstFrameAt = null;
 
     return new Promise((resolve) => {
@@ -114,6 +85,7 @@ export class VoiceProcessor {
         if (this._raf) cancelAnimationFrame(this._raf);
         this._raf = null;
 
+        // 마지막이 무음으로 끝난 경우 세그먼트 반영
         if (pauseSegMs >= 600) longPauseCount += 1;
         else if (pauseSegMs >= 200) shortPauseCount += 1;
 
@@ -133,12 +105,14 @@ export class VoiceProcessor {
         const pitch_mean = mean(pitchList);
         const pitch_sd = std(pitchList);
 
+        // 서버가 422로 필수 요구하던 필드들을 metrics에 포함 (프론트에서 0 채우기 싫으면 이걸 쓰면 됨)
         const start_latency_ms = firstFrameAt ? Math.max(0, firstFrameAt - startedAt) : 0;
-        const stop_offset_ms = Math.floor(recorded_ms);
+        const stop_offset_ms = Math.floor(recorded_ms); // 조기 종료 포함
 
         resolve({
-          status,
+          status, // "completed" | "stopped"
 
+          // 기존
           noise_floor_db: toDb(noise),
           snr_est_db: snr,
           pitch_mean: pitch_mean ?? null,
@@ -153,6 +127,7 @@ export class VoiceProcessor {
           pause_ms: Math.floor(pauseMs),
           restart_rms_spike_count: restartRmsSpikeCount,
 
+          // ✅ 필수필드(422 방지)
           start_latency_ms,
           stop_offset_ms,
           jitter: 0,
@@ -188,15 +163,18 @@ export class VoiceProcessor {
 
         if (isVoiced) voicedFrames += 1;
 
+        // baseline(유음) 업데이트
         if (isVoiced) {
           rmsBaselineWin.push(r);
           if (rmsBaselineWin.length > BASE_WIN) rmsBaselineWin.shift();
         }
 
+        // pause segment 누적 + 전환 순간 체크
         if (!isVoiced) {
           pauseSegMs += dtMs;
           pauseMs += dtMs;
         } else {
+          // 무음→유음 전환 순간(긴 pause 종료)
           if (pauseSegMs >= 600) {
             longPauseCount += 1;
             if (rmsBaselineWin.length >= 10) {
@@ -209,6 +187,7 @@ export class VoiceProcessor {
           pauseSegMs = 0;
         }
 
+        // pitch
         if (isVoiced) {
           const f0 = autoCorrelPitch(buf, this.ctx.sampleRate);
           if (f0) pitchList.push(f0);
@@ -222,7 +201,6 @@ export class VoiceProcessor {
     });
   }
 }
-
 
 /* --- helpers --- */
 function sleep(ms) {
