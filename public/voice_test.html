@@ -529,7 +529,8 @@ async function getTabAudioStream() {
   // 녹음 + 전송  => 끝단 지표 용으로 잠시 변경 
   // ---------------------------
 // runVoiceStage 시작부에 추가/교체
-async function runVoiceStage({ source = "mic" } = {}) {
+async function runVoiceStage({ source = "tab" } = {}) {
+  console.log("[runVoiceStage] source=", source);
   const recBtn = document.querySelector("#recordBtn");
   const finishBtn = document.getElementById("finishBtn");
 
