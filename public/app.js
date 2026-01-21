@@ -273,6 +273,7 @@ window.closeModal = function() {
 };
 
 
+
 // app.js 상단
 window.checkAndGo = function () {
   // 1) 필수 동의 체크(기존 로직 유지)
@@ -305,6 +306,7 @@ window.checkAndGo = function () {
 
 
 
+
 /* ============================================================
    2. Step 1~3: 인트로, 동의, 정보 입력
    ============================================================ */
@@ -321,7 +323,7 @@ window.startResearch = function(under14) {
             parentalCheckbox.classList.remove('essential');
         }
     }
-    window.showStep(3); 
+    window.showStep(2); 
 };
 
 window.toggleDiagnosis = function(element, value) {

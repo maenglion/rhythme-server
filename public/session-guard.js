@@ -84,12 +84,19 @@ function initSession() {
     }
 
     // 1) 메인 페이지 처리
-    if (isMainPage) {
-      if (!activeSid) activeSid = generateUUID();
-      syncSid(activeSid);
-      clearUrlFromMain();
-      return;
-    }
+   // 1) 메인 페이지 처리
+if (isMainPage) {
+  // ✅ 메인에서는 자동 생성 금지: 사용자가 '테스트 시작/동의' 누를 때 만들 것
+  if (activeSid) {
+    syncSid(activeSid);
+    clearUrlFromMain();
+    // 전역 주입은 이미 위에서 했으니 OK
+  } else {
+    console.log("[session-guard] main: no sid yet (waiting for user start)");
+  }
+  return;
+}
+
 
     // 2) 리포트 페이지 처리
     if (isReportPage) {
