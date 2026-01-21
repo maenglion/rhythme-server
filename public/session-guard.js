@@ -72,14 +72,7 @@ function initSession() {
 
     let activeSid = urlSid || storedSid;
 
-    // [핵심] 2. 페이지 판별을 하기도 전에, activeSid가 보이면 무조건 전역 변수에 먼저 꽂습니다.
-    // 이렇게 해야 report.js가 뒤늦게 실행되어도 값을 바로 가져갈 수 있습니다.
-    if (activeSid) {
-      window.SESSION_ID = activeSid; 
-      console.log("[session-guard] Global SID set immediately:", activeSid);
-    }
 
-    // 1) 메인 페이지 처리
    // 1) 메인 페이지 처리
 if (isMainPage) {
   // ✅ 메인에서는 자동 생성 금지: 사용자가 '테스트 시작/동의' 누를 때 만들 것
