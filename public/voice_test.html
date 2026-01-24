@@ -508,28 +508,12 @@ async function measureNoiseThen(stream, onDone, opts = {}) {
   tick();
 }
 
-// 오디오로 추가
-
-async function getTabAudioStream() {
-  const s = await navigator.mediaDevices.getDisplayMedia({
-    video: true,
-    audio: true
-  });
-
-  // 비디오는 필요 없으니 즉시 종료
-  s.getVideoTracks().forEach(t => t.stop());
-
-  if (s.getAudioTracks().length === 0) {
-    throw new Error("탭 공유에서 '오디오 공유'를 체크해야 해요.");
-  }
-  return s;
-}
 
   // ---------------------------
   // 녹음 + 전송  => 끝단 지표 용으로 잠시 변경 
   // ---------------------------
 // runVoiceStage 시작부에 추가/교체
-async function runVoiceStage({ source = "tab" } = {}) {
+async function runVoiceStage({ source = "mic" } = {}) {
   console.log("[runVoiceStage] source=", source);
   const recBtn = document.querySelector("#recordBtn");
   const finishBtn = document.getElementById("finishBtn");
@@ -541,6 +525,9 @@ async function runVoiceStage({ source = "tab" } = {}) {
 
   const s = STAGES[stageIdx];
   if (!s) return;
+
+const sid = (typeof getSidSafe === "function" ? getSidSafe() : (typeof getSid === "function" ? getSid() : null));
+
 
   // ✅ sid는 try 밖에서 잡아야 catch에서도 안전하게 사용 가능
   if (!sid) {
