@@ -35,6 +35,15 @@
     return urlSid || storeSid;
   }
 
+  function clearAllSessionKeys() {
+    try {
+      localStorage.removeItem(KEY);
+      localStorage.removeItem(CREATED_KEY);
+      localStorage.removeItem("rhythmi_session_id");
+      localStorage.removeItem("RHYTHMI_SESSION_ID");
+    } catch {}
+  }
+
   function ensureSidInUrl(sid) {
     if (!sid) return;
     const u = new URL(location.href);
@@ -76,6 +85,16 @@
         const u = new URL(path, location.href);
         u.searchParams.set("sid", sid);
         location.href = u.toString();
+      });
+    });
+  }
+
+  // ✅ data-reset-session 버튼: 클릭 시 세션 초기화
+  function bindResetSession() {
+    document.querySelectorAll("[data-reset-session]").forEach((el) => {
+      el.addEventListener("click", (e) => {
+        clearAllSessionKeys();
+        console.log("[session-guard] 세션 초기화됨 (data-reset-session)");
       });
     });
   }
@@ -170,15 +189,17 @@
     // ✅ index 페이지이고 URL에 sid가 없으면 localStorage 초기화
     if (shouldResetSession()) {
       console.log("[session-guard] 새 세션 시작 - localStorage 초기화");
-      localStorage.removeItem(KEY);
-      localStorage.removeItem(CREATED_KEY);
+      clearAllSessionKeys();
     }
+
+    // ✅ data-reset-session 버튼 바인딩
+    bindResetSession();
 
     const sid = getSid();
     
     if (sid) {
       ensureSidInUrl(sid);
-      //propagateSidToLinks(sid);
+      // propagateSidToLinks(sid);  // 필요시 활성화
       bindNavWithSid(sid);
     }
 
