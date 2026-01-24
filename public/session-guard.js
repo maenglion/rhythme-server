@@ -178,7 +178,7 @@
     
     if (sid) {
       ensureSidInUrl(sid);
-      propagateSidToLinks(sid);
+      //propagateSidToLinks(sid);
       bindNavWithSid(sid);
     }
 
