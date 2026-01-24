@@ -1,5 +1,16 @@
 // ./voice-processor.js
 
+// ✅ 파일 상단에 마이크 제약조건 추가
+const MIC_CONSTRAINTS = {
+  audio: {
+    echoCancellation: false,      // 에코 제거 끄기 (원본 음성 보존)
+    noiseSuppression: false,      // 노이즈 억제 끄기 (분석용 원본 필요)
+    autoGainControl: true,        // 자동 음량 조절만 켜기 (일관된 볼륨)
+    sampleRate: 48000,            // 고품질 샘플레이트
+    channelCount: 1,              // 모노 (용량 절약 + 분석 단순화)
+  },
+};
+
 export class VoiceProcessor {
   constructor() {
     this.ctx = null;
@@ -23,7 +34,9 @@ export class VoiceProcessor {
     // 이미 준비되어 있으면 재사용
     if (this.ctx && this.analyser && this.stream) return;
 
-    this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    // ✅ 여기를 수정! { audio: true } → MIC_CONSTRAINTS
+    this.stream = await navigator.mediaDevices.getUserMedia(MIC_CONSTRAINTS);
+    
     this.ctx = new (window.AudioContext || window.webkitAudioContext)();
     this.source = this.ctx.createMediaStreamSource(this.stream);
 
