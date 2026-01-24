@@ -30,12 +30,18 @@ export class VoiceProcessor {
     this._raf = null;
   }
 
-  async init() {
+ async init(inputStream = null) {
     // 이미 준비되어 있으면 재사용
     if (this.ctx && this.analyser && this.stream) return;
 
-    // ✅ 여기를 수정! { audio: true } → MIC_CONSTRAINTS
-    this.stream = await navigator.mediaDevices.getUserMedia(MIC_CONSTRAINTS);
+    // ✅ 외부에서 stream이 오면 그걸 쓰고, 없으면 MIC_CONSTRAINTS로 마이크 잡기
+    this.stream = inputStream || await navigator.mediaDevices.getUserMedia(MIC_CONSTRAINTS);
+    
+    // ✅ 검증용: 실제 적용된 설정 확인
+    const track = this.stream.getAudioTracks()[0];
+    if (track?.getSettings) {
+      console.log("[VoiceProcessor] track settings:", track.getSettings());
+    }
     
     this.ctx = new (window.AudioContext || window.webkitAudioContext)();
     this.source = this.ctx.createMediaStreamSource(this.stream);
