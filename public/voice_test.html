@@ -514,9 +514,17 @@ async function measureNoiseThen(stream, onDone, opts = {}) {
   // ---------------------------
 // runVoiceStage 시작부에 추가/교체
 async function runVoiceStage({ source = "mic" } = {}) {
+
+
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if (isMobile) source = "mic"; // 모바일은 탭 오디오 불가
+
   console.log("[runVoiceStage] source=", source);
   const recBtn = document.querySelector("#recordBtn");
   const finishBtn = document.getElementById("finishBtn");
+
+
+
 
   const inputStream =
     source === "tab"
