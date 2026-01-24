@@ -405,7 +405,14 @@ function setupCTA() {
   const btn = document.getElementById("btnStartTest");
   if (btn) {
     btn.onclick = () => {
-      // 새 테스트: sid 제거하고 깨끗한 index로
+      // ✅ 공유받은 사람도 "완전 새 세션"으로 시작하게 로컬 키 제거
+      try {
+        localStorage.removeItem("SESSION_ID");
+        localStorage.removeItem("rhythmi_session_id");
+        localStorage.removeItem("RHYTHMI_SESSION_ID");
+      } catch {}
+
+      // ✅ URL도 깨끗하게
       location.assign("./index.html");
     };
   }
