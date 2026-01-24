@@ -69,7 +69,7 @@
         if (!path) return;
 
         if (!sid) {
-          alert("세션이 없습니다. 처음부터 다시 진행해주세요.");
+          window.showModal?.("세션이 없습니다. 처음부터 다시 진행해주세요.");
           location.href = "./index.html";
           return;
         }
@@ -150,14 +150,14 @@
       if (isAndroid()) {
         location.href = chromeIntentUrl(url);
       } else {
-        alert("iPhone: 오른쪽 메뉴(⋯)에서 'Safari에서 열기'로 진행해줘.");
+        window.showModal?.("iPhone: 오른쪽 메뉴(⋯)에서 'Safari에서 열기'로 진행해줘.");
       }
     });
 
     bar.querySelector("#copyLink")?.addEventListener("click", async () => {
       try {
         await navigator.clipboard.writeText(url);
-        alert("링크를 복사했어요. 외부 브라우저에 붙여넣어 열어주세요.");
+        window.showModal?.("링크를 복사했어요. 외부 브라우저에 붙여넣어 열어주세요.");
       } catch {
         prompt("아래 링크를 복사해서 브라우저에 붙여넣어 주세요:", url);
       }
