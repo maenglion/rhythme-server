@@ -645,18 +645,34 @@ function buildSurveyPayloadV2({
 /* ============================================================
    최종 데이터 제출 (설문 + qEEG 업로드)
    ============================================================ */
-window.submitAll = async function (evt) {
-  // ✅ sid 생성 금지: 읽기만
-  const sid =
-    localStorage.getItem("SESSION_ID") ||
-    new URLSearchParams(location.search).get("sid");
 
+// ✅ SID 생성: Step5(qEEG 제출) 동의 시에만
+window.submitAll = async function (evt) {
+  const currentBtn = evt?.currentTarget;
+
+  // ✅ 1. 먼저 SID 존재 여부 확인
+  let sid = localStorage.getItem("SESSION_ID") || new URLSearchParams(location.search).get("sid");
+  
+  // ✅ 2. SID가 없으면 여기서 최초 생성
   if (!sid) {
-    alert("세션이 없습니다. 처음부터 다시 진행해주세요.");
-    location.href = "./index.html";
-    return;
+    sid = (crypto?.randomUUID) 
+      ? crypto.randomUUID() 
+      : `sid_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    
+    console.log("[submitAll] 새 SID 생성:", sid);
+    
+    // ✅ 3. 생성 즉시 저장
+    localStorage.setItem("SESSION_ID", sid);
+    localStorage.setItem("SESSION_CREATED_AT", String(Date.now()));
+    window.SESSION_ID = sid;
+    
+    // ✅ 4. URL에도 반영
+    const u = new URL(location.href);
+    u.searchParams.set("sid", sid);
+    history.replaceState(null, "", u.toString());
   }
-  console.log("[SID] used at submitAll:", sid);
+
+  console.log("[submitAll] 사용 중인 SID:", sid);
 
   const ecFile = document.getElementById("qeegEC")?.files?.[0] || null;
   const eoFile = document.getElementById("qeegEO")?.files?.[0] || null;
@@ -666,14 +682,13 @@ window.submitAll = async function (evt) {
   const gender = document.querySelector('input[name="gender"]:checked')?.value || "unknown";
   const isChild = age > 0 && age <= 18;
 
-  const currentBtn = evt?.currentTarget;
   if (currentBtn) {
     currentBtn.disabled = true;
     currentBtn.innerText = "데이터 분석중...";
   }
 
   try {
-    // 1) qEEG 파일 없을 때 confirm
+    // qEEG 파일 없을 때 confirm
     if (!ecFile || !eoFile) {
       const confirmGo = await window.showConfirmModal?.(
         "⚠️ qEEG 파일이 선택되지 않았습니다.\n\n파일 없이 진행할까요?"
@@ -687,8 +702,8 @@ window.submitAll = async function (evt) {
       }
     }
 
-    // 2) 설문 완료 체크 (answersById 기준)
-    const items = getSQQuestions(); // adultItems / childItems
+    // 설문 완료 체크
+    const items = getSQQuestions();
     const expectedLen = items.length;
     const answeredCount = items.filter(q => answersById?.[q.id] !== undefined && answersById?.[q.id] !== null).length;
 
@@ -701,7 +716,7 @@ window.submitAll = async function (evt) {
       return;
     }
 
-    // 3) payload 생성
+    // payload 생성 (buildSurveyPayloadV2 함수 사용)
     const surveyPayload = buildSurveyPayloadV2({
       sid,
       nickname,
@@ -715,7 +730,10 @@ window.submitAll = async function (evt) {
       eoFile,
     });
 
-    // 4) 설문 저장
+    // 설문 저장
+    const API_BASE = "https://rhythme-server-357918245340.asia-northeast3.run.app";
+    const API = (path) => `${API_BASE.replace(/\/$/, '')}${path}`;
+    
     const surveyRes = await fetch(API("/submit-survey"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -727,17 +745,17 @@ window.submitAll = async function (evt) {
       throw new Error(`submit-survey failed ${surveyRes.status}: ${t}`);
     }
 
-    // 5) qEEG 업로드 (있으면)
+    // qEEG 업로드
     const ecResult = ecFile ? await uploadSingleFile(sid, "EC", ecFile) : null;
     const eoResult = eoFile ? await uploadSingleFile(sid, "EO", eoFile) : null;
 
-    // 6) 로컬 저장(기존 흐름 유지)
+    // 로컬 저장
     localStorage.setItem("rhythmi_session_id", sid);
     localStorage.setItem("rhythmi_user_id", nickname || sid);
     localStorage.setItem("rhythmi_age", String(age));
     localStorage.setItem("rhythmi_gender", gender);
 
-    // 7) 안내 + 다음 이동
+    // 안내 + 다음 이동
     window.showModal?.(
       `✅ 저장 완료\n\nEC: ${ecFile?.name || "none"}\nEO: ${eoFile?.name || "none"}`
     );
@@ -764,127 +782,37 @@ window.submitAll = async function (evt) {
   }
 };
 
+// ✅ ensureSid 함수 제거 또는 사용 중지
+// 기존에 ensureSid()를 호출하는 부분이 있다면 모두 제거
 
-// ✅ 설문 완료 로컬 저장(필요하면 유지)
-function completeSQTest() {
-  const items = getSQQuestions();
-  const score100 = computeSqScore100(items, answersById);
-
-  localStorage.setItem("rhythmi_sq_done", "1");
-  localStorage.setItem("rhythmi_sq_answers", JSON.stringify(answers)); // index 기반 호환
-  localStorage.setItem("rhythmi_sq_answers_by_id", JSON.stringify(answersById)); // id 기반
-  localStorage.setItem("rhythmi_sq_version", "v2_14");
-  localStorage.setItem("rhythmi_sq_score_100", String(score100));
-
-  localStorage.setItem(
-    "rhythmi_confidence_note",
-    "신뢰도(Confidence)는 설문(자기보고) 점수와 음성 기반 지표(말의 리듬/속도/휴지/억양 변동)에서 추정된 성향이 얼마나 일치하는지로 계산됩니다. 두 값의 차이가 클수록, 의도적 응답/상황 요인(피로·주변 소음·감정 상태 등) 가능성이 있어 신뢰도가 낮아질 수 있습니다."
-  );
-}
-
-
-async function uploadSingleFile(userId, type, file) {
-  const formData = new FormData();
-  formData.append("user_id", userId);
-  formData.append("file_type", type);
-  formData.append("file", file);
-
-  const res = await fetch(API("/upload-qeeg"), {
-    method: "POST",
-    body: formData,
-  });
-
-  if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`upload-qeeg failed ${res.status}: ${t}`);
-  }
-  return res.json();
-}
-
-
-/* ============================================================
-   4. Step 6~7: 음성 분석 엔진 (핵심)
-   ============================================================ */
-window.goToVoiceTest = function () {
-  const age = parseInt(document.getElementById('age')?.value || '20', 10);
-
-  STAGES = getStages(age);   // ✅ 연령 기반 스테이지 구성
-  stageIdx = 0;
-  window.goToNextStep();         // ✅ step6 -> step7 (active 전환)
-  renderStage();             // ✅ step7 내용 렌더
-};
-
-function getStages(age) {
-  const isUnder14 = age < 14;
-
-  return [
-    { id: 1, q: "Stage 1", d: "지문을 읽어주세요.", text: "지금 나는 내 음성에 귀를 기울이고 있다..." },
-    { id: 2, q: isUnder14 ? "최근에 흥미로운 주제는?" : "최근에 해결한 사례는?", d: "자유롭게 말씀해 주세요." },
-  ];
-}
-
-
-
-/* ============================================================
-   [신규 추가] Step 7: 음성 테스트 화면 전용 렌더링 함수
-   ============================================================ */
-
-function renderStage() {
-  const s = STAGES[stageIdx];
-
-  // ✅ 종료 화면(마지막 stage 끝난 뒤)
-  if (!s) {
-    const badgeEl = document.getElementById("stageBadge");
-    if (badgeEl) badgeEl.innerText = "완료";
-
-    setQuestionText("녹음이 완료되었습니다.");
-    setDescriptionText("참여해주셔서 감사합니다.");
-
-    const recBtn = document.getElementById("recordBtn");
-    if (recBtn) recBtn.style.display = "none";
-
-    const finishBtn = document.getElementById("finishBtn");
-    if (finishBtn) {
-      finishBtn.style.display = "inline-block";
-      finishBtn.disabled = false;
-      finishBtn.innerText = "완료";
-      finishBtn.onclick = () => {
-        // location.href = "done.html";
-      };
-    }
-    return;
-  }
-
-  // ✅ 일반 stage 화면
-  const badgeEl = document.getElementById("stageBadge");
-  if (badgeEl) badgeEl.innerText = `Stage ${s.id}`;
-
-  setQuestionText(s.text || s.q || "");
-  setDescriptionText(s.d || "");
-
-  setTimer(40000);
-  setRecordButtonState({ recording: false, calibrating: false });
-
+// ✅ DOMContentLoaded에서 자동 SID 생성 제거
+document.addEventListener("DOMContentLoaded", () => {
+  // ensureSid(); // ❌ 이 줄 제거
+  
+  // 나머지 초기화 코드는 유지
+  initVoicePage();
+  
   const finishBtn = document.getElementById("finishBtn");
-  if (finishBtn) finishBtn.style.display = "none";
+  if (finishBtn) {
+    finishBtn.onclick = null;
+    finishBtn.style.display = "none";
+    finishBtn.disabled = true;
+  }
 
-
-  const qEl = document.getElementById('question') || document.getElementById('questionText');
-  const dEl = document.getElementById('desc') || document.getElementById('descriptionText');
-
-
-  if (qEl) qEl.innerText = s.text || s.q;
-  if (dEl) dEl.innerText = s.d;
-  if (badge) badge.innerText = `Stage ${s.id}`;
-
-  stageDisplayTime = performance.now();
-
-  if (typeof setTimer === 'function') setTimer(40000);
-  if (typeof setRecordButtonState === 'function') setRecordButtonState({ recording: false });
-
-  const nBtn = document.getElementById('nextBtn');
-  if (nBtn) nBtn.style.display = 'none';
-}
+  const nextBtn = document.getElementById("nextStepBtn");
+  if (nextBtn) {
+    nextBtn.onclick = null;
+    nextBtn.addEventListener("click", () => {
+      const sid = localStorage.getItem("SESSION_ID");
+      if (!sid) {
+        alert("세션이 없습니다. Step5 제출을 먼저 완료해주세요.");
+        location.href = "./index.html";
+        return;
+      }
+      location.href = `voice_info.html?sid=${encodeURIComponent(sid)}`;
+    });
+  }
+});
 
 async function runVoiceStage() {
   const s = STAGES[stageIdx];
