@@ -48,6 +48,7 @@ function copyText(text) {
 
 function showModal(title, message, detail = "") {
   if (typeof window.showErrorModal === "function") window.showErrorModal(title, message, detail);
+  else if (typeof window.showModal === "function") window.showModal(`${title}\n\n${message}`);
   else alert(`${title}\n\n${message}`);
 }
 
@@ -376,7 +377,7 @@ function renderAxesAndSQ(sq) {
 
   setText("sqScore", String(sq.SQ));
   setText("sqConfidence", sq.eligibleCount >= 3 ? "높음" : "보통");
-  setText("sqDesc", "SQ(BETA)는 S2~S4의 속도·끊김·유창성 회복·일관성을 합성한 ‘음성 체계화 지수’입니다.");
+  setText("sqDesc", "SQ(BETA)는 S2~S4의 속도·끊김·유창성 회복·일관성을 합성한 '음성 체계화 지수'입니다.");
 
   setBar(document.getElementById("axSpeed"), sq.speed);
   setBar(document.getElementById("axCont"), sq.cont);
@@ -426,7 +427,7 @@ function setupCTA() {
 }
 
 // ---------------------------
-// init
+// init (단일 DOMContentLoaded)
 // ---------------------------
 document.addEventListener("DOMContentLoaded", async () => {
   const sid = getSidSafe();
@@ -481,81 +482,5 @@ document.addEventListener("DOMContentLoaded", async () => {
     showModal("리포트를 불러오지 못했어요", "네트워크 또는 서버 오류입니다.", String(e?.message || e));
   }
 });
-function showOkModal(title, message) {
-  // 성공 알림도 모달로
-  if (typeof window.showErrorModal === "function") {
-    window.showErrorModal(title, message, "");
-  } else if (typeof window.showModal === "function") {
-    window.showModal(`${title}\n\n${message}`);
-  } else {
-    alert(`${title}\n\n${message}`);
-  }
-}
 
-async function copyTextToClipboard(text) {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    // fallback
-    try {
-      prompt("복사해서 붙여넣기:", text);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-}
-
-function getSidForReport() {
-  return (
-    new URLSearchParams(location.search).get("sid") ||
-    localStorage.getItem("SESSION_ID") ||
-    localStorage.getItem("rhythmi_session_id") ||
-    window.SESSION_ID ||
-    ""
-  );
-}
-
-function setupReportCopyUI() {
-  const sid = getSidForReport();
-
-  // 1) Session ID 표시
-  const sidEl = document.getElementById("displaySessionId");
-  if (sidEl) sidEl.textContent = sid ? `Session ID: ${sid}` : "Session ID: 없음";
-
-  // 2) 세션 ID 복사 버튼
-  const btnCopySession = document.getElementById("btnCopySession");
-  if (btnCopySession) {
-    btnCopySession.addEventListener("click", async (e) => {
-      e.preventDefault();
-      if (!sid) {
-        showOkModal("세션 ID가 없어요", "리포트를 다시 열어 주세요.");
-        return;
-      }
-      const ok = await copyTextToClipboard(sid);
-      if (ok) showOkModal("복사 완료", "세션 ID가 클립보드에 복사되었습니다.");
-      else showOkModal("복사 실패", "브라우저 권한 문제일 수 있어요. 수동으로 복사해 주세요.");
-    });
-  }
-
-  // 3) 결과 링크 복사 버튼 (id는 둘 중 하나를 잡음)
-  const btnCopyLink =
-    document.getElementById("btnCopyReportLink") || document.getElementById("copyReportLinkBtn");
-
-  if (btnCopyLink) {
-    btnCopyLink.addEventListener("click", async (e) => {
-      e.preventDefault();
-
-      // ✅ report 링크는 sid가 있어야 열림 → 현재 URL(=sid 포함)을 그대로 복사
-      const url = location.href;
-
-      const ok = await copyTextToClipboard(url);
-      if (ok) showOkModal("복사 완료", "결과 링크가 클립보드에 복사되었습니다.");
-      else showOkModal("복사 실패", "브라우저 권한 문제일 수 있어요. 수동으로 복사해 주세요.");
-    });
-  }
-}
-
-document.addEventListener("DOMContentLoaded", setupReportCopyUI);
 })();
