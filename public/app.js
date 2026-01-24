@@ -90,7 +90,7 @@ window.copyShareLink = async function () {
   const u = new URL(location.href);
   u.searchParams.delete("sid");
   const shareUrl = u.toString();
-  try { await navigator.clipboard.writeText(shareUrl); alert("참여 링크 복사됨"); }
+  try { await navigator.clipboard.writeText(shareUrl); window.showModal("참여 링크 복사됨"); }
   catch { prompt("복사해서 보내:", shareUrl); }
 };
 
@@ -650,10 +650,8 @@ function buildSurveyPayloadV2({
 window.submitAll = async function (evt) {
   const currentBtn = evt?.currentTarget;
 
-  // ✅ 1. 먼저 SID 존재 여부 확인
   let sid = localStorage.getItem("SESSION_ID") || new URLSearchParams(location.search).get("sid");
   
-  // ✅ 2. SID가 없으면 여기서 최초 생성
   if (!sid) {
     sid = (crypto?.randomUUID) 
       ? crypto.randomUUID() 
@@ -661,12 +659,10 @@ window.submitAll = async function (evt) {
     
     console.log("[submitAll] 새 SID 생성:", sid);
     
-    // ✅ 3. 생성 즉시 저장
     localStorage.setItem("SESSION_ID", sid);
     localStorage.setItem("SESSION_CREATED_AT", String(Date.now()));
     window.SESSION_ID = sid;
     
-    // ✅ 4. URL에도 반영
     const u = new URL(location.href);
     u.searchParams.set("sid", sid);
     history.replaceState(null, "", u.toString());
@@ -688,7 +684,7 @@ window.submitAll = async function (evt) {
   }
 
   try {
-    // qEEG 파일 없을 때 confirm
+    // qEEG 파일 없을 때 confirm (이미 modal 사용중)
     if (!ecFile || !eoFile) {
       const confirmGo = await window.showConfirmModal?.(
         "⚠️ qEEG 파일이 선택되지 않았습니다.\n\n파일 없이 진행할까요?"
@@ -702,7 +698,7 @@ window.submitAll = async function (evt) {
       }
     }
 
-    // 설문 완료 체크
+    // 설문 완료 체크 (이미 modal 사용중)
     const items = getSQQuestions();
     const expectedLen = items.length;
     const answeredCount = items.filter(q => answersById?.[q.id] !== undefined && answersById?.[q.id] !== null).length;
@@ -716,7 +712,6 @@ window.submitAll = async function (evt) {
       return;
     }
 
-    // payload 생성 (buildSurveyPayloadV2 함수 사용)
     const surveyPayload = buildSurveyPayloadV2({
       sid,
       nickname,
@@ -730,7 +725,6 @@ window.submitAll = async function (evt) {
       eoFile,
     });
 
-    // 설문 저장
     const API_BASE = "https://rhythme-server-357918245340.asia-northeast3.run.app";
     const API = (path) => `${API_BASE.replace(/\/$/, '')}${path}`;
     
@@ -745,17 +739,15 @@ window.submitAll = async function (evt) {
       throw new Error(`submit-survey failed ${surveyRes.status}: ${t}`);
     }
 
-    // qEEG 업로드
     const ecResult = ecFile ? await uploadSingleFile(sid, "EC", ecFile) : null;
     const eoResult = eoFile ? await uploadSingleFile(sid, "EO", eoFile) : null;
 
-    // 로컬 저장
     localStorage.setItem("rhythmi_session_id", sid);
     localStorage.setItem("rhythmi_user_id", nickname || sid);
     localStorage.setItem("rhythmi_age", String(age));
     localStorage.setItem("rhythmi_gender", gender);
 
-    // 안내 + 다음 이동
+    // 성공 메시지 (이미 modal 사용중)
     window.showModal?.(
       `✅ 저장 완료\n\nEC: ${ecFile?.name || "none"}\nEO: ${eoFile?.name || "none"}`
     );
@@ -774,24 +766,26 @@ window.submitAll = async function (evt) {
 
   } catch (error) {
     console.error("Submit Error:", error);
-    alert("서버 오류: " + (error?.message || String(error)));
+    
+    // ✅ alert → modal 변경
+    if (typeof window.showModal === "function") {
+      window.showModal("서버 오류: " + (error?.message || String(error)));
+    } else {
+      alert("서버 오류: " + (error?.message || String(error)));
+    }
+    
     if (currentBtn) {
       currentBtn.disabled = false;
       currentBtn.innerText = "음성분석 시작";
     }
   }
 };
-
 // ✅ ensureSid 함수 제거 또는 사용 중지
 // 기존에 ensureSid()를 호출하는 부분이 있다면 모두 제거
 
-// ✅ DOMContentLoaded에서 자동 SID 생성 제거
 document.addEventListener("DOMContentLoaded", () => {
-  // ensureSid(); // ❌ 이 줄 제거
-  
-  // 나머지 초기화 코드는 유지
-  initVoicePage();
-  
+  initVoicePage(); // 기존 함수
+
   const finishBtn = document.getElementById("finishBtn");
   if (finishBtn) {
     finishBtn.onclick = null;
@@ -799,14 +793,20 @@ document.addEventListener("DOMContentLoaded", () => {
     finishBtn.disabled = true;
   }
 
+  // ✅ 여기 수정
   const nextBtn = document.getElementById("nextStepBtn");
   if (nextBtn) {
     nextBtn.onclick = null;
     nextBtn.addEventListener("click", () => {
       const sid = localStorage.getItem("SESSION_ID");
       if (!sid) {
-        alert("세션이 없습니다. Step5 제출을 먼저 완료해주세요.");
-        location.href = "./index.html";
+        if (typeof window.showModal === "function") {
+          window.showModal("세션이 없습니다. Step5 제출을 먼저 완료해주세요.");
+          setTimeout(() => location.href = "./index.html", 300);
+        } else {
+          alert("세션이 없습니다. Step5 제출을 먼저 완료해주세요.");
+          location.href = "./index.html";
+        }
         return;
       }
       location.href = `voice_info.html?sid=${encodeURIComponent(sid)}`;
@@ -932,7 +932,7 @@ function copyCurrentUrl() {
     dummy.select();
     document.execCommand('copy');
     document.body.removeChild(dummy);
-    alert('주소가 복사되었습니다. 크롬 앱을 열어 주소창에 붙여넣어 주세요!');
+    window.showModal('주소가 복사되었습니다. 크롬 앱을 열어 주소창에 붙여넣어 주세요!');
 }
 
 /* ============================================================
@@ -954,32 +954,6 @@ function initVoicePage() {
     }
   });
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-  initVoicePage();
-
-  const finishBtn = document.getElementById("finishBtn");
-  if (finishBtn) {
-    // 혹시 inline onclick 있었으면 제거
-    finishBtn.onclick = null;
-    finishBtn.style.display = "none";
-    finishBtn.disabled = true;
-  }
-
-  const nextBtn = document.getElementById("nextStepBtn");
-  if (nextBtn) {
-    nextBtn.onclick = null; // ✅ inline onclick 무력화
-    nextBtn.addEventListener("click", () => {
-      const sid = localStorage.getItem("SESSION_ID");
-      if (!sid) {
-        alert("세션이 없습니다. Step5 제출을 먼저 완료해주세요.");
-        location.href = "./index.html";
-        return;
-      }
-      location.href = `voice_info.html?sid=${encodeURIComponent(sid)}`;
-    });
-  }
-});
 
 function getSidSafe() {
   return (
