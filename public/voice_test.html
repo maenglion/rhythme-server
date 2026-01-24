@@ -523,13 +523,17 @@ async function runVoiceStage({ source = "mic" } = {}) {
   const recBtn = document.querySelector("#recordBtn");
   const finishBtn = document.getElementById("finishBtn");
 
-
-
-
-  const inputStream =
-    source === "tab"
-      ? await getTabAudioStream()
-      : await navigator.mediaDevices.getUserMedia({ audio: true });
+//끝단테스트용
+const inputStream =
+  source === "tab"
+    ? await getTabAudioStream()
+    : await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: true,
+        },
+      });
 
   const s = STAGES[stageIdx];
   if (!s) return;
