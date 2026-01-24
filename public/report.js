@@ -36,8 +36,12 @@ function apiUrl(path) {
 // ---------------------------
 function getSidSafe() {
   const urlSid = new URLSearchParams(location.search).get("sid");
-  const storeSid = localStorage.getItem("SESSION_ID");
-  const sid = urlSid || storeSid || "";
+  const sid =
+    urlSid ||
+    localStorage.getItem("SESSION_ID") ||
+    localStorage.getItem("rhythmi_session_id") ||
+    localStorage.getItem("RHYTHMI_SESSION_ID") ||
+    "";
   return sid;
 }
 
@@ -401,9 +405,8 @@ function setupCTA() {
   const btn = document.getElementById("btnStartTest");
   if (btn) {
     btn.onclick = () => {
-      // 새 테스트: sid 제거하고 index로
-      const u = new URL("./index.html", location.href);
-      location.href = u.toString();
+      // 새 테스트: sid 제거하고 깨끗한 index로
+      location.assign("./index.html");
     };
   }
 
