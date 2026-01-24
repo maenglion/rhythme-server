@@ -217,6 +217,36 @@
     <button type="button" id="uploadBtn" class="next-btn" onclick="submitAll(event)">다음</button>
 </section>
 
+<script>
+  // ✅ Step1에서 새로 시작할 때 기존 세션 완전 초기화
+  (function() {
+    // URL에 sid 파라미터가 없으면 = 새로운 참여자
+    const hasSidInUrl = new URLSearchParams(location.search).has('sid');
+    
+    if (!hasSidInUrl) {
+      console.log("[Step1 Init] 새로운 참여 시작 - 기존 세션 초기화");
+      localStorage.removeItem("SESSION_ID");
+      localStorage.removeItem("SESSION_CREATED_AT");
+      localStorage.removeItem("rhythmi_session_id");
+      localStorage.removeItem("rhythmi_user_id");
+      localStorage.removeItem("rhythmi_age");
+      localStorage.removeItem("rhythmi_gender");
+      localStorage.removeItem("rhythmi_sq_done");
+      localStorage.removeItem("rhythmi_sq_answers");
+      localStorage.removeItem("rhythmi_sq_answers_by_id");
+      localStorage.removeItem("rhythmi_sq_version");
+      localStorage.removeItem("rhythmi_sq_score_100");
+      localStorage.removeItem("rhythmi_voice_version");
+      
+      // URL도 깨끗하게
+      if (location.search) {
+        history.replaceState(null, "", location.pathname);
+      }
+    } else {
+      console.log("[Step1 Init] 기존 세션 이어하기 모드");
+    }
+  })();
+</script>
 
 <script src="./runtime-config.js?v=1"></script>
 <script src="./session-guard.js"></script>
