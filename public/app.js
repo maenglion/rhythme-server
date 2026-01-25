@@ -403,7 +403,7 @@ function renderQuestion() {
   const q = questions[currentQIndex];
 
   if (!q) {
-    completeSQTest();     // ✅ 완료 처리 먼저
+    window.completeSQTest?.();   // ✅ 완료 처리 먼저
     window.showStep?.(5); // ✅ 설문 완료 → step5
     return;
   }
